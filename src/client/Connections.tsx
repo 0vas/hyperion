@@ -1,5 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Bot, Code2, Orbit, Sparkles, Terminal } from 'lucide-react';
 import { t, useLocale } from './i18n';
+
+const CLIENT_ICONS: Record<string, typeof Bot> = {
+  codex: Terminal,
+  cursor: Code2,
+  'claude-desktop': Sparkles,
+  'claude-code': Sparkles,
+  antigravity: Orbit,
+  chatgpt: Bot,
+  hermes: Bot,
+};
+
+function ClientMark({ id }: { id: string }) {
+  const Icon = CLIENT_ICONS[id] || Bot;
+  return (
+    <span className="connection-client-mark" aria-hidden="true">
+      <Icon size={28} strokeWidth={1.6} />
+    </span>
+  );
+}
 
 export type ConnectionStatusId =
   'configured' | 'missing' | 'conflict' | 'unknown';
@@ -341,7 +361,13 @@ export function ConnectionsView({
 
       <div className="connection-service-strip">
         <div>
-          <strong>{t('Servicio local')}</strong>
+          <strong>
+            <span
+              className={`connection-online-dot${online ? '' : ' is-offline'}`}
+              aria-hidden="true"
+            />
+            {t('Servicio local')}
+          </strong>
           <p>
             {online ? t('Conectado') : t('Sin conexión')}
             {serviceHost ? ` · ${serviceHost}` : ''}
@@ -382,7 +408,10 @@ export function ConnectionsView({
         {(inventory?.integrations || []).map((row) => (
           <li key={row.id} className={`connection-card status-${row.status}`}>
             <div className="connection-card-head">
-              <strong>{row.name}</strong>
+              <div className="connection-card-title">
+                <ClientMark id={row.id} />
+                <strong>{row.name}</strong>
+              </div>
               <span className={`connection-status-badge status-${row.status}`}>
                 {t(STATUS_LABEL[row.status])}
               </span>

@@ -5,7 +5,22 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
-import { ChevronDown } from 'lucide-react';
+import {
+  BookOpen,
+  ChevronDown,
+  CircleHelp,
+  Download,
+  ExternalLink,
+  History,
+  Info,
+  type LucideIcon,
+  MessageSquareText,
+  Pause,
+  Play,
+  Plug,
+  Route,
+  Settings2,
+} from 'lucide-react';
 import { t, useLocale } from './i18n';
 import { RELEASE_CHANNEL, VERSION } from '../version';
 import type { ConnectionInventory } from './Connections';
@@ -28,6 +43,21 @@ export type AppMenuRunChrome = {
   live: boolean;
   paused: boolean;
   canPauseResume: boolean;
+};
+
+const MENU_ICONS: Record<AppMenuAction, LucideIcon> = {
+  connections: Plug,
+  settings: Settings2,
+  guide: BookOpen,
+  help: CircleHelp,
+  legend: Route,
+  window: ExternalLink,
+  updates: Download,
+  about: Info,
+  request: MessageSquareText,
+  activity: History,
+  pause: Pause,
+  resume: Play,
 };
 
 function calVerLabel(inventory: ConnectionInventory | null) {
@@ -161,14 +191,21 @@ export function AppMenu({
               <div className="app-menu-sep" role="separator" />
               <p className="app-menu-section">{t('Este flujo')}</p>
               <div className="app-menu-group">
-                <MenuRow onSelect={() => runAction('request')}>
+                <MenuRow
+                  icon={MENU_ICONS.request}
+                  onSelect={() => runAction('request')}
+                >
                   {t('Petición original')}
                 </MenuRow>
-                <MenuRow onSelect={() => runAction('activity')}>
+                <MenuRow
+                  icon={MENU_ICONS.activity}
+                  onSelect={() => runAction('activity')}
+                >
                   {t('Actividad')}
                 </MenuRow>
                 {run.canPauseResume && (
                   <MenuRow
+                    icon={run.live ? MENU_ICONS.pause : MENU_ICONS.resume}
                     onSelect={() => runAction(run.live ? 'pause' : 'resume')}
                   >
                     {run.live ? t('Pausar') : t('Reanudar')}
@@ -180,43 +217,64 @@ export function AppMenu({
           <div className="app-menu-sep" role="separator" />
           <p className="app-menu-section">{t('Aplicación')}</p>
           <div className="app-menu-group">
-            <MenuRow onSelect={() => runAction('connections')}>
+            <MenuRow
+              icon={MENU_ICONS.connections}
+              onSelect={() => runAction('connections')}
+            >
               {t('Conexiones')}
             </MenuRow>
-            <MenuRow onSelect={() => runAction('settings')}>
+            <MenuRow
+              icon={MENU_ICONS.settings}
+              onSelect={() => runAction('settings')}
+            >
               {t('Ajustes')}
             </MenuRow>
           </div>
           <div className="app-menu-sep" role="separator" />
           <p className="app-menu-section">{t('Ayuda')}</p>
           <div className="app-menu-group">
-            <MenuRow onSelect={() => runAction('guide')}>
+            <MenuRow
+              icon={MENU_ICONS.guide}
+              onSelect={() => runAction('guide')}
+            >
               {t('Guía de uso')}
             </MenuRow>
-            <MenuRow onSelect={() => runAction('help')}>
+            <MenuRow icon={MENU_ICONS.help} onSelect={() => runAction('help')}>
               {t('Ayuda de conexión')}
             </MenuRow>
           </div>
           <div className="app-menu-sep" role="separator" />
           <p className="app-menu-section">{t('Más')}</p>
           <div className="app-menu-group">
-            <MenuRow onSelect={() => runAction('legend')}>
+            <MenuRow
+              icon={MENU_ICONS.legend}
+              onSelect={() => runAction('legend')}
+            >
               {t('Colores del flujo')}
             </MenuRow>
             {!isElectron && (
-              <MenuRow onSelect={() => runAction('window')}>
+              <MenuRow
+                icon={MENU_ICONS.window}
+                onSelect={() => runAction('window')}
+              >
                 {t('Abrir en ventana')}
               </MenuRow>
             )}
             {isElectron && (
-              <MenuRow onSelect={() => runAction('updates')}>
+              <MenuRow
+                icon={MENU_ICONS.updates}
+                onSelect={() => runAction('updates')}
+              >
                 {t('Buscar actualizaciones…')}
               </MenuRow>
             )}
           </div>
           <div className="app-menu-sep" role="separator" />
           <div className="app-menu-group">
-            <MenuRow onSelect={() => runAction('about')}>
+            <MenuRow
+              icon={MENU_ICONS.about}
+              onSelect={() => runAction('about')}
+            >
               {t('Acerca de Hyperion')}
             </MenuRow>
           </div>
@@ -228,9 +286,11 @@ export function AppMenu({
 
 function MenuRow({
   children,
+  icon: Icon,
   onSelect,
 }: {
   children: ReactNode;
+  icon: LucideIcon;
   onSelect: () => void;
 }) {
   return (
@@ -240,6 +300,9 @@ function MenuRow({
       className="app-menu-row"
       onClick={onSelect}
     >
+      <span className="app-menu-row-icon" aria-hidden="true">
+        <Icon size={18} strokeWidth={1.75} />
+      </span>
       {children}
     </button>
   );
