@@ -53,8 +53,10 @@ async function findMountedApp(mountPoint) {
 
 /**
  * Mount a verified DMG read-only, codesign-check Hyperion.app, replace this
- * process's bundle, relaunch with open -n. Restores the previous bundle if
- * replacement fails. Never kills foreign processes.
+ * process's bundle. Does not relaunch: the caller must quit first so
+ * requestSingleInstanceLock is released, then start the new binary (e.g.
+ * app.relaunch()). Restores the previous bundle if replacement fails. Never
+ * kills foreign processes.
  */
 export async function applyMacDmg(
   installerPath,
@@ -112,7 +114,6 @@ export async function applyMacDmg(
     }
     await rm(backup, { recursive: true, force: true });
     renamed = false;
-    await execFile('open', ['-n', currentApp], { timeout: 30000 });
   } finally {
     if (renamed && !(await exists(currentApp)) && (await exists(backup))) {
       try {

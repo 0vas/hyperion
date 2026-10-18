@@ -27,8 +27,10 @@ test('Actualizar y reiniciar requires consent, downloads under userData/updates,
   const progress = [];
   const boxes = [];
   const controller = createUpdateController({
+    platform: 'darwin',
     app: {
       ...app,
+      relaunch: () => calls.push(['relaunch']),
       quit: () => calls.push(['quit']),
     },
     getWindow: () => ({
@@ -72,9 +74,41 @@ test('Actualizar y reiniciar requires consent, downloads under userData/updates,
   assert.deepEqual(calls, [
     ['download', '2026.10.15.1916', installer],
     ['apply', installer],
+    ['relaunch'],
     ['quit'],
   ]);
   assert.deepEqual(progress, [0.5, 1, -1]);
+});
+
+test('Windows Actualizar y reiniciar applies then quits without app.relaunch', async () => {
+  const calls = [];
+  const controller = createUpdateController({
+    platform: 'win32',
+    app: {
+      ...app,
+      relaunch: () => calls.push(['relaunch']),
+      quit: () => calls.push(['quit']),
+    },
+    getWindow: () => undefined,
+    check: async () => ({
+      ...update,
+      asset: { name: 'Hyperion-2026.10.15.1916-win-x64.exe' },
+    }),
+    dialog: {
+      showMessageBox: async () => ({ response: 0 }),
+      showSaveDialog: async () => {
+        throw new Error('save dialog must not open');
+      },
+    },
+    download: async (info, file) => calls.push(['download', file]),
+    apply: async (file) => calls.push(['apply', file]),
+    shell: { showItemInFolder: () => {} },
+  });
+  await controller.check();
+  assert.deepEqual(
+    calls.map((c) => c[0]),
+    ['download', 'apply', 'quit'],
+  );
 });
 
 test('Ahora no and cancelled save-as never download or apply', async () => {

@@ -17,8 +17,13 @@ export function createUpdateController({
   check = checkForUpdate,
   download = downloadUpdate,
   apply = applyVerifiedInstaller,
+  platform = process.platform,
   relaunch = async (installerPath) => {
     await apply(installerPath);
+    // macOS: do not open -n while this process still holds the single-instance
+    // lock (the new instance would quit immediately). Schedule relaunch after
+    // quit so the lock is released first. Windows: the NSIS spawn relaunches.
+    if (platform === 'darwin') app.relaunch();
     app.quit();
   },
 }) {
