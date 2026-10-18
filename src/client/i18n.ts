@@ -106,6 +106,7 @@ declare global {
       getLanguage(): Promise<LanguageSnapshot>;
       setLanguage(value: LanguagePreference): Promise<void>;
       onLanguageChanged(callback: (value: LanguageSnapshot) => void): void;
+      checkForUpdates?(): Promise<void>;
     };
   }
 }

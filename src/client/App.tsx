@@ -84,6 +84,7 @@ import {
   type ConnectionRow,
 } from './Connections';
 import { AppMenu, type AppMenuAction } from './AppMenu';
+import { requestDesktopUpdateCheck } from './desktop-updates';
 import { usePreferences } from './preferences';
 import { RELEASE_CHANNEL, VERSION } from '../version';
 import { layoutSteps } from './layout';
@@ -780,11 +781,21 @@ export function App() {
       return;
     }
     if (action === 'updates') {
-      setPopup('about');
-      setNotice(
-        t(
-          'Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.',
-        ),
+      void requestDesktopUpdateCheck(window.hyperionDesktop).then(
+        (result) => {
+          if (result === 'unavailable')
+            setNotice(
+              t(
+                'Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.',
+              ),
+            );
+        },
+        () =>
+          setNotice(
+            t(
+              'No se pudo buscar actualizaciones. Inténtalo de nuevo desde Hyperion → Buscar actualizaciones…',
+            ),
+          ),
       );
       return;
     }

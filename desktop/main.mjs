@@ -190,12 +190,16 @@ if (!app.requestSingleInstanceLock()) {
         applicationVersion: `${VERSION} UTC · ${RELEASE_CHANNEL}`,
       });
       ipcMain.handle('hyperion:language:get', (event) => {
-        validateLanguageSender(event);
+        validateDesktopSender(event);
         return language.snapshot();
       });
       ipcMain.handle('hyperion:language:set', (event, value) => {
-        validateLanguageSender(event);
+        validateDesktopSender(event);
         setLanguage(value);
+      });
+      ipcMain.handle('hyperion:updates:check', async (event) => {
+        validateDesktopSender(event);
+        await updater.check(true);
       });
       rebuildMenu();
 
@@ -313,14 +317,14 @@ function rebuildMenu() {
   );
 }
 
-function validateLanguageSender(event) {
+function validateDesktopSender(event) {
   if (
     !window ||
     event.sender !== window.webContents ||
     event.senderFrame !== window.webContents.mainFrame ||
     !isLocal(event.senderFrame.url)
   )
-    throw new Error('Invalid language request');
+    throw new Error('Invalid desktop request');
 }
 function setLanguage(value) {
   language.set(value);
