@@ -5,8 +5,7 @@ test('empty home keeps readable contrast in light and dark', async ({
 }) => {
   // Force the empty-state view: other e2e specs leave runs in the shared
   // server, and App auto-selects runs[0] when ?run is absent.
-  const emptyHome =
-    '/?run=00000000-0000-0000-0000-000000000000';
+  const emptyHome = '/?run=00000000-0000-0000-0000-000000000000';
   for (const theme of ['light', 'dark'] as const) {
     await page.addInitScript((next) => {
       localStorage.setItem(
