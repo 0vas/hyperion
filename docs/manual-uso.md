@@ -12,7 +12,7 @@ Instala Hyperion Desktop y elige **Codex**, **Cursor**, **Claude Desktop** o **C
 
 Hyperion incluye **español e inglés** en el canvas y en los menús y diálogos de Desktop. Abre **Ajustes → Idioma** para elegir **Automático (sistema)**, **Español** o **English**. En Desktop también puedes cambiarlo desde **Hyperion → Idioma**.
 
-La versión CalVer (p. ej. `2026.10.18.1508 UTC · preview`) aparece al abrir **Menú** (primera línea), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
+La versión CalVer (p. ej. `2026.10.18.1653 UTC · preview`) aparece al abrir **Menú** (primera línea), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
 
 ## Conexiones e integraciones
 
@@ -206,7 +206,7 @@ Después de completar el flujo puedes continuar la conversación, por ejemplo: �
 
 También puedes usar **Continuar desde aquí** al final del gráfico para preparar la nueva petición y copiarla al chat conectado. Ese botón no inicia un agente por sí mismo. Una continuación nueva no sirve para saltar una aprobación pendiente ni para recuperar una tarea atascada; esas situaciones usan los controles existentes.
 
-Estas funciones están incluidas en el instalador **2026.10.18.1508 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
+Estas funciones están incluidas en el instalador **2026.10.18.1653 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
 
 ## Organizar el canvas
 
@@ -216,4 +216,4 @@ Arrastra el asa de puntos de cualquier tarea, evento, compuerta, trabajo o enlac
 
 Las posiciones se guardan localmente por flujo, orientación y vista de pasos/trabajos. Las actualizaciones del agente no las borran. Mover un nodo no cambia dependencias, ejecución, decisiones ni historial; tampoco mueve el mismo flujo en otro navegador o dispositivo.
 
-Disponible en los instaladores **2026.10.18.1508 UTC · Preview**.
+Disponible en los instaladores **2026.10.18.1653 UTC · Preview**.
