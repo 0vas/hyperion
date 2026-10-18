@@ -866,7 +866,7 @@ test('home explores six goals with isolated decisions and copyable requests', as
     await explorer.locator('.goal-choices button').last().click();
     await expect(explorer.locator('.goal-parallel')).toBeVisible();
     await expect(
-      explorer.locator('.goal-node.kind-parallelJoin'),
+      explorer.locator('.goal-gateway.kind-parallelJoin'),
     ).toBeVisible();
     await explorer
       .getByRole('button', {

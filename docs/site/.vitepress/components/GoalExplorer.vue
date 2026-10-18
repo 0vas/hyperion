@@ -261,6 +261,33 @@ function kindIcon(kind: NodeKind): string {
   if (kind === 'parallelSplit' || kind === 'parallelJoin') return 'connect';
   return activeCase.value.icon;
 }
+
+function statusPill(state: FlowNode['state'], kind: NodeKind): string | null {
+  if (kind === 'start' || kind === 'end') return null;
+  if (
+    kind === 'exclusive' ||
+    kind === 'parallelSplit' ||
+    kind === 'parallelJoin'
+  )
+    return null;
+  if (state === 'decision') return en.value ? 'Your turn' : 'Tu turno';
+  if (state === 'alt') return en.value ? 'Skipped' : 'Omitido';
+  if (state === 'pending') return en.value ? 'Pending' : 'Pendiente';
+  if (state === 'active' || (state === 'trunk' && choice.value))
+    return en.value ? 'Completed' : 'Completado';
+  return null;
+}
+
+function isGateway(kind: NodeKind) {
+  return (
+    kind === 'exclusive' || kind === 'parallelSplit' || kind === 'parallelJoin'
+  );
+}
+
+function edgeClass(si: number): string {
+  if (choice.value === null) return 'is-pending';
+  return 'is-active';
+}
 </script>
 <template>
   <section
@@ -315,24 +342,72 @@ function kindIcon(kind: NodeKind): string {
         >
           <template v-for="(stage, si) in stages" :key="si">
             <div
-              v-if="stage.type === 'node'"
+              v-if="stage.type === 'node' && stage.node.kind === 'start'"
+              class="goal-event kind-start"
+            >
+              <span class="goal-event-ring" aria-hidden="true"></span>
+              <strong>{{ stage.node.label }}</strong>
+            </div>
+            <div
+              v-else-if="stage.type === 'node' && stage.node.kind === 'end'"
+              class="goal-event kind-end"
+            >
+              <span class="goal-event-ring" aria-hidden="true"></span>
+              <strong>{{ stage.node.label }}</strong>
+            </div>
+            <div
+              v-else-if="stage.type === 'node' && isGateway(stage.node.kind)"
+              class="goal-gateway"
+              :class="[`kind-${stage.node.kind}`, `state-${stage.node.state}`]"
+            >
+              <span class="goal-gateway-diamond" aria-hidden="true">
+                <svg viewBox="0 0 48 48" width="44" height="44">
+                  <polygon
+                    points="24,2 46,24 24,46 2,24"
+                    fill="currentColor"
+                    fill-opacity="0.18"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <text
+                    x="24"
+                    y="28"
+                    text-anchor="middle"
+                    font-size="16"
+                    font-weight="700"
+                    fill="currentColor"
+                  >
+                    {{
+                      stage.node.kind === 'exclusive'
+                        ? '×'
+                        : stage.node.kind === 'parallelSplit'
+                          ? '+'
+                          : '='
+                    }}
+                  </text>
+                </svg>
+              </span>
+              <strong class="goal-gateway-label">{{ stage.node.label }}</strong>
+              <span class="goal-gateway-chip">{{ gatewayChip }}</span>
+            </div>
+            <div
+              v-else-if="stage.type === 'node'"
               class="goal-node"
               :class="[`kind-${stage.node.kind}`, `state-${stage.node.state}`]"
             >
-              <span class="goal-node-icon"
-                ><DocIcon :name="kindIcon(stage.node.kind)"
-              /></span>
+              <div class="goal-node-head">
+                <span class="goal-node-icon"
+                  ><DocIcon :name="kindIcon(stage.node.kind)"
+                /></span>
+                <span
+                  v-if="statusPill(stage.node.state, stage.node.kind)"
+                  class="goal-status-pill"
+                  :class="`pill-${stage.node.state}`"
+                  >{{ statusPill(stage.node.state, stage.node.kind) }}</span
+                >
+              </div>
               <strong>{{ stage.node.label }}</strong>
-              <span
-                v-if="
-                  stage.node.kind === 'exclusive' ||
-                  stage.node.kind === 'parallelSplit' ||
-                  stage.node.kind === 'parallelJoin'
-                "
-                class="goal-gateway-chip"
-                >{{ gatewayChip }}</span
-              >
-              <span v-else-if="stage.node.role" class="goal-node-role">{{
+              <span v-if="stage.node.role" class="goal-node-role">{{
                 stage.node.role
               }}</span>
             </div>
@@ -358,9 +433,17 @@ function kindIcon(kind: NodeKind): string {
                   class="goal-node"
                   :class="[`kind-${node.kind}`, `state-${node.state}`]"
                 >
-                  <span class="goal-node-icon"
-                    ><DocIcon :name="kindIcon(node.kind)"
-                  /></span>
+                  <div class="goal-node-head">
+                    <span class="goal-node-icon"
+                      ><DocIcon :name="kindIcon(node.kind)"
+                    /></span>
+                    <span
+                      v-if="statusPill(node.state, node.kind)"
+                      class="goal-status-pill"
+                      :class="`pill-${node.state}`"
+                      >{{ statusPill(node.state, node.kind) }}</span
+                    >
+                  </div>
                   <strong>{{ node.label }}</strong>
                   <span v-if="node.role" class="goal-node-role">{{
                     node.role
@@ -374,9 +457,14 @@ function kindIcon(kind: NodeKind): string {
                 :key="node.id"
                 class="goal-node state-active kind-agent"
               >
-                <span class="goal-node-icon"
-                  ><DocIcon :name="kindIcon(node.kind)"
-                /></span>
+                <div class="goal-node-head">
+                  <span class="goal-node-icon"
+                    ><DocIcon :name="kindIcon(node.kind)"
+                  /></span>
+                  <span class="goal-status-pill pill-active">{{
+                    en ? 'Completed' : 'Completado'
+                  }}</span>
+                </div>
                 <strong>{{ node.label }}</strong>
                 <span class="goal-node-role">{{ node.role }}</span>
               </div>
@@ -384,6 +472,7 @@ function kindIcon(kind: NodeKind): string {
             <span
               v-if="si < stages.length - 1"
               class="goal-edge"
+              :class="edgeClass(si)"
               aria-hidden="true"
             ></span>
           </template>

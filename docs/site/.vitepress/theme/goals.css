@@ -66,148 +66,246 @@
   color: var(--vp-c-text-2);
 }
 .goal-preview {
+  --goal-stage: #171e23;
+  --goal-card: #232c33;
+  --goal-ink: #f1eee5;
+  --goal-muted: #bbbeb7;
+  --goal-gold: #dfc187;
+  --goal-mint: #9fe6c1;
+  --goal-mint-deep: #7dcea0;
+  --goal-end: #e8a59c;
+  --goal-line: #49525b;
+  --goal-completed-bg: #35463e;
+  --goal-completed-fg: #dce6dd;
+  --goal-turn-bg: #51452f;
+  --goal-turn-fg: #f1dab2;
+  --goal-skip-bg: #2d373e;
   margin-top: 24px;
-  border: 1px solid var(--vp-c-divider);
+  border: 1px solid var(--goal-line);
   border-radius: 14px;
-  background: var(--vp-c-bg);
+  background: var(--goal-stage);
   overflow: hidden;
+  color: var(--goal-ink);
+}
+html:not(.dark) .goal-preview {
+  --goal-stage: #f4f2eb;
+  --goal-card: #fffefa;
+  --goal-ink: #292d29;
+  --goal-muted: #62645c;
+  --goal-gold: #806127;
+  --goal-mint: #3e6250;
+  --goal-mint-deep: #3e6250;
+  --goal-end: #a65d55;
+  --goal-line: #dedbd0;
+  --goal-completed-bg: #dce6dd;
+  --goal-completed-fg: #2f463c;
+  --goal-turn-bg: #f5e6c8;
+  --goal-turn-fg: #705623;
+  --goal-skip-bg: #ece8df;
 }
 .goal-preview-title {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 18px;
-  border-bottom: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--goal-line);
   font-size: 12px;
-  color: var(--vp-c-text-2);
+  color: var(--goal-muted);
 }
 .goal-preview-title svg {
-  color: var(--vp-c-brand-1);
+  color: var(--goal-gold);
   width: 17px;
   height: 17px;
 }
 .goal-preview-title span:last-child {
   margin-left: auto;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--vp-c-bg-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--goal-card) 80%, transparent);
+  border: 1px solid var(--goal-line);
   font-size: 10px;
-  color: var(--vp-c-text-2);
+  color: var(--goal-muted);
 }
 .goal-flow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 10px 8px;
-  padding: 28px 20px 12px;
+  gap: 12px 10px;
+  padding: 28px 20px 16px;
+  background:
+    radial-gradient(
+      ellipse at 80% 0%,
+      color-mix(in srgb, var(--goal-mint) 12%, transparent),
+      transparent 50%
+    ),
+    var(--goal-stage);
 }
 .goal-edge {
-  width: 18px;
-  height: 1px;
-  background: var(--vp-c-text-3);
+  width: 22px;
+  height: 2.5px;
+  background: var(--goal-line);
   flex-shrink: 0;
-  opacity: 0.7;
+  border-radius: 2px;
+  opacity: 0.85;
 }
-.goal-flow.is-settled .goal-edge {
-  background: var(--vp-c-brand-1);
-  opacity: 0.55;
+.goal-edge.is-pending {
+  height: 0;
+  border-top: 1.5px dashed #6a737c;
+  background: transparent;
+  opacity: 0.9;
+}
+.goal-edge.is-active {
+  background: var(--goal-mint-deep);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--goal-mint) 35%, transparent);
 }
 .goal-node {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 118px;
-  max-width: 168px;
-  padding: 12px 12px 10px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  background: var(--vp-c-bg-soft);
+  min-width: 200px;
+  max-width: 240px;
+  padding: 12px 14px 12px;
+  border: 1px solid var(--goal-line);
+  border-radius: 14px;
+  background: var(--goal-card);
   text-align: left;
+  color: var(--goal-ink);
 }
-.goal-node.kind-start,
-.goal-node.kind-end {
-  min-width: 72px;
-  max-width: 88px;
+.goal-node-head {
+  display: flex;
   align-items: center;
-  text-align: center;
-  padding: 10px 8px;
+  justify-content: space-between;
+  gap: 8px;
+}
+.goal-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
   border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
-.goal-node.kind-exclusive,
-.goal-node.kind-parallelSplit,
-.goal-node.kind-parallelJoin {
-  align-items: center;
-  text-align: center;
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-  min-width: 132px;
-  max-width: 152px;
-  min-height: 98px;
-  justify-content: center;
-  border-radius: 0;
-  padding: 18px 16px;
+.goal-status-pill.pill-active,
+.goal-status-pill.pill-trunk {
+  background: var(--goal-completed-bg);
+  color: var(--goal-completed-fg);
 }
-.goal-node.kind-exclusive .goal-node-icon,
-.goal-node.kind-parallelSplit .goal-node-icon,
-.goal-node.kind-parallelJoin .goal-node-icon {
-  display: none;
+.goal-status-pill.pill-decision {
+  background: var(--goal-turn-bg);
+  color: var(--goal-turn-fg);
+}
+.goal-status-pill.pill-alt,
+.goal-status-pill.pill-pending {
+  background: var(--goal-skip-bg);
+  color: var(--goal-muted);
 }
 .goal-node.state-decision {
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--goal-gold);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--goal-gold) 35%, transparent);
 }
 .goal-node.state-pending {
   border-style: dashed;
 }
 .goal-node.state-active {
-  border-color: var(--vp-c-brand-1);
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--vp-c-brand-1) 35%, transparent);
+  border-color: var(--goal-mint-deep);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--goal-mint) 40%, transparent),
+    0 0 20px color-mix(in srgb, var(--goal-mint) 20%, transparent);
 }
 .goal-node.state-alt {
   border-style: dashed;
-  background: var(--vp-c-bg);
+  opacity: 0.72;
 }
 .goal-node-icon {
   display: flex;
-  color: var(--vp-c-text-2);
+  color: var(--goal-muted);
 }
 .goal-node.state-decision .goal-node-icon,
 .goal-node.state-active .goal-node-icon {
-  color: var(--vp-c-brand-1);
+  color: var(--goal-gold);
 }
 .goal-node-icon svg {
   width: 18px;
   height: 18px;
 }
 .goal-node strong {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
   font-weight: 600;
-  color: var(--vp-c-text-1);
+  color: var(--goal-ink);
 }
-.goal-node-role,
-.goal-gateway-chip {
+.goal-node-role {
   font-size: 11px;
-  color: var(--vp-c-text-1);
+  color: var(--goal-muted);
   line-height: 1.3;
 }
-.goal-gateway-chip {
+.goal-event {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 72px;
+  color: var(--goal-ink);
+}
+.goal-event-ring {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.goal-event.kind-start .goal-event-ring {
+  background: var(--goal-mint-deep);
+  box-shadow: inset 0 0 0 7px var(--goal-stage);
+}
+.goal-event.kind-end .goal-event-ring {
+  border: 2px solid var(--goal-end);
+  box-shadow:
+    inset 0 0 0 4px var(--goal-stage),
+    0 0 0 5px var(--goal-end);
+  background: transparent;
+}
+.goal-event strong {
+  font-size: 12px;
   font-weight: 600;
 }
-.goal-node.kind-exclusive strong,
-.goal-node.kind-parallelSplit strong,
-.goal-node.kind-parallelJoin strong,
-.goal-node.state-decision strong {
-  color: var(--vp-c-text-1);
+.goal-gateway {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  max-width: 200px;
+  text-align: center;
+  color: var(--goal-gold);
+}
+.goal-gateway-diamond {
+  display: flex;
+  color: var(--goal-gold);
+}
+.goal-gateway-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--goal-ink);
+  line-height: 1.35;
+}
+.goal-gateway-chip {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--goal-gold) 22%, var(--goal-card));
+  color: var(--goal-ink);
+  border: 1px solid color-mix(in srgb, var(--goal-gold) 45%, var(--goal-line));
 }
 .goal-fork {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: min(100%, 220px);
+  min-width: min(100%, 260px);
   padding: 4px 0;
 }
 .goal-fork-lane {
@@ -215,43 +313,46 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border: 1px dashed var(--vp-c-divider);
+  padding: 10px 12px;
+  border: 1.5px dashed #6a737c;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--vp-c-bg-soft) 70%, transparent);
+  background: color-mix(in srgb, var(--goal-card) 55%, transparent);
 }
 .goal-fork-lane.is-pending-branch {
   border-style: dashed;
 }
 .goal-fork-lane.is-active-branch {
   border-style: solid;
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--goal-mint-deep);
+  background: color-mix(in srgb, var(--goal-mint) 10%, var(--goal-card));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--goal-mint) 15%, transparent);
 }
 .goal-fork-lane.is-alt-branch {
   border-style: dashed;
-  background: var(--vp-c-bg);
+  border-color: #6a737c;
+  opacity: 0.75;
 }
 .goal-parallel {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 140px;
-  padding: 8px 10px;
-  border: 1px solid var(--vp-c-brand-1);
-  border-radius: 12px;
-  background: var(--vp-c-brand-soft);
+  min-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--goal-mint-deep);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--goal-mint) 8%, var(--goal-card));
 }
 .goal-parallel .goal-node {
   max-width: none;
   width: 100%;
-  background: var(--vp-c-bg);
 }
 .goal-decision {
   margin: 8px 20px 20px;
   padding: 20px;
-  border: 1px solid var(--vp-c-divider);
+  border: 1px solid var(--goal-line);
   border-radius: 12px;
+  background: color-mix(in srgb, var(--goal-card) 70%, transparent);
+  color: var(--goal-ink);
 }
 .vp-doc .goal-decision > p {
   display: flex;
@@ -259,15 +360,16 @@
   align-items: center;
   margin: 0 0 12px;
   font-size: 15px;
+  color: var(--goal-ink);
 }
 .vp-doc .goal-choice-hint {
   margin: 0 0 14px;
   font-size: 13px;
-  color: var(--vp-c-text-2);
+  color: var(--goal-muted);
   line-height: 1.5;
 }
 .goal-decision > p svg {
-  color: var(--vp-c-brand-1);
+  color: var(--goal-gold);
   width: 19px;
   height: 19px;
   flex-shrink: 0;
@@ -282,18 +384,18 @@
   gap: 8px;
   align-items: center;
   padding: 10px 14px;
-  border: 1px solid var(--vp-c-divider);
+  border: 1px solid var(--goal-line);
   border-radius: 9px;
-  color: var(--vp-c-text-1);
-  background: var(--vp-c-bg-soft);
+  color: var(--goal-ink);
+  background: var(--goal-card);
   font-size: 13px;
   text-align: left;
   cursor: pointer;
 }
 .goal-choices button[aria-pressed='true'] {
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
+  border-color: var(--goal-gold);
+  background: color-mix(in srgb, var(--goal-gold) 16%, var(--goal-card));
+  color: var(--goal-gold);
 }
 .goal-choices svg {
   width: 16px;
@@ -305,23 +407,25 @@
   gap: 12px;
   margin-top: 18px;
   padding: 18px;
-  background: var(--vp-c-bg-soft);
+  background: var(--goal-card);
   border-radius: 10px;
+  border: 1px solid var(--goal-line);
 }
 .goal-output > svg {
-  color: var(--vp-c-brand-1);
+  color: var(--goal-gold);
   width: 20px;
   height: 20px;
   flex-shrink: 0;
 }
 .goal-output strong {
   font-size: 13px;
+  color: var(--goal-ink);
 }
 .vp-doc .goal-output p {
   margin: 4px 0 0;
   font-size: 13px;
   line-height: 1.65;
-  color: var(--vp-c-text-2);
+  color: var(--goal-muted);
 }
 .goal-preview-footer {
   display: flex;
@@ -330,8 +434,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  border-top: 1px solid var(--vp-c-divider);
-  color: var(--vp-c-text-2);
+  border-top: 1px solid var(--goal-line);
+  color: var(--goal-muted);
 }
 .goal-preview-footer small {
   font-size: 11px;
@@ -342,7 +446,7 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: var(--vp-c-brand-1);
+  color: var(--goal-gold);
   cursor: pointer;
   padding: 6px 0;
 }
@@ -395,8 +499,10 @@
   .goal-flow,
   .goal-node,
   .goal-fork-lane,
-  .goal-parallel {
+  .goal-parallel,
+  .goal-edge {
     transition: none;
+    box-shadow: none;
   }
 }
 @media (max-width: 900px) {
@@ -420,15 +526,8 @@
     max-width: none;
     width: 100%;
   }
-  .goal-node.kind-start,
-  .goal-node.kind-end {
-    width: auto;
-    align-self: center;
-  }
-  .goal-node.kind-exclusive,
-  .goal-node.kind-parallelSplit,
-  .goal-node.kind-parallelJoin {
-    width: min(100%, 180px);
+  .goal-event,
+  .goal-gateway {
     align-self: center;
   }
   .goal-fork,
