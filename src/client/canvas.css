@@ -658,9 +658,15 @@ textarea::placeholder {
   font-family: Georgia, serif;
   font-weight: 400;
   font-size: 46px;
-  color: #30372d;
+  color: var(--ink);
 }
-.empty-symbol {
+.canvas-app .empty-state p {
+  color: var(--muted);
+}
+.canvas-app .empty-state .eyebrow {
+  color: var(--gold);
+}
+.canvas-app .empty-symbol {
   background: #e9e3d0;
   color: #7f6535;
   border-radius: 50%;
@@ -1470,6 +1476,32 @@ button:active:not(:disabled) {
     .task-navigation-actions button[aria-pressed='true']
   ) {
   color: var(--gold);
+}
+[data-theme='dark'] .secondary {
+  background: #232c33;
+  border-color: var(--line);
+  color: var(--gold);
+  box-shadow: none;
+}
+[data-theme='dark'] .secondary:hover {
+  background: #303b43;
+}
+[data-theme='dark'] .canvas-app .empty-actions .secondary,
+[data-theme='dark'] .canvas-app .empty-actions .secondary:hover {
+  background: #232c33;
+  border-color: var(--line);
+  color: var(--gold);
+  box-shadow: none;
+}
+[data-theme='dark'] .canvas-app .empty-symbol {
+  background: #232c33;
+  color: var(--gold);
+}
+[data-theme='dark'] .canvas-app .empty-state .eyebrow {
+  color: var(--gold);
+}
+[data-theme='dark'] .canvas-app .empty-state [role='alert'] {
+  color: #ffd2cc;
 }
 [data-theme='dark']
   :is(
