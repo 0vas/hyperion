@@ -51,7 +51,6 @@ test('applyMacDmg mounts read-only, verifies signature, replaces bundle and rest
         if (command === 'codesign') return { stdout: '' };
         if (command === 'hdiutil' && args[0] === 'detach')
           return { stdout: '' };
-        if (command === 'open') return { stdout: '' };
         throw new Error(`unexpected ${command}`);
       },
     });
@@ -62,7 +61,10 @@ test('applyMacDmg mounts read-only, verifies signature, replaces bundle and rest
     assert.ok(calls.some((c) => c[0] === 'hdiutil' && c[1] === 'attach'));
     assert.ok(calls.some((c) => c.includes('-readonly')));
     assert.ok(calls.some((c) => c[0] === 'codesign'));
-    assert.ok(calls.some((c) => c[0] === 'open' && c.includes('-n')));
+    assert.ok(
+      !calls.some((c) => c[0] === 'open'),
+      'applyMacDmg must not open -n while the old instance still holds the lock',
+    );
     assert.ok(!existsSync(join(root, 'Hyperion.app.updating-backup')));
   } finally {
     rmSync(root, { recursive: true, force: true });
