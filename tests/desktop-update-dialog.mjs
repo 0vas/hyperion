@@ -33,6 +33,7 @@ test('Actualizar y reiniciar requires consent, downloads under userData/updates,
       relaunch: () => calls.push(['relaunch']),
       quit: () => calls.push(['quit']),
     },
+    markRefresh: () => calls.push(['mark-refresh']),
     getWindow: () => ({
       isDestroyed: () => false,
       setProgressBar: (p) => progress.push(p),
@@ -73,6 +74,7 @@ test('Actualizar y reiniciar requires consent, downloads under userData/updates,
   );
   assert.deepEqual(calls, [
     ['download', '2026.10.15.1916', installer],
+    ['mark-refresh'],
     ['apply', installer],
     ['relaunch'],
     ['quit'],
@@ -89,6 +91,7 @@ test('Windows Actualizar y reiniciar applies then quits without app.relaunch', a
       relaunch: () => calls.push(['relaunch']),
       quit: () => calls.push(['quit']),
     },
+    markRefresh: () => calls.push(['mark-refresh']),
     getWindow: () => undefined,
     check: async () => ({
       ...update,
@@ -107,7 +110,7 @@ test('Windows Actualizar y reiniciar applies then quits without app.relaunch', a
   await controller.check();
   assert.deepEqual(
     calls.map((c) => c[0]),
-    ['download', 'apply', 'quit'],
+    ['download', 'mark-refresh', 'apply', 'quit'],
   );
 });
 

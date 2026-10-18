@@ -145,3 +145,5 @@ These artifact and cycle APIs ship in the **2026.10.12.1722 UTC · Preview** ins
 ## Upgrading the local runtime
 
 From 2026.10.12.2101, Desktop, CLI and MCP share a launcher that automatically replaces an older authenticated server from the same installation. It checks the listening PID, OS owner and exact server command, creates an integrity-checked SQLite backup, serializes concurrent launches, then reuses the original data directory and credentials. Other installations, unknown processes, failed authentication/backups and newer servers are never terminated. Existing clients reconnect; an interrupted request retries with its original command ID. This restarts the service, not workflow tasks or an idle conversation. No provider-specific wakeup capability is added.
+
+After Desktop **Actualizar y reiniciar**, the next boot may refresh Hyperion MCP entries that belong to _this_ installation and only conflict because the update changed command/args/paths (with file backup). Foreign or unknown conflicts still require the Connections Resolver; ordinary cold starts do not auto-replace.

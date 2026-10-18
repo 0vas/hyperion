@@ -24,6 +24,8 @@ import {
   resolveWorkspaceService,
 } from '../dist/adapters/desktop.js';
 import { createUpdateController } from './update-dialog.mjs';
+import { consumePostUpdateRefresh } from './post-update-refresh.mjs';
+import { refreshSameInstallConflicts } from '../dist/adapters/post-update-connections.js';
 import { recoverStartup } from './startup.mjs';
 const language = createLanguageStore({
   file: resolve(app.getPath('userData'), 'language.json'),
@@ -217,6 +219,40 @@ if (!app.requestSingleInstanceLock()) {
         !existsSync(resolve(target.directory, 'desktop-onboarding.json'))
       )
         await connect();
+      if (consumePostUpdateRefresh(app.getPath('userData'))) {
+        try {
+          const refreshed = await refreshSameInstallConflicts({
+            directory: target.directory,
+            url: target.service,
+          });
+          if (refreshed.replaced.length > 0) {
+            const names = refreshed.replaced
+              .map((id) =>
+                id === 'claude-desktop'
+                  ? 'Claude Desktop'
+                  : id === 'claude-code'
+                    ? 'Claude Code'
+                    : id === 'antigravity'
+                      ? 'Antigravity'
+                      : id === 'codex'
+                        ? 'Codex'
+                        : 'Cursor',
+              )
+              .join(', ');
+            await dialog.showMessageBox(window, {
+              type: 'info',
+              message: t('Conexiones actualizadas'),
+              detail: t(
+                'Tras la actualización se actualizaron las conexiones de esta instalación: {0}. Las entradas ajenas o en conflicto distinto siguen en Conexiones.',
+                { 0: names },
+              ),
+              buttons: [t('Listo')],
+            });
+          }
+        } catch (error) {
+          report(error);
+        }
+      }
       if (app.isPackaged && !process.env.HYPERION_DISABLE_UPDATE_CHECK) {
         const timer = setTimeout(() => {
           if (!connecting) void updater.check(false);
