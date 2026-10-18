@@ -77,6 +77,7 @@ import { FlowLegend } from './FlowLegend';
 import { JobNode } from './JobNode';
 import { Settings } from './Settings';
 import {
+  ConflictResolverBody,
   ConnectionsView,
   connectionsSummaryLine,
   useConnectionInventory,
@@ -2431,64 +2432,27 @@ export function App() {
           onClose={() => setConflictRow(null)}
         >
           <section
-            className="modal compact"
+            className="modal conflict-resolver"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="conflict-title"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="conflict-title">{t('Conflicto de conexión')}</h2>
-            <p>
-              {t(
-                'Ya existe otra conexión Hyperion en {0}. No se sobrescribió.',
-                {
-                  0: conflictRow.name,
-                },
-              )}
-            </p>
-            {conflictRow.path && (
-              <p className="muted">
-                {t('Archivo: {0}', { 0: conflictRow.path })}
-              </p>
-            )}
-            <p>
-              {t(
-                'Retira o alinea la entrada «hyperion» en ese archivo y vuelve a conectar. Tus demás servidores se conservan.',
-              )}
-            </p>
-            <div className="modal-actions">
-              {conflictRow.path && (
-                <button
-                  className="secondary"
-                  onClick={() =>
-                    void navigator.clipboard.writeText(conflictRow.path || '')
-                  }
-                >
-                  {t('Copiar ruta')}
-                </button>
-              )}
-              <button
-                className="secondary"
-                onClick={() => {
-                  setConflictRow(null);
-                  setHelp(true);
-                }}
-              >
-                {t('Abrir guía')}
-              </button>
-              <button
-                className="secondary"
-                onClick={() => {
-                  setReplaceConfirm(conflictRow);
-                  setConflictRow(null);
-                }}
-              >
-                {t('Reemplazar…')}
-              </button>
-              <button className="primary" onClick={() => setConflictRow(null)}>
-                {t('Cerrar')}
-              </button>
-            </div>
+            <ConflictResolverBody
+              row={conflictRow}
+              onReplace={() => {
+                setReplaceConfirm(conflictRow);
+                setConflictRow(null);
+              }}
+              onCopyPath={() =>
+                void navigator.clipboard.writeText(conflictRow.path || '')
+              }
+              onGuide={() => {
+                setConflictRow(null);
+                setHelp(true);
+              }}
+              onClose={() => setConflictRow(null)}
+            />
           </section>
         </Modal>
       )}

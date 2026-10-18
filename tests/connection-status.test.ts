@@ -59,6 +59,9 @@ test('inventory reports configured after desktop setup and conflict when entry d
     const conflict = inspectDesktopClient('codex', options);
     assert.equal(conflict.status, 'conflict');
     assert.match(conflict.detail || '', /No se sobrescribió/);
+    assert.equal(conflict.existing?.command, 'different');
+    assert.ok(conflict.expected?.command);
+    assert.notEqual(conflict.existing?.command, conflict.expected?.command);
 
     const inventory = inspectDesktopConnections(options);
     assert.equal(inventory.summary.configured, 1);
