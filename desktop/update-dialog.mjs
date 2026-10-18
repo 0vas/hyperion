@@ -1,5 +1,6 @@
 import { checkForUpdate, downloadUpdate } from './updates.mjs';
 import { applyVerifiedInstaller } from './apply-update.mjs';
+import { markPostUpdateRefresh } from './post-update-refresh.mjs';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -18,7 +19,11 @@ export function createUpdateController({
   download = downloadUpdate,
   apply = applyVerifiedInstaller,
   platform = process.platform,
+  markRefresh = () => markPostUpdateRefresh(app.getPath('userData')),
   relaunch = async (installerPath) => {
+    // Consent for Actualizar y reiniciar covers same-install connection refresh
+    // on the next boot. Mark before apply/quit so the new process can consume it.
+    markRefresh();
     await apply(installerPath);
     // macOS: do not open -n while this process still holds the single-instance
     // lock (the new instance would quit immediately). Schedule relaunch after
