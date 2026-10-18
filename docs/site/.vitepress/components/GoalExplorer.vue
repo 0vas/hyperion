@@ -332,10 +332,18 @@ function edgeClass(si: number): string {
             en ? 'Simulation · not running' : 'Simulación · no ejecuta'
           }}</span>
         </div>
+        <p class="goal-scroll-hint">
+          {{
+            en
+              ? 'Scroll the plan horizontally'
+              : 'Desliza el plan en horizontal'
+          }}
+        </p>
         <div
           class="goal-flow"
           :class="{ 'is-settled': choice !== null }"
-          role="img"
+          role="region"
+          tabindex="0"
           :aria-label="
             en ? 'Example process graph' : 'Grafo de ejemplo del proceso'
           "
@@ -427,28 +435,40 @@ function edgeClass(si: number): string {
                   'is-pending-branch': choice === null,
                 }"
               >
-                <div
-                  v-for="node in branch"
-                  :key="node.id"
-                  class="goal-node"
-                  :class="[`kind-${node.kind}`, `state-${node.state}`]"
-                >
-                  <div class="goal-node-head">
-                    <span class="goal-node-icon"
-                      ><DocIcon :name="kindIcon(node.kind)"
-                    /></span>
-                    <span
-                      v-if="statusPill(node.state, node.kind)"
-                      class="goal-status-pill"
-                      :class="`pill-${node.state}`"
-                      >{{ statusPill(node.state, node.kind) }}</span
-                    >
+                <template v-for="(node, ni) in branch" :key="node.id">
+                  <div
+                    class="goal-node"
+                    :class="[`kind-${node.kind}`, `state-${node.state}`]"
+                  >
+                    <div class="goal-node-head">
+                      <span class="goal-node-icon"
+                        ><DocIcon :name="kindIcon(node.kind)"
+                      /></span>
+                      <span
+                        v-if="statusPill(node.state, node.kind)"
+                        class="goal-status-pill"
+                        :class="`pill-${node.state}`"
+                        >{{ statusPill(node.state, node.kind) }}</span
+                      >
+                    </div>
+                    <strong>{{ node.label }}</strong>
+                    <span v-if="node.role" class="goal-node-role">{{
+                      node.role
+                    }}</span>
                   </div>
-                  <strong>{{ node.label }}</strong>
-                  <span v-if="node.role" class="goal-node-role">{{
-                    node.role
-                  }}</span>
-                </div>
+                  <span
+                    v-if="ni < branch.length - 1"
+                    class="goal-edge"
+                    :class="
+                      choice === null
+                        ? 'is-pending'
+                        : choice === (bi === 0 ? 'A' : 'B')
+                          ? 'is-active'
+                          : 'is-pending'
+                    "
+                    aria-hidden="true"
+                  ></span>
+                </template>
               </div>
             </div>
             <div v-else-if="stage.type === 'parallel'" class="goal-parallel">
