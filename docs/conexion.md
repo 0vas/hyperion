@@ -11,7 +11,7 @@ La pausa persistente y el alcance por herramienta se explican en [Reanudación a
 
 No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Desktop incluye el runtime. La conexión sirve para otros proyectos y chats sin contexto previo. La IA pide solo los datos que falten y genera el proceso; no debes explicarle cómo dibujar el canvas ni cómo registrar los pasos.
 
-**[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.18.0854)**: elige el `.dmg` de Apple Silicon o el `.exe` de Windows x64. No necesitas una cuenta de GitHub para descargar la versión preliminar. El instalador de Apple Silicon está firmado con Developer ID y notarizado por Apple; Windows no tiene firma de editor. Intel macOS no se publica en esta release. La release estable sigue pendiente.
+**[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.18.0926)**: elige el `.dmg` de Apple Silicon o el `.exe` de Windows x64. No necesitas una cuenta de GitHub para descargar la versión preliminar. El instalador de Apple Silicon está firmado con Developer ID y notarizado por Apple; Windows no tiene firma de editor. Intel macOS no se publica en esta release. La release estable sigue pendiente.
 
 | Aplicación     | Qué prepara el asistente                                                             |
 | -------------- | ------------------------------------------------------------------------------------ |
