@@ -325,9 +325,6 @@ export function ConnectionsView({
           )}
         </div>
         <div className="connections-identity-actions">
-          <button type="button" className="ghost-button" onClick={onClose}>
-            {t('Volver al canvas')}
-          </button>
           <button
             type="button"
             className="ghost-button"
@@ -335,6 +332,9 @@ export function ConnectionsView({
             onClick={onRefresh}
           >
             {t('Volver a comprobar')}
+          </button>
+          <button type="button" className="ghost-button" onClick={onClose}>
+            {t('Volver al canvas')}
           </button>
         </div>
       </header>

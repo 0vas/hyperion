@@ -18,6 +18,7 @@ import { connectWithDialog } from './onboarding.mjs';
 import { ensureServer } from '../dist/adapters/bootstrap.js';
 import {
   desktopTarget,
+  desktopWindowUrl,
   rememberDesktop,
   rememberWorkspace,
   resolveWorkspaceService,
@@ -118,7 +119,7 @@ async function openRun(args) {
   target = {
     ...next,
     service,
-    url: `${service}/${next.run ? `?run=${next.run}` : ''}`,
+    url: desktopWindowUrl(next, service),
   };
   rememberWorkspace(target);
   if (!window || window.isDestroyed()) {
@@ -147,7 +148,9 @@ async function openRun(args) {
     });
     window.once('ready-to-show', () => window.show());
   }
-  await window.loadURL(next.url);
+  // Load the resolved service from ensureServer — never next.url (stale
+  // remembered alternate) which flashes ERR_CONNECTION_REFUSED before Retry.
+  await window.loadURL(target.url);
   if (window.isMinimized()) window.restore();
   window.show();
   window.focus();

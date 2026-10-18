@@ -694,8 +694,14 @@ export function App() {
     document.documentElement.classList.toggle('electron', isElectron);
   }, [isElectron]);
   useLayoutEffect(() => {
-    if (popup && document.activeElement === document.body)
-      document.querySelector<HTMLButtonElement>('.modal-close')?.focus();
+    if (!popup || document.activeElement !== document.body) return;
+    const focus =
+      popup === 'connections'
+        ? document.querySelector<HTMLButtonElement>(
+            '.connections-identity-actions .ghost-button',
+          )
+        : document.querySelector<HTMLButtonElement>('.modal-close');
+    focus?.focus();
   }, [popup]);
   const [online, setOnline] = useState(false);
   const [streaming, setStreaming] = useState(false);
@@ -1786,13 +1792,15 @@ export function App() {
             aria-modal="true"
             aria-labelledby="popup-title"
           >
-            <button
-              className="modal-close icon-button"
-              aria-label={t('Cerrar popup')}
-              onClick={() => setPopup(null)}
-            >
-              <X size={19} />
-            </button>
+            {popup !== 'connections' && (
+              <button
+                className="modal-close icon-button"
+                aria-label={t('Cerrar popup')}
+                onClick={() => setPopup(null)}
+              >
+                <X size={19} />
+              </button>
+            )}
             {error && (
               <p role="alert" className="popup-error">
                 {error}
@@ -2432,7 +2440,7 @@ export function App() {
           onClose={() => setConflictRow(null)}
         >
           <section
-            className="modal conflict-resolver"
+            className="modal conflict-resolver conflict-layer"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="conflict-title"
@@ -2462,7 +2470,7 @@ export function App() {
           onClose={() => setReplaceConfirm(null)}
         >
           <section
-            className="modal compact"
+            className="modal compact conflict-layer"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="replace-title"
