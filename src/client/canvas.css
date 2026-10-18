@@ -150,6 +150,7 @@ select:focus-visible {
   font-size: 11px;
   color: var(--ink);
   max-width: 180px;
+  flex-shrink: 0;
 }
 .connection-state {
   color: var(--ink);
@@ -171,12 +172,16 @@ select:focus-visible {
 .app-menu {
   position: relative;
   z-index: 40;
+  margin-inline-start: 4px;
 }
 .app-menu-trigger {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  min-height: 37px;
+  min-height: 36px;
+  height: 36px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -185,13 +190,19 @@ select:focus-visible {
   font: inherit;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1;
   cursor: pointer;
   transition:
     transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
     border-color 120ms ease;
 }
 .app-menu-trigger:hover {
+  border-width: 1px;
   border-color: var(--gold);
+}
+.app-menu-trigger:focus-visible {
+  outline: 2px solid #8b682c;
+  outline-offset: 2px;
 }
 .app-menu-trigger:active {
   transform: scale(0.97);
@@ -1095,15 +1106,21 @@ textarea::placeholder {
   margin-top: 10px;
 }
 .canvas-popup.connections-popup {
+  display: flex;
+  flex-direction: column;
   width: min(1040px, calc(100vw - 32px));
   max-height: min(88vh, 900px);
   padding: 28px 28px 20px;
+  overflow: hidden;
 }
 .connections-view {
   display: flex;
   flex-direction: column;
   gap: 20px;
   min-height: 0;
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 .connections-identity {
   display: flex;
@@ -1112,11 +1129,13 @@ textarea::placeholder {
   gap: 16px;
   position: sticky;
   top: 0;
-  z-index: 2;
-  margin: 0 -4px;
-  padding: 0 4px 16px;
+  z-index: 5;
+  isolation: isolate;
+  margin: 0;
+  padding: 16px 0 20px;
   background: #fffefa;
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 8px 12px -8px #fffefa;
 }
 .canvas-popup.connections-popup > .modal-close {
   display: none;
@@ -1173,12 +1192,19 @@ textarea::placeholder {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
+  position: relative;
+  z-index: 0;
 }
 .connection-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: #fffefa;
+  position: relative;
+  z-index: 0;
 }
 .connection-card.status-conflict {
   border-color: color-mix(in srgb, var(--gold) 50%, var(--line));
@@ -1275,10 +1301,15 @@ textarea::placeholder {
   background: #f5e6c8;
 }
 .connection-path {
+  display: block;
   margin: 8px 0 0;
+  padding: 0;
+  min-height: 2.6em;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
+  line-height: 1.35;
   color: var(--muted);
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 .connection-path .eyebrow {
@@ -1293,13 +1324,19 @@ textarea::placeholder {
 .connection-row-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 .connection-row-actions button,
 .connections-footer-actions button,
 .ghost-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 36px;
+  height: 36px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -1307,6 +1344,7 @@ textarea::placeholder {
   color: var(--ink);
   font: inherit;
   font-size: 13px;
+  line-height: 1;
   cursor: pointer;
 }
 .connection-row-actions .primary {
@@ -1388,6 +1426,7 @@ textarea::placeholder {
 }
 [data-theme='dark'] .connections-identity {
   background: #232c33;
+  box-shadow: 0 8px 12px -8px #232c33;
 }
 [data-theme='dark'] .usage-guide li strong {
   color: var(--ink);
