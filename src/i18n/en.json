@@ -327,6 +327,7 @@
   "No se pudo actualizar. Revisa la red o el digest del instalador.": "Could not update. Check the network or the installer digest.",
   "No se pudo completar la actualización": "Could not complete the update",
   "No se pudo completar la solicitud.": "Could not complete the request.",
+  "No se pudo buscar actualizaciones. Inténtalo de nuevo desde Hyperion → Buscar actualizaciones…": "Could not check for updates. Try again from Hyperion → Check for updates…",
   "No se pudo comprobar": "Couldn’t verify",
   "No se pudo copiar. Puedes seleccionar y copiar el ID del flujo.": "Could not copy. You can select and copy the workflow ID.",
   "No se pudo descargar el instalador ({0}).": "Could not download the installer ({0}).",
