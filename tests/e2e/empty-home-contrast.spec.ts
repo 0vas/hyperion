@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test';
-import { chooseFromAppMenu } from './app-menu';
 
 test('empty home keeps readable contrast in light and dark', async ({
   page,
 }) => {
   for (const theme of ['light', 'dark'] as const) {
+    await page.addInitScript((next) => {
+      localStorage.setItem(
+        'hyperion.preferences.v1',
+        JSON.stringify({ theme: next, reduceMotion: true }),
+      );
+    }, theme);
     await page.goto('/');
-    await chooseFromAppMenu(page, 'Ajustes');
-    await page.getByLabel('Tema', { exact: true }).selectOption(theme);
-    await page.keyboard.press('Escape');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await page.mouse.move(0, 0);
     const heading = page.locator('.empty-state h1');
     await expect(heading).toBeVisible();
     await expect(heading).toHaveCSS(
