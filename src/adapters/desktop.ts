@@ -8,11 +8,25 @@ import {
   renameSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { isAbsolute, resolve } from 'node:path';
+import { isAbsolute, resolve, sep } from 'node:path';
 import { DEFAULT_SERVICE } from './bootstrap.js';
 import { defaultDirectory } from './install.js';
 
 export type DesktopServiceSource = 'arg' | 'env' | 'workspace' | 'default';
+
+/** Electron ignores a remembered portable/temp data dir; sticky home wins. */
+export function rememberedWorkspaceDirectory(
+  previous: { directory?: string },
+  home: string,
+): string | undefined {
+  if (!previous.directory || !isAbsolute(previous.directory)) return undefined;
+  if (!process.versions.electron) return previous.directory;
+  const sticky = defaultDirectory(home);
+  const remembered = resolve(previous.directory);
+  if (remembered === sticky) return remembered;
+  if (remembered.startsWith(sticky + sep)) return remembered;
+  return undefined;
+}
 
 export function desktopTarget(
   args: string[],
@@ -61,7 +75,7 @@ export function desktopTarget(
   const directory = resolve(
     option('directory') ||
       process.env.HYPERION_DATA_DIR ||
-      previous.directory ||
+      rememberedWorkspaceDirectory(previous, home) ||
       defaultDirectory(home),
   );
   return {

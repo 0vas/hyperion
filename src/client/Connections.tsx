@@ -4,12 +4,26 @@ import { t, useLocale } from './i18n';
 export type ConnectionStatusId =
   'configured' | 'missing' | 'conflict' | 'unknown';
 
+export type ConnectionEntryPreview = {
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  url?: string;
+  type?: string;
+  envKeys?: string[];
+  envPreview?: Record<string, string>;
+  skillPath?: string;
+  owner?: string;
+};
+
 export type ConnectionRow = {
   id: string;
   name: string;
   status: ConnectionStatusId;
   path?: string;
   detail?: string;
+  existing?: ConnectionEntryPreview;
+  expected?: ConnectionEntryPreview;
 };
 
 export type ConnectionInventory = {
@@ -26,6 +40,20 @@ const STATUS_LABEL: Record<ConnectionStatusId, string> = {
   conflict: 'Conflicto · no sobrescrita',
   unknown: 'No se pudo comprobar',
 };
+
+const PREVIEW_FIELDS: {
+  key: keyof ConnectionEntryPreview;
+  label: string;
+}[] = [
+  { key: 'type', label: 'type' },
+  { key: 'command', label: 'command' },
+  { key: 'args', label: 'args' },
+  { key: 'cwd', label: 'cwd' },
+  { key: 'url', label: 'url' },
+  { key: 'envKeys', label: 'env' },
+  { key: 'skillPath', label: 'skill' },
+  { key: 'owner', label: 'owner' },
+];
 
 export function connectionsSummaryLine(summary: {
   configured: number;
@@ -56,6 +84,36 @@ export function connectionsSummaryLine(summary: {
 function truncatePath(path: string) {
   if (path.length <= 42) return path;
   return `${path.slice(0, 18)}…${path.slice(-18)}`;
+}
+
+function formatPreviewValue(
+  entry: ConnectionEntryPreview | undefined,
+  key: keyof ConnectionEntryPreview,
+): string {
+  if (!entry) return '—';
+  const value = entry[key];
+  if (value === undefined || value === '') return '—';
+  if (key === 'args' && Array.isArray(value)) return value.join(' ');
+  if (key === 'envKeys' && Array.isArray(value)) {
+    const preview = entry.envPreview || {};
+    return value
+      .map((name) =>
+        preview[name] !== undefined ? `${name}=${preview[name]}` : name,
+      )
+      .join(', ');
+  }
+  return String(value);
+}
+
+function fieldDiffers(
+  existing: ConnectionEntryPreview | undefined,
+  expected: ConnectionEntryPreview | undefined,
+  key: keyof ConnectionEntryPreview,
+): boolean {
+  return (
+    JSON.stringify(existing?.[key] ?? null) !==
+    JSON.stringify(expected?.[key] ?? null)
+  );
 }
 
 async function fetchInventory(
@@ -111,6 +169,106 @@ function calVerLabel(inventory: ConnectionInventory | null) {
     0: inventory.version,
     1: inventory.channel || 'preview',
   });
+}
+
+export function ConflictResolverBody({
+  row,
+  onReplace,
+  onCopyPath,
+  onGuide,
+  onClose,
+}: {
+  row: ConnectionRow;
+  onReplace: () => void;
+  onCopyPath: () => void;
+  onGuide: () => void;
+  onClose: () => void;
+}) {
+  useLocale();
+  const fields = PREVIEW_FIELDS.filter(
+    (field) =>
+      row.existing?.[field.key] !== undefined ||
+      row.expected?.[field.key] !== undefined,
+  );
+  return (
+    <>
+      <h2 id="conflict-title">{t('Conflicto en {0}', { 0: row.name })}</h2>
+      <p>
+        {t('Ya existe otra conexión Hyperion en {0}. No se sobrescribió.', {
+          0: row.name,
+        })}
+      </p>
+      {row.path && (
+        <p className="muted">{t('Archivo: {0}', { 0: row.path })}</p>
+      )}
+      {fields.length > 0 && (
+        <div className="conflict-compare">
+          <div className="conflict-compare-col">
+            <h3>{t('Entrada actual')}</h3>
+            <dl>
+              {fields.map((field) => (
+                <div
+                  key={`current-${field.key}`}
+                  className={
+                    fieldDiffers(row.existing, row.expected, field.key)
+                      ? 'is-diff'
+                      : undefined
+                  }
+                >
+                  <dt>{field.label}</dt>
+                  <dd>{formatPreviewValue(row.existing, field.key)}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <div className="conflict-compare-col">
+            <h3>{t('Entrada esperada')}</h3>
+            <dl>
+              {fields.map((field) => (
+                <div
+                  key={`expected-${field.key}`}
+                  className={
+                    fieldDiffers(row.existing, row.expected, field.key)
+                      ? 'is-diff'
+                      : undefined
+                  }
+                >
+                  <dt>{field.label}</dt>
+                  <dd>{formatPreviewValue(row.expected, field.key)}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      )}
+      {fields.some((field) =>
+        fieldDiffers(row.existing, row.expected, field.key),
+      ) && (
+        <p className="muted conflict-diff-note">{t('Campos que difieren')}</p>
+      )}
+      <p className="muted">
+        {t(
+          'Se creará un respaldo del archivo antes de escribir la entrada Hyperion esperada.',
+        )}
+      </p>
+      <div className="modal-actions">
+        <button type="button" className="primary" onClick={onReplace}>
+          {t('Reemplazar conexión')}
+        </button>
+        {row.path && (
+          <button type="button" className="secondary" onClick={onCopyPath}>
+            {t('Copiar ruta')}
+          </button>
+        )}
+        <button type="button" className="ghost-button" onClick={onGuide}>
+          {t('Abrir guía')}
+        </button>
+        <button type="button" className="ghost-button" onClick={onClose}>
+          {t('Cerrar')}
+        </button>
+      </div>
+    </>
+  );
 }
 
 export function ConnectionsView({
@@ -242,12 +400,20 @@ export function ConnectionsView({
             )}
             <div className="connection-row-actions">
               {row.status === 'missing' && (
-                <button type="button" onClick={() => onSetup(row.id)}>
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => onSetup(row.id)}
+                >
                   {t('Configurar…')}
                 </button>
               )}
               {row.status === 'configured' && row.path && (
-                <button type="button" onClick={() => void copyPath(row.path!)}>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void copyPath(row.path!)}
+                >
                   {copied === row.path ? t('Ruta copiada') : t('Copiar ruta')}
                 </button>
               )}
@@ -261,28 +427,39 @@ export function ConnectionsView({
                 </button>
               )}
               {row.status === 'conflict' && (
-                <button type="button" onClick={() => onConflict(row)}>
-                  {t('Ver conflicto…')}
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => onConflict(row)}
+                >
+                  {t('Resolver conflicto…')}
                 </button>
               )}
               {row.status === 'conflict' && row.path && (
                 <button
                   type="button"
-                  className="ghost-button"
+                  className="secondary"
                   onClick={() => void copyPath(row.path!)}
                 >
                   {copied === row.path ? t('Ruta copiada') : t('Copiar ruta')}
                 </button>
               )}
               {row.status === 'unknown' && (
-                <button type="button" onClick={onRefresh}>
+                <button type="button" className="primary" onClick={onRefresh}>
                   {t('Reintentar comprobación')}
                 </button>
               )}
+              {row.status === 'unknown' && row.path && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void copyPath(row.path!)}
+                >
+                  {copied === row.path ? t('Ruta copiada') : t('Copiar ruta')}
+                </button>
+              )}
               <button type="button" className="ghost-button" onClick={onHelp}>
-                {row.status === 'conflict'
-                  ? t('Ayuda para resolver')
-                  : t('Ayuda')}
+                {row.status === 'conflict' ? t('Guía') : t('Ayuda')}
               </button>
             </div>
           </li>

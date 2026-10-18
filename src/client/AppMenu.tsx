@@ -160,52 +160,66 @@ export function AppMenu({
             <>
               <div className="app-menu-sep" role="separator" />
               <p className="app-menu-section">{t('Este flujo')}</p>
-              <MenuRow onSelect={() => runAction('request')}>
-                {t('Petición original')}
-              </MenuRow>
-              <MenuRow onSelect={() => runAction('activity')}>
-                {t('Actividad')}
-              </MenuRow>
-              {run.canPauseResume && (
-                <MenuRow
-                  onSelect={() => runAction(run.live ? 'pause' : 'resume')}
-                >
-                  {run.live ? t('Pausar') : t('Reanudar')}
+              <div className="app-menu-group">
+                <MenuRow onSelect={() => runAction('request')}>
+                  {t('Petición original')}
                 </MenuRow>
-              )}
+                <MenuRow onSelect={() => runAction('activity')}>
+                  {t('Actividad')}
+                </MenuRow>
+                {run.canPauseResume && (
+                  <MenuRow
+                    onSelect={() => runAction(run.live ? 'pause' : 'resume')}
+                  >
+                    {run.live ? t('Pausar') : t('Reanudar')}
+                  </MenuRow>
+                )}
+              </div>
             </>
           )}
           <div className="app-menu-sep" role="separator" />
-          <MenuRow onSelect={() => runAction('connections')}>
-            {t('Conexiones')}
-          </MenuRow>
-          <MenuRow onSelect={() => runAction('settings')}>
-            {t('Ajustes')}
-          </MenuRow>
-          <MenuRow onSelect={() => runAction('guide')}>
-            {t('Guía de uso')}
-          </MenuRow>
-          <MenuRow onSelect={() => runAction('help')}>
-            {t('Ayuda de conexión')}
-          </MenuRow>
-          <div className="app-menu-sep" role="separator" />
-          <MenuRow onSelect={() => runAction('legend')}>
-            {t('Colores del flujo')}
-          </MenuRow>
-          {!isElectron && (
-            <MenuRow onSelect={() => runAction('window')}>
-              {t('Abrir en ventana')}
+          <p className="app-menu-section">{t('Aplicación')}</p>
+          <div className="app-menu-group">
+            <MenuRow onSelect={() => runAction('connections')}>
+              {t('Conexiones')}
             </MenuRow>
-          )}
-          {isElectron && (
-            <MenuRow onSelect={() => runAction('updates')}>
-              {t('Buscar actualizaciones…')}
+            <MenuRow onSelect={() => runAction('settings')}>
+              {t('Ajustes')}
             </MenuRow>
-          )}
+          </div>
           <div className="app-menu-sep" role="separator" />
-          <MenuRow onSelect={() => runAction('about')}>
-            {t('Acerca de Hyperion')}
-          </MenuRow>
+          <p className="app-menu-section">{t('Ayuda')}</p>
+          <div className="app-menu-group">
+            <MenuRow onSelect={() => runAction('guide')}>
+              {t('Guía de uso')}
+            </MenuRow>
+            <MenuRow onSelect={() => runAction('help')}>
+              {t('Ayuda de conexión')}
+            </MenuRow>
+          </div>
+          <div className="app-menu-sep" role="separator" />
+          <p className="app-menu-section">{t('Más')}</p>
+          <div className="app-menu-group">
+            <MenuRow onSelect={() => runAction('legend')}>
+              {t('Colores del flujo')}
+            </MenuRow>
+            {!isElectron && (
+              <MenuRow onSelect={() => runAction('window')}>
+                {t('Abrir en ventana')}
+              </MenuRow>
+            )}
+            {isElectron && (
+              <MenuRow onSelect={() => runAction('updates')}>
+                {t('Buscar actualizaciones…')}
+              </MenuRow>
+            )}
+          </div>
+          <div className="app-menu-sep" role="separator" />
+          <div className="app-menu-group">
+            <MenuRow onSelect={() => runAction('about')}>
+              {t('Acerca de Hyperion')}
+            </MenuRow>
+          </div>
         </div>
       )}
     </div>

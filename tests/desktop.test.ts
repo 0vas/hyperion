@@ -8,9 +8,11 @@ import {
   rememberDesktop,
   desktopLaunch,
   rememberWorkspace,
+  rememberedWorkspaceDirectory,
   resolveWorkspaceService,
 } from '../src/adapters/desktop.js';
 import { DEFAULT_SERVICE } from '../src/adapters/bootstrap.js';
+import { defaultDirectory } from '../src/adapters/install.js';
 
 test('desktop targets reuse one local run, reject remote navigation and launch without shell interpolation', () => {
   const directory = join(tmpdir(), 'local data');
@@ -51,6 +53,43 @@ test('desktop targets reuse one local run, reject remote navigation and launch w
     ]);
   } finally {
     rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('Electron ignores a remembered portable data directory from workspace.json', () => {
+  const previous = process.versions.electron;
+  const home = mkdtempSync(join(tmpdir(), 'hyperion-sticky-workspace-'));
+  const portable = mkdtempSync(join(tmpdir(), 'hyperion-portable-ws-'));
+  try {
+    Object.defineProperty(process.versions, 'electron', {
+      value: '38.0.0',
+      configurable: true,
+    });
+    rememberWorkspace(
+      {
+        service: 'http://127.0.0.1:54321',
+        directory: join(portable, '.hyperion'),
+      },
+      home,
+    );
+    assert.equal(
+      rememberedWorkspaceDirectory(
+        { directory: join(portable, '.hyperion') },
+        home,
+      ),
+      undefined,
+    );
+    const target = desktopTarget([], home);
+    assert.equal(target.directory, defaultDirectory(home));
+    assert.equal(target.service, 'http://127.0.0.1:54321');
+    assert.equal(target.serviceSource, 'workspace');
+  } finally {
+    Object.defineProperty(process.versions, 'electron', {
+      value: previous,
+      configurable: true,
+    });
+    rmSync(home, { recursive: true, force: true });
+    rmSync(portable, { recursive: true, force: true });
   }
 });
 

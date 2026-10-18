@@ -23,13 +23,77 @@ export type DesktopClientId = (typeof DESKTOP_CLIENTS)[number];
 export type ConnectionStatusId =
   'configured' | 'missing' | 'conflict' | 'unknown';
 
+/** Sanitized MCP/skill entry for conflict UI — never includes secret values. */
+export type ConnectionEntryPreview = {
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  url?: string;
+  type?: string;
+  envKeys?: string[];
+  envPreview?: Record<string, string>;
+  skillPath?: string;
+  owner?: string;
+};
+
 export type ConnectionRow = {
   id: DesktopClientId;
   name: string;
   status: ConnectionStatusId;
   path?: string;
   detail?: string;
+  existing?: ConnectionEntryPreview;
+  expected?: ConnectionEntryPreview;
 };
+
+const VISIBLE_ENV = new Set([
+  'HYPERION_URL',
+  'HYPERION_AGENT_ID',
+  'HYPERION_DATA_DIR',
+  'ELECTRON_RUN_AS_NODE',
+]);
+
+function truncateMiddle(text: string, max = 72): string {
+  if (text.length <= max) return text;
+  const keep = Math.floor((max - 1) / 2);
+  return `${text.slice(0, keep)}…${text.slice(-keep)}`;
+}
+
+export function sanitizeConnectionEntry(
+  raw: Record<string, unknown>,
+): ConnectionEntryPreview {
+  const out: ConnectionEntryPreview = {};
+  if (typeof raw.command === 'string')
+    out.command = truncateMiddle(raw.command);
+  if (Array.isArray(raw.args))
+    out.args = raw.args
+      .filter((a): a is string => typeof a === 'string')
+      .map((a) => truncateMiddle(a, 64));
+  if (typeof raw.cwd === 'string') out.cwd = truncateMiddle(raw.cwd);
+  if (typeof raw.type === 'string') out.type = raw.type;
+  if (typeof raw.url === 'string') out.url = raw.url;
+  const env =
+    raw.env && typeof raw.env === 'object' && !Array.isArray(raw.env)
+      ? (raw.env as Record<string, unknown>)
+      : undefined;
+  if (env) {
+    out.envKeys = Object.keys(env).sort();
+    out.envPreview = {};
+    for (const [key, value] of Object.entries(env)) {
+      if (typeof value !== 'string') continue;
+      if (key === 'HYPERION_URL') {
+        out.url = value;
+        out.envPreview[key] = value;
+      } else if (VISIBLE_ENV.has(key)) {
+        out.envPreview[key] = truncateMiddle(value, 48);
+      }
+    }
+  }
+  if (typeof raw.skillPath === 'string')
+    out.skillPath = truncateMiddle(raw.skillPath);
+  if (typeof raw.owner === 'string') out.owner = raw.owner;
+  return out;
+}
 
 export type ConnectionInventory = {
   version: string;
@@ -163,13 +227,15 @@ function inspectMcpClient(
   const directory = options.directory || defaultDirectory(home);
   const url =
     options.url || process.env.HYPERION_URL || 'http://127.0.0.1:4317';
+  let existingRaw: Record<string, unknown> = {};
+  let expectedRaw: Record<string, unknown> = {};
   try {
-    const existing = object(servers.hyperion);
-    const { type: existingType, ...comparable } = existing;
-    const expected = expectedServer(id, directory, url);
+    existingRaw = object(servers.hyperion);
+    const { type: existingType, ...comparable } = existingRaw;
+    expectedRaw = expectedServer(id, directory, url);
     if (
       (!existingType || existingType === 'stdio') &&
-      isDeepStrictEqual(JSON.parse(JSON.stringify(comparable)), expected)
+      isDeepStrictEqual(JSON.parse(JSON.stringify(comparable)), expectedRaw)
     )
       return { id, name, status: 'configured', path };
   } catch {
@@ -181,6 +247,11 @@ function inspectMcpClient(
     status: 'conflict',
     path,
     detail: `Ya existe otra conexión Hyperion en ${id}. No se sobrescribió.`,
+    existing: sanitizeConnectionEntry(existingRaw),
+    expected: sanitizeConnectionEntry({
+      type: 'stdio',
+      ...expectedRaw,
+    }),
   };
 }
 
@@ -205,6 +276,14 @@ function inspectClaudeCode(options: Options): ConnectionRow {
         status: 'conflict',
         path,
         detail: `Ya existe otra conexión Hyperion en ${id}. No se sobrescribió.`,
+        existing: sanitizeConnectionEntry({
+          skillPath: path,
+          owner: String(manifest.owner ?? ''),
+        }),
+        expected: sanitizeConnectionEntry({
+          skillPath: path,
+          owner: 'hyperion',
+        }),
       };
     }
     const skill = readFileSync(path, 'utf8');
@@ -216,6 +295,11 @@ function inspectClaudeCode(options: Options): ConnectionRow {
       status: 'conflict',
       path,
       detail: `Ya existe otra conexión Hyperion en ${id}. No se sobrescribió.`,
+      existing: sanitizeConnectionEntry({ skillPath: path }),
+      expected: sanitizeConnectionEntry({
+        skillPath: path,
+        owner: 'hyperion',
+      }),
     };
   } catch {
     return {
