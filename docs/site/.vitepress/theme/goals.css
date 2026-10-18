@@ -126,13 +126,24 @@ html:not(.dark) .goal-preview {
   font-size: 10px;
   color: var(--goal-muted);
 }
+.goal-scroll-hint {
+  display: none;
+  margin: 0 20px 8px;
+  font-size: 12px;
+  color: var(--goal-muted);
+  line-height: 1.4;
+}
 .goal-flow {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
-  gap: 12px 10px;
+  justify-content: flex-start;
+  gap: 12px;
   padding: 28px 20px 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
   background:
     radial-gradient(
       ellipse at 80% 0%,
@@ -140,6 +151,14 @@ html:not(.dark) .goal-preview {
       transparent 50%
     ),
     var(--goal-stage);
+}
+.goal-flow > .goal-node,
+.goal-flow > .goal-event,
+.goal-flow > .goal-gateway,
+.goal-flow > .goal-fork,
+.goal-flow > .goal-parallel,
+.goal-flow > .goal-edge {
+  flex-shrink: 0;
 }
 .goal-edge {
   width: 22px;
@@ -302,21 +321,33 @@ html:not(.dark) .goal-preview {
   border: 1px solid color-mix(in srgb, var(--goal-gold) 45%, var(--goal-line));
 }
 .goal-fork {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr;
+  align-content: center;
   gap: 10px;
-  min-width: min(100%, 260px);
+  min-width: 200px;
+  max-width: max-content;
   padding: 4px 0;
 }
 .goal-fork-lane {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1.5px dashed #6a737c;
   border-radius: 12px;
   background: color-mix(in srgb, var(--goal-card) 55%, transparent);
+}
+.goal-fork-lane .goal-node {
+  min-width: 160px;
+  max-width: 220px;
+  width: auto;
+}
+.goal-fork-lane .goal-edge {
+  width: 14px;
 }
 .goal-fork-lane.is-pending-branch {
   border-style: dashed;
@@ -333,16 +364,18 @@ html:not(.dark) .goal-preview {
   opacity: 0.75;
 }
 .goal-parallel {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-rows: auto;
   gap: 8px;
-  min-width: 200px;
+  min-width: 220px;
+  max-width: 280px;
   padding: 10px 12px;
   border: 1px solid var(--goal-mint-deep);
   border-radius: 14px;
   background: color-mix(in srgb, var(--goal-mint) 8%, var(--goal-card));
 }
 .goal-parallel .goal-node {
+  min-width: 0;
   max-width: none;
   width: 100%;
 }
@@ -484,7 +517,8 @@ html:not(.dark) .goal-preview {
   width: 15px;
   height: 15px;
 }
-.goal-explorer button:focus-visible {
+.goal-explorer button:focus-visible,
+.goal-flow:focus-visible {
   outline: 2px solid var(--vp-c-brand-1);
   outline-offset: 3px;
 }
@@ -505,7 +539,7 @@ html:not(.dark) .goal-preview {
     box-shadow: none;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 1099px) {
   .goal-categories {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -513,30 +547,19 @@ html:not(.dark) .goal-preview {
     justify-content: flex-start;
     padding-left: 12px;
   }
-  .goal-flow {
-    flex-direction: column;
-    align-items: stretch;
+  .goal-fork-lane .goal-node {
+    min-width: 150px;
+    max-width: 200px;
   }
-  .goal-edge {
-    width: 1px;
-    height: 14px;
-    margin-inline: auto;
-  }
+}
+@media (max-width: 899px) {
   .goal-node {
-    max-width: none;
-    width: 100%;
+    min-width: 160px;
+    max-width: 200px;
   }
-  .goal-event,
-  .goal-gateway {
-    align-self: center;
-  }
-  .goal-fork,
-  .goal-parallel {
-    width: 100%;
-  }
-  .goal-fork-lane {
-    flex-direction: column;
-    align-items: stretch;
+  .goal-fork-lane .goal-node {
+    min-width: 140px;
+    max-width: 180px;
   }
 }
 @media (max-width: 600px) {
@@ -559,8 +582,26 @@ html:not(.dark) .goal-preview {
   .goal-request {
     padding: 14px;
   }
+  .goal-scroll-hint {
+    display: block;
+    margin: 0 12px 6px;
+  }
   .goal-flow {
     padding: 16px 12px 8px;
+  }
+  .goal-fork {
+    /* Last-resort vertical stack of lanes only below 600px */
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    gap: 8px;
+    max-width: min(100%, 320px);
+  }
+  .goal-fork-lane {
+    flex-wrap: wrap;
+  }
+  .goal-fork-lane .goal-node {
+    min-width: 140px;
+    max-width: 220px;
   }
   .goal-decision {
     margin: 0 12px 16px;
