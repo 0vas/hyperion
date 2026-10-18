@@ -176,15 +176,15 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 12px;
+  min-height: 37px;
+  padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--glass);
+  background: #fffefa;
   color: var(--ink);
   font: inherit;
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 600;
   cursor: pointer;
   transition:
     transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
@@ -201,14 +201,14 @@ select:focus-visible {
   top: calc(100% + 8px);
   right: 0;
   z-index: 50;
-  width: min(350px, calc(100vw - 24px));
+  width: min(360px, calc(100vw - 24px));
   max-height: min(70vh, 560px);
   overflow: auto;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--panel, var(--glass));
-  box-shadow: 0 12px 32px color-mix(in srgb, #000 14%, transparent);
+  border-radius: 16px;
+  background: #fffefa;
+  box-shadow: 0 16px 40px color-mix(in srgb, #000 14%, transparent);
   transform-origin: top right;
 }
 .app-menu-panel.is-animated {
@@ -260,6 +260,7 @@ select:focus-visible {
   align-items: center;
   width: 100%;
   min-height: 44px;
+  margin: 3px 0;
   padding: 0 12px;
   border: 0;
   border-radius: 10px;
@@ -1100,9 +1101,14 @@ textarea::placeholder {
   gap: 16px;
   position: sticky;
   top: 0;
-  z-index: 1;
-  padding-bottom: 8px;
-  background: color-mix(in srgb, var(--panel, var(--glass)) 92%, transparent);
+  z-index: 2;
+  margin: 0 -4px;
+  padding: 0 4px 16px;
+  background: #fffefa;
+  border-bottom: 1px solid var(--line);
+}
+.canvas-popup.connections-popup > .modal-close {
+  display: none;
 }
 .connections-identity h2 {
   margin: 4px 0 6px;
@@ -1278,6 +1284,12 @@ textarea::placeholder {
 .conflict-resolver {
   max-width: min(720px, 100%);
 }
+.modal-backdrop:has(.conflict-layer) {
+  z-index: 30;
+}
+.modal-backdrop:has(.connections-popup) {
+  z-index: 20;
+}
 .conflict-compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1327,6 +1339,13 @@ textarea::placeholder {
   .conflict-compare {
     grid-template-columns: 1fr;
   }
+}
+[data-theme='dark'] .connections-identity {
+  background: #232c33;
+}
+[data-theme='dark'] .app-menu-trigger,
+[data-theme='dark'] .app-menu-panel {
+  background: #232c33;
 }
 [data-theme='dark'] .connection-card {
   background: #232c33;

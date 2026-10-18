@@ -83,8 +83,16 @@ export function desktopTarget(
     service: service.origin,
     serviceSource,
     directory,
-    url: `${service.origin}/${run ? `?run=${run}` : ''}`,
+    url: desktopWindowUrl({ run }, service.origin),
   };
+}
+
+/** Browser URL for the resolved loopback service (never a stale remembered port). */
+export function desktopWindowUrl(
+  target: { run?: string },
+  service: string,
+): string {
+  return `${service}/${target.run ? `?run=${target.run}` : ''}`;
 }
 
 /** Prefer :4317 when a remembered alternate is no longer ours; keep a live authenticated alternate sticky. */

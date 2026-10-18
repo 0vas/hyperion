@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   desktopTarget,
+  desktopWindowUrl,
   rememberDesktop,
   desktopLaunch,
   rememberWorkspace,
@@ -121,6 +122,27 @@ test('workspace reopen prefers :4317 when a remembered alternate is no longer ou
       await resolveWorkspaceService(explicit, async () => 'dead'),
       'http://127.0.0.1:55555',
     );
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('Desktop load URL uses the resolved service, not a dead remembered alternate', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'hyperion-load-resolved-'));
+  const directory = join(home, 'data');
+  try {
+    rememberWorkspace({ service: 'http://127.0.0.1:59799', directory }, home);
+    const remembered = desktopTarget(['--hyperion-run=abc-123'], home);
+    assert.equal(remembered.service, 'http://127.0.0.1:59799');
+    assert.match(remembered.url, /59799/);
+    const resolved = await resolveWorkspaceService(
+      remembered,
+      async () => 'dead',
+    );
+    assert.equal(resolved, DEFAULT_SERVICE);
+    const loadUrl = desktopWindowUrl(remembered, resolved);
+    assert.equal(loadUrl, `${DEFAULT_SERVICE}/?run=abc-123`);
+    assert.notEqual(loadUrl, remembered.url);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
