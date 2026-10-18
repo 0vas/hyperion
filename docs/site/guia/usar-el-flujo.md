@@ -89,4 +89,4 @@ Arrastra el asa de puntos sobre una tarjeta o símbolo. Con teclado, enfoca el n
 Las posiciones se conservan en este navegador por flujo, orientación y vista de pasos/trabajos, incluso al recibir actividad del agente. No cambian las dependencias ni el historial, y no se sincronizan con otros dispositivos.
 :::
 
-Disponible en los instaladores **2026.10.18.0617 UTC · Preview**. [Descargar](primeros-pasos.md).
+Disponible en los instaladores **2026.10.18.0820 UTC · Preview**. [Descargar](primeros-pasos.md).
