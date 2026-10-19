@@ -1,6 +1,6 @@
 {
   "name": "hyperion-workflows",
-  "version": "2026.10.18-build.1361",
+  "version": "2026.10.19-build.1271",
   "private": true,
   "description": "Human-guided workflows for any AI tool",
   "license": "MIT",
@@ -93,8 +93,7 @@
         {
           "target": "dmg",
           "arch": [
-            "arm64",
-            "x64"
+            "arm64"
           ]
         }
       ],

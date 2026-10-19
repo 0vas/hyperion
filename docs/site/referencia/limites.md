@@ -18,9 +18,11 @@ El perfil `bpmn-lite` admite inicio, fin y compuertas exclusivas, inclusivas y p
 
 ## Distribución actual
 
-La versión descargable `v0.4.0-preview.1` incluye paquetes para Mac Apple Silicon, Mac Intel y Windows x64. Los builds y pruebas de runtime se ejecutan en esos sistemas. No equivale a verificar todos los entornos de cada proveedor.
+La preview publicada `2026.10.18.2241` ofrece Mac Apple Silicon (arm64), firmado con Developer ID y notarizado por Apple, y Windows x64, sin firma de editor. Los [enlaces de descarga](../guia/primeros-pasos.md) corresponden a esa release publicada, no a una compilación pendiente.
 
-Los instaladores son de prueba y aún no cuentan con firma/notarización. Los cambios nuevos de `main`, como los desplegables declarados en el plan, estarán en los siguientes instaladores; la documentación de este sitio sigue `main`.
+Las nuevas compilaciones y publicaciones incluyen solo macOS arm64 y Windows x64. Ambos deben superar las pruebas nativas y del instalador empaquetado; ya no se generan paquetes nuevos para Mac Intel. La release histórica `v0.4.0-preview.1` sí incluyó Apple Silicon, Intel y Windows; sus archivos se conservan. Las pruebas nativas no certifican una conversación real en cada cliente de IA.
+
+La documentación sigue `main`, que puede incluir cambios todavía ausentes de los instaladores publicados. Una compilación o un artefacto de CI no equivale a una nueva release disponible para actualizar la aplicación.
 
 ## Privacidad
 

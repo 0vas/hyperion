@@ -8,9 +8,9 @@ La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.10.
 
 - `npm ci` y `npm run desktop` abren el cliente de desarrollo.
 - `npm run test:desktop` prueba un servicio aislado: decisión en split, reflejo en Desktop, ejecución del agente y resultado en ambos.
-- `npm run desktop:dist -- --mac` genera DMG; `--win` genera instaladores NSIS EXE.
+- `npm run desktop:dist -- --mac --arm64` genera DMG para Apple Silicon; `npm run desktop:dist -- --win --x64` genera instaladores NSIS EXE para Windows x64. Son los únicos destinos predeterminados; no se generan nuevas compilaciones Intel.
 - `HYPERION_DESKTOP_EXECUTABLE=/ruta/al/ejecutable npm run test:desktop` ejecuta la prueba sobre una aplicación empaquetada.
-- El workflow **Desktop installers**, manual y automático ante cambios de Desktop, adaptadores o dependencias, compila en macOS y Windows y guarda artefactos descargables. No publica automáticamente.
+- El workflow **Desktop installers**, manual y automático ante cambios de Desktop, adaptadores o dependencias, compila y prueba macOS arm64 y Windows x64. Ambos trabajos son obligatorios: cualquier fallo impide que el run sea publicable. Guarda artefactos descargables, pero no publica automáticamente. Los artefactos de releases históricas, incluidos los de Intel, se conservan.
 
 Los binarios pertenecen a GitHub Releases, no al historial Git. `release/` está ignorado. Para distribución pública, configurar firma/notarización macOS y firma Windows. No se incorporan certificados al repositorio. El build local sin esas identidades es un artefacto de desarrollo.
 
@@ -54,7 +54,7 @@ El aviso «Apple could not verify Hyperion.app is free of malware» bloquea esta
 
 Para generar una distribución macOS notarizada, ejecutar **Desktop installers** con `notarized=true`. El build falla si faltan credenciales Developer ID/notarización; nunca degrada silenciosamente esa solicitud a ad-hoc. Las compilaciones preview siguen disponibles, pero CI las identifica como **NOT Apple-notarized**. Sin certificado Developer ID y cuenta Apple Developer, la distribución sin este bloqueo continúa pendiente.
 
-Para publicar archivos ya probados sin volver a compilarlos, crear primero una release **draft** con notas revisadas y `target_commitish` igual al commit del build. Ejecutar **Publish verified Desktop artifacts** con el ID de un run exitoso de **Desktop installers** en `main`. El workflow verifica procedencia, selecciona cada instalador desde su plataforma nativa, sube a la release draft y compara tamaño y SHA-256 remotos antes de publicarla. Rechaza releases ya públicas; no sobrescribe sus binarios. No añade notarización a los artefactos.
+Para publicar archivos ya probados sin volver a compilarlos, crear primero una release **draft** con notas revisadas y `target_commitish` igual al commit del build. Ejecutar **Publish verified Desktop artifacts** con el ID de un run exitoso de **Desktop installers** en `main`. El workflow verifica procedencia y selecciona solo el DMG arm64 de `Hyperion-macos-latest` y el EXE x64 de `Hyperion-windows-latest`, ambos con la versión del commit probado. La ausencia de cualquiera impide la publicación. No incorpora instaladores Intel aunque aparezcan entre los artefactos del run; rechaza un borrador con archivos adicionales a los dos instaladores probados y su manifiesto SHA-256, sin borrar esos archivos. Sube los dos instaladores a la release draft y compara tamaño y SHA-256 remotos antes de publicarla. Rechaza releases ya públicas; no sobrescribe sus binarios. No añade notarización a los artefactos.
 
 La web usa `docs/site/.vitepress/release.json` como registro de la última release **publicada**. Actualizarlo solo después de subir y verificar los instaladores; no anunciar un enlace antes de que exista su asset. El campo `macNotarized` solo puede ser verdadero con evidencia de notarización y validación de Gatekeeper.
 

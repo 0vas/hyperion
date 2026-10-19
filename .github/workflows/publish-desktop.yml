@@ -60,13 +60,6 @@ jobs:
           mkdir publish
           cp "artifacts/Hyperion-macos-latest/Hyperion-${VERSION}-mac-arm64.dmg" publish/
           cp "artifacts/Hyperion-windows-latest/Hyperion-${VERSION}-win-x64.exe" publish/
-          # Intel DMG is optional (public policy: arm64 + win). Include it when the build produced one.
-          intel="artifacts/Hyperion-macos-15-intel/Hyperion-${VERSION}-mac-x64.dmg"
-          if [ -f "$intel" ]; then
-            cp "$intel" publish/
-          else
-            echo "Intel macOS DMG absent; publishing arm64 + Windows only."
-          fi
           cd publish
           test -f "Hyperion-${VERSION}-mac-arm64.dmg"
           test -f "Hyperion-${VERSION}-win-x64.exe"
@@ -85,6 +78,11 @@ jobs:
           import assert from 'node:assert/strict';
           const release = JSON.parse(execFileSync('gh', ['api', `repos/${process.env.GITHUB_REPOSITORY}/releases/${process.env.RELEASE_ID}`], { encoding: 'utf8' }));
           assert.ok(release.draft);
+          assert.deepEqual(
+            release.assets.map(asset => asset.name).sort(),
+            readdirSync('publish').sort(),
+            'Draft assets must match the two tested installers and checksum manifest',
+          );
           for (const name of readdirSync('publish')) {
             const bytes = readFileSync(`publish/${name}`);
             const asset = release.assets.find(a => a.name === name);

@@ -46,7 +46,7 @@ These are **2026.10.18.2241 UTC · Preview** installers (CalVer: year, month, da
 
 **[Download Hyperion Desktop — preview](https://github.com/0vas/hyperion/releases/tag/v2026.10.18.2241)** · macOS Apple Silicon · Windows x64.
 
-A stable channel release remains pending. The [Desktop installers workflow](https://github.com/0vas/hyperion/actions/workflows/desktop.yml) builds and tests the packaged application on each platform. Protocol tests do not replace native conversation testing in every AI client.
+A stable channel release remains pending. New Desktop builds target **macOS Apple Silicon (arm64)** and **Windows x64** only. Both native jobs in the [Desktop installers workflow](https://github.com/0vas/hyperion/actions/workflows/desktop.yml) must pass before their tested installers can be published. Intel Mac builds are no longer produced; historical release assets remain available. Source versions may be newer than the published installers linked above. Protocol tests do not replace native conversation testing in every AI client.
 
 [Setup and troubleshooting](docs/conexion.md) · [User manual](docs/manual-uso.md) · [Desktop build details](desktop/README.md)
 
