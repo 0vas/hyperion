@@ -73,6 +73,34 @@ for (const locale of ['es', 'en'] as const) {
       await page.screenshot({ path: testInfo.outputPath('menu-narrow.png') });
     });
 
+    test(`guide list numbers have readable contrast (${locale}, ${theme})`, async ({
+      page,
+    }, testInfo) => {
+      await mockConnectionHome(page);
+      await setAppearance(page, theme, locale);
+      await page.goto('/');
+      await chooseFromAppMenu(
+        page,
+        locale === 'es' ? 'Guía de uso' : 'User guide',
+      );
+      await expectReadableText(page.locator('.usage-guide li'));
+      for (const [width, height] of [
+        [1440, 1000],
+        [900, 900],
+        [390, 844],
+        [320, 740],
+      ] as const) {
+        await page.setViewportSize({ width, height });
+        const dialog = page.getByRole('dialog');
+        expect(
+          await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+        ).toBe(true);
+        await page.screenshot({
+          path: testInfo.outputPath(`guide-${width}.png`),
+        });
+      }
+    });
+
     test(`connection cards retain contrast, hierarchy and an opaque header (${locale}, ${theme})`, async ({
       page,
     }, testInfo) => {
@@ -91,15 +119,48 @@ for (const locale of ['es', 'en'] as const) {
           '.connection-card strong, .connection-path, .connection-path .eyebrow, .connection-status-badge, .connection-row-actions button',
         ),
       );
-      for (const width of [1440, 390]) {
-        await page.setViewportSize({ width, height: 1000 });
+      for (const [width, height] of [
+        [1440, 1000],
+        [900, 900],
+        [390, 844],
+        [320, 740],
+      ] as const) {
+        await page.setViewportSize({ width, height });
+        const panelBox = (await popup.boundingBox())!;
+        if (width === 1440) expect.soft(panelBox.width).toBe(1040);
+        expect.soft(panelBox.x).toBeGreaterThanOrEqual(16);
+        expect
+          .soft(panelBox.x + panelBox.width)
+          .toBeLessThanOrEqual(width - 16);
+        expect
+          .soft(await popup.evaluate((el) => el.scrollWidth <= el.clientWidth))
+          .toBe(true);
+        await expect(
+          popup.locator('.connections-identity .connections-calver'),
+        ).toBeInViewport();
         for (const card of await popup.locator('.connection-card').all()) {
           expect(await card.locator('.primary').count()).toBeLessThanOrEqual(1);
+          if (width >= 900)
+            expect((await card.boundingBox())!.width).toBeGreaterThanOrEqual(
+              260,
+            );
           const path = (await card.locator('.connection-path').boundingBox())!;
           const buttonBoxes = [];
           for (const button of await card.getByRole('button').all()) {
             const buttonBox = (await button.boundingBox())!;
             buttonBoxes.push(buttonBox);
+            if (width <= 390) {
+              const actions = (await card
+                .locator('.connection-row-actions')
+                .boundingBox())!;
+              expect
+                .soft(buttonBox.width, 'Narrow card actions fill their row')
+                .toBeCloseTo(actions.width, 0);
+              if (buttonBoxes.length > 1) {
+                const previous = buttonBoxes.at(-2)!;
+                expect.soft(buttonBox.y - previous.y - previous.height).toBe(8);
+              }
+            }
             expect(buttonBox.height).toBe(36);
             expect(buttonBox.y - (path.y + path.height)).toBeGreaterThanOrEqual(
               8,
@@ -113,8 +174,19 @@ for (const locale of ['es', 'en'] as const) {
             }
           }
         }
+        expect
+          .soft(
+            await popup
+              .locator('.connections-view')
+              .evaluate((el) => el.scrollWidth <= el.clientWidth),
+            'Connections body has no horizontal scroll',
+          )
+          .toBe(true);
         const identity = popup.locator('.connections-identity');
         const top = (await identity.boundingBox())!.y;
+        await page.screenshot({
+          path: testInfo.outputPath(`connections-${width}-top.png`),
+        });
         await popup.locator('.connections-view').evaluate((el) => {
           el.scrollTop = el.scrollHeight;
         });

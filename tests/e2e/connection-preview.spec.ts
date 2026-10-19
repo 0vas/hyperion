@@ -112,7 +112,15 @@ for (const locale of ['es', 'en'] as const) {
         exact: true,
       })
       .click();
-    await expect(confirmation).toHaveCount(0);
+    await expect(page.locator('[aria-labelledby="replace-title"]')).toHaveCount(
+      0,
+    );
+    await expect(resolver).toBeVisible();
+    await expect(
+      resolver.getByRole('button', {
+        name: /Reemplazar conexión|Replace connection/,
+      }),
+    ).toBeFocused();
     await expect(page.locator('.connections-popup')).toBeVisible();
     expect(writes).toEqual([]);
   });

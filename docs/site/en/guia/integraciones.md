@@ -22,7 +22,11 @@ In the development source, **Menu → Connections → Resolve conflict…** comp
 
 This preview is not a universal secret detector: executable names, local paths, hosts and client IDs are treated as public metadata. Do not put credentials in them or share configuration files without reviewing them. **Replace connection** still requires confirmation, creates a backup and preserves other MCP servers. This fix is not yet part of a published installer. [Exact policy and limits](https://github.com/0vas/hyperion/blob/main/SECURITY.md#connection-conflict-previews).
 
+In development source, **Cancel**, **Escape**, or clicking outside the confirmation returns to the resolver and focuses **Replace connection**, without writing changes. Closing the resolver returns focus to its originating card; **Back to canvas** or Escape from Connections returns to its opener. Only the top dialog receives keyboard and pointer input. While saving, the confirmation cannot be dismissed or submitted again. On failure, you can read the error, retry, or cancel; on success, both dialogs close and the list updates. This navigation is not yet in a published installer.
+
 ## If Hyperion is not recognized
+
+In development source, if another Hyperion instance rejects this installation’s credentials at the requested address, the MCP launcher uses the alternate local port selected during startup. It does not change the saved client configuration or stop the other instance. This correction is not yet included in a published installer. Verify a read-only call such as `hyperion_list_runs`: an existing configuration or a visible tool list does not establish that calls work in that chat.
 
 1. Check that you selected the right tool in the assistant.
 2. Restart it and open a new chat.

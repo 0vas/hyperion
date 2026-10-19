@@ -961,8 +961,9 @@ textarea::placeholder {
   background: #f4efdf;
   border-radius: 9px;
 }
-.usage-guide ol {
+.modal .usage-guide ol {
   margin-bottom: 18px;
+  color: var(--ink);
 }
 .usage-guide li strong {
   font-size: 14px;
@@ -1113,6 +1114,7 @@ textarea::placeholder {
   display: flex;
   flex-direction: column;
   width: min(1040px, calc(100vw - 32px));
+  max-width: 1040px;
   max-height: min(88vh, 900px);
   padding: 28px 28px 20px;
   overflow: hidden;
@@ -1277,7 +1279,16 @@ textarea::placeholder {
     flex: 1;
   }
   .connection-card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .connection-card-head {
+    flex-wrap: wrap;
+  }
+  .connection-row-actions {
+    flex-direction: column;
+  }
+  .connection-row-actions button {
+    width: 100%;
   }
 }
 .connection-status-badge {
@@ -1373,6 +1384,13 @@ textarea::placeholder {
 .conflict-resolver {
   max-width: min(720px, 100%);
 }
+.conflict-layer .modal-actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.conflict-layer .modal-actions .primary {
+  margin-top: 0;
+}
 .modal-backdrop:has(.conflict-layer) {
   z-index: 30;
 }
@@ -1427,6 +1445,12 @@ textarea::placeholder {
 @media (max-width: 720px) {
   .conflict-compare {
     grid-template-columns: 1fr;
+  }
+  .conflict-layer .modal-actions {
+    flex-direction: column;
+  }
+  .conflict-layer .modal-actions button {
+    width: 100%;
   }
 }
 [data-theme='dark'] .connections-identity {

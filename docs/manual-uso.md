@@ -22,6 +22,8 @@ La vista **Conexiones** lista siempre las cinco aplicaciones (Codex, Cursor, Cla
 
 En las fuentes de desarrollo, **Resolver conflicto…** compara una vista previa limitada: las URL muestran solo protocolo, host y puerto; los valores privados del entorno se omiten, y los argumentos se ocultan desde el primer elemento no admitido con `••••`. La marca ámbar compara lo que se muestra, incluidos los valores permitidos del entorno, no el archivo completo. Conserva las credenciales fuera de nombres de ejecutables, rutas, hosts e identificadores. Esta corrección aún no está en un instalador publicado. [Alcance y límites de la vista previa](../SECURITY.md#connection-conflict-previews).
 
+En las fuentes de desarrollo, **Cancelar**, **Escape** o pulsar fuera de la confirmación vuelve al Resolver y enfoca **Reemplazar conexión**, sin escribir cambios. Cerrar el Resolver devuelve el foco a la tarjeta de origen; **Volver al canvas** o Escape desde Conexiones vuelve al control que abrió la vista. Solo el diálogo superior recibe teclado y clics. Mientras se guarda, la confirmación permanece bloqueada para evitar repetir o abandonar la solicitud; si falla, muestra el error y permite reintentar o cancelar. Si termina correctamente, cierra la confirmación y el Resolver, actualiza la lista y devuelve el foco a un control de Conexiones. Esta navegación aún no está en un instalador publicado.
+
 El modo automático toma el idioma del sistema o del navegador; si no está soportado, usa inglés. La selección manual se conserva al volver a abrir la app. En Desktop, el menú y el canvas comparten la preferencia; en el navegador se guarda por separado.
 
 **Tu contenido conserva su idioma.**

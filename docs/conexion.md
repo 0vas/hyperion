@@ -239,6 +239,8 @@ El [contrato de procesos](process-contract.md) describe inicio/fin, las compuert
 
 ## Resolver problemas
 
+En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta instalación en la dirección solicitada, el lanzador MCP usa el puerto alternativo local elegido durante el arranque. No cambia la configuración guardada del cliente ni detiene la otra instancia. La corrección aún no está incluida en un instalador publicado. Comprueba una llamada de lectura, como `hyperion_list_runs`: que la configuración exista o se muestre la lista de herramientas no demuestra que las llamadas funcionen en ese chat.
+
 | Problema                                         | Comprobación                                                                            |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | La interfaz no abre                              | Mantén `npm start` activo y usa `127.0.0.1:4317`                                        |

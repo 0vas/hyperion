@@ -24,7 +24,11 @@ En las fuentes de desarrollo, **Menú → Conexiones → Resolver conflicto…**
 
 Esta vista previa no es un detector universal de secretos: los nombres de ejecutables, rutas locales, hosts e identificadores se consideran metadatos públicos. No pongas credenciales en ellos ni compartas archivos de configuración sin revisarlos. **Reemplazar conexión** requiere confirmación, crea un respaldo y conserva los demás servidores MCP. Esta corrección aún no está en un instalador publicado. [Política exacta y límites](https://github.com/0vas/hyperion/blob/main/SECURITY.md#connection-conflict-previews).
 
+En las fuentes de desarrollo, **Cancelar**, **Escape** o pulsar fuera de la confirmación vuelve al Resolver y enfoca **Reemplazar conexión**, sin escribir. Cerrar el Resolver devuelve el foco a la tarjeta de origen; **Volver al canvas** o Escape desde Conexiones vuelve a su control de apertura. Solo el diálogo superior recibe teclado y clics. Durante el guardado, no se puede cerrar ni repetir la confirmación. Si falla, puedes leer el error, reintentar o cancelar; si termina, se cierran ambos diálogos y se actualiza la lista. Esta navegación aún no está en un instalador publicado.
+
 ## Si no reconoce Hyperion
+
+En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta instalación en la dirección solicitada, el lanzador MCP usa el puerto alternativo local elegido durante el arranque. No cambia la configuración guardada del cliente ni detiene la otra instancia. La corrección aún no está incluida en un instalador publicado. Comprueba una llamada de lectura, como `hyperion_list_runs`: que la configuración exista o se muestre la lista de herramientas no demuestra que las llamadas funcionen en ese chat.
 
 1. Comprueba que elegiste la herramienta correcta en el asistente.
 2. Reinicia esa herramienta y abre un chat nuevo.
