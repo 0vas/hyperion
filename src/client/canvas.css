@@ -180,9 +180,8 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 14px;
+  min-height: 40px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fffefa;
@@ -1199,8 +1198,10 @@ textarea::placeholder {
 }
 .connections-identity-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  overflow-wrap: normal;
 }
 .connection-overview {
   flex-shrink: 0;
@@ -1502,7 +1503,7 @@ textarea::placeholder {
     width: 100%;
   }
   .connections-identity-actions .ghost-button {
-    flex: 1;
+    flex: 1 1 auto;
     padding-inline: 6px;
   }
   .connections-view .connection-row-toggle {
