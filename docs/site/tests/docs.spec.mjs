@@ -68,7 +68,7 @@ test('a new reader can find setup and search for retry', async ({ page }) => {
   await expect(page.locator('h1')).toHaveText('Tu primer flujo');
   await expect(
     page.getByRole('link', { name: 'Descargar Hyperion Desktop', exact: true }),
-  ).toHaveAttribute('href', /releases\/tag\/v2026.10.18.2241/);
+  ).toHaveAttribute('href', /releases\/tag\/v2026.10.19.2111/);
   await page.getByRole('button', { name: /Buscar/ }).click();
   await page.locator('#localsearch-input').fill('Reintentar');
   await expect(page.locator('.VPLocalSearchBox a').first()).toBeVisible();
@@ -161,7 +161,7 @@ test('branded pages offer direct installers and a working Archify viewer in both
         page.getByRole('link', { name, exact: true }),
       ).toHaveAttribute(
         'href',
-        `https://github.com/0vas/hyperion/releases/download/v2026.10.18.2241/Hyperion-2026.10.18.2241-${asset}`,
+        `https://github.com/0vas/hyperion/releases/download/v2026.10.19.2111/Hyperion-2026.10.19.2111-${asset}`,
       );
     }
     await page.goto(`/hyperion/${locale}referencia/arquitectura.html`);
@@ -1190,10 +1190,10 @@ test('CalVer minute and macOS opening instructions remain visible in both themes
         await page.goto(`/hyperion/${locale}guia/primeros-pasos.html`);
         const downloads = page.locator('.downloads');
         await downloads.scrollIntoViewIfNeeded();
-        await expect(downloads.locator('time')).toHaveText('2026.10.18.2241');
+        await expect(downloads.locator('time')).toHaveText('2026.10.19.2111');
         await expect(downloads.locator('time')).toHaveAttribute(
           'datetime',
-          '2026-10-18T22:41:00Z',
+          '2026-10-19T21:11:00Z',
         );
         await expect(downloads.locator('.download-status')).toContainText(
           locale
