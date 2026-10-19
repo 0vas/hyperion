@@ -1,0 +1,55 @@
+name: Windows owner timing diagnostic
+
+on:
+  push:
+    branches: [diagnostics/windows-owner-a89e333]
+    paths:
+      - .github/workflows/windows-owner-diagnostic.yml
+      - scripts/diagnostics/windows-owner-probe.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-owner-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-full-unit:
+    # One first-push run, no manual reruns or warm-up probe.
+    if: github.repository == '0vas/hyperion' && github.event.created && github.run_attempt == '1'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out diagnostic tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic-tools
+          persist-credentials: false
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+      - name: Check out the unchanged reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: a89e33350b17fca5e39a8b8062e216b6aea32fe2
+          path: subject
+          persist-credentials: false
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+      - name: Use the failing job's exact Node version
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: subject/package-lock.json
+      - name: Run install, typecheck and the full unit suite once
+        working-directory: subject
+        shell: pwsh
+        run: |
+          node ../diagnostic-tools/scripts/diagnostics/windows-owner-probe.mjs --run-ci
+          exit $LASTEXITCODE
