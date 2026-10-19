@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Copy,
   History,
+  Info,
   Layers3,
   LoaderCircle,
   LockKeyhole,
@@ -83,6 +84,12 @@ import {
   useConnectionInventory,
   type ConnectionRow,
 } from './Connections';
+import {
+  connectionMessage,
+  describeConnectionMessage,
+  formatConnectionMessage,
+  type ConnectionMessage,
+} from './connection-messages';
 import { AppMenu, type AppMenuAction } from './AppMenu';
 import { requestDesktopUpdateCheck } from './desktop-updates';
 import { usePreferences } from './preferences';
@@ -607,8 +614,10 @@ function Modal({
   children,
   onClose,
   returnFocus,
+  active = true,
 }: {
-  returnFocus?: HTMLElement | null;
+  returnFocus?: HTMLElement | null | (() => HTMLElement | null);
+  active?: boolean;
   children: ReactNode;
   onClose: () => void;
 }) {
@@ -617,27 +626,61 @@ function Modal({
   useEffect(() => {
     const previous =
       returnFocus || (document.activeElement as HTMLElement | null);
-    root.current?.querySelector<HTMLElement>('button,textarea')?.focus();
     return () => {
       // React Flow remeasures changed nodes on the next frame. Restore focus
       // after those nodes become visible again, and after inert is removed.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
-          if (previous?.isConnected) previous.focus({ preventScroll: true });
+          const target = typeof previous === 'function' ? previous() : previous;
+          const top = Array.from(
+            document.querySelectorAll('.modal-backdrop:not([inert])'),
+          ).at(-1);
+          if (
+            target?.isConnected &&
+            !target.closest('[inert]') &&
+            !target.matches(':disabled') &&
+            (!top || top.contains(target))
+          ) {
+            target.focus({ preventScroll: true });
+          }
         }),
       );
     };
   }, []);
+  useLayoutEffect(() => {
+    const container = root.current;
+    if (!active || !container) return;
+    const focused = document.activeElement;
+    // Disabling the focused submit can blur to BODY. Recover on render, while
+    // retaining a user's valid focus through polling and async error updates.
+    if (
+      focused &&
+      focused !== container &&
+      container.contains(focused) &&
+      !focused.matches(':disabled')
+    )
+      return;
+    (
+      container.querySelector<HTMLElement>(
+        'button:not(:disabled),textarea:not(:disabled)',
+      ) || container
+    ).focus();
+  });
   return (
     <div
       ref={root}
       className="modal-backdrop"
+      tabIndex={-1}
+      inert={!active}
+      aria-hidden={!active || undefined}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (active && event.target === event.currentTarget) onClose();
       }}
       onKeyDown={(event) => {
+        if (!active) return;
         if (event.key === 'Escape') {
           event.preventDefault();
+          event.stopPropagation();
           onClose();
         }
         if (event.key !== 'Tab') return;
@@ -648,7 +691,13 @@ function Modal({
         );
         const first = items[0];
         const last = items.at(-1);
-        if (event.shiftKey && document.activeElement === first) {
+        if (!first) {
+          event.preventDefault();
+          root.current?.focus();
+        } else if (document.activeElement === root.current) {
+          event.preventDefault();
+          (event.shiftKey ? last : first)?.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
           last?.focus();
         } else if (!event.shiftKey && document.activeElement === last) {
@@ -661,11 +710,36 @@ function Modal({
     </div>
   );
 }
+type CanvasNoticeMessage =
+  string | { kind: 'desktop-update'; outcome: 'unavailable' | 'failed' };
+const UPDATE_NOTICES = {
+  unavailable:
+    'Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.',
+  failed:
+    'No se pudo buscar actualizaciones. Inténtalo de nuevo desde Hyperion → Buscar actualizaciones…',
+} as const;
+
 export function App() {
   const locale = useLocale();
   const [preferences, setPreferences] = usePreferences();
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState<CanvasNoticeMessage>('');
   const popupTrigger = useRef<HTMLElement | null>(null);
+  const connectionTrigger = useRef<HTMLElement | null>(null);
+  const replaceTrigger = useRef<HTMLElement | null>(null);
+  const connectionSetupPending = useRef(false);
+  const connectionReturnFocus = () => {
+    const target =
+      connectionTrigger.current?.isConnected &&
+      !connectionTrigger.current.matches(':disabled')
+        ? connectionTrigger.current
+        : document.querySelector<HTMLElement>(
+            '.connections-identity-actions button',
+          );
+    // Reactivating Connections may focus its header before the Resolver's
+    // return-focus callback runs. Reveal the original card below that header.
+    target?.scrollIntoView({ block: 'nearest' });
+    return target;
+  };
   const [runs, setRuns] = useState<Run[]>([]);
   const [runId, setRunId] = useState(
     new URLSearchParams(location.search).get('run') || '',
@@ -726,7 +800,10 @@ export function App() {
   const [replaceConfirm, setReplaceConfirm] = useState<ConnectionRow | null>(
     null,
   );
-  const [setupNotice, setSetupNotice] = useState('');
+  const [setupNotice, setSetupNotice] = useState<ConnectionMessage | null>(
+    null,
+  );
+  const [setupError, setSetupError] = useState<ConnectionMessage | null>(null);
   const connections = useConnectionInventory(loaded && online);
   const openConnections = () => {
     setMenuOpen(false);
@@ -784,18 +861,9 @@ export function App() {
       void requestDesktopUpdateCheck(window.hyperionDesktop).then(
         (result) => {
           if (result === 'unavailable')
-            setNotice(
-              t(
-                'Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.',
-              ),
-            );
+            setNotice({ kind: 'desktop-update', outcome: 'unavailable' });
         },
-        () =>
-          setNotice(
-            t(
-              'No se pudo buscar actualizaciones. Inténtalo de nuevo desde Hyperion → Buscar actualizaciones…',
-            ),
-          ),
+        () => setNotice({ kind: 'desktop-update', outcome: 'failed' }),
       );
       return;
     }
@@ -804,7 +872,10 @@ export function App() {
     }
   };
   const setupConnection = async (clientId: string, replace = false) => {
-    setSetupNotice('');
+    if (busy || connectionSetupPending.current) return;
+    connectionSetupPending.current = true;
+    setSetupNotice(null);
+    setSetupError(null);
     setBusy(true);
     try {
       const res = await fetch('/api/connections/setup', {
@@ -833,30 +904,21 @@ export function App() {
           await connections.refresh();
           return;
         }
-        throw new Error(
-          body.message || t('No se pudo completar la solicitud.'),
-        );
+        throw new Error(body.message || 'No se pudo completar la solicitud.');
       }
       setConflictRow(null);
       setReplaceConfirm(null);
       if (body.inventory) connections.setInventory(body.inventory);
       else await connections.refresh();
-      setSetupNotice(
-        replace
-          ? t(
-              'Conexión reemplazada. Reinicia tu aplicación de IA y abre un chat nuevo.',
-            )
-          : t(
-              'Conexión configurada. Reinicia tu aplicación de IA y abre un chat nuevo.',
-            ),
-      );
+      setSetupNotice(connectionMessage(replace ? 'replaced' : 'configured'));
     } catch (err) {
-      setError(
+      setSetupError(
         err instanceof Error
-          ? err.message
-          : t('No se pudo completar la solicitud.'),
+          ? describeConnectionMessage(err.message)
+          : connectionMessage('requestFailed'),
       );
     } finally {
+      connectionSetupPending.current = false;
       setBusy(false);
     }
   };
@@ -1474,6 +1536,26 @@ export function App() {
     </div>
   );
   const dialogOpen = Boolean(popup || help || confirmation);
+  // Only native Menu update outcomes use descriptors here. Workflow notices and
+  // recorded content remain literal; this is not a general notice translation.
+  const noticeView =
+    notice && !dialogOpen ? (
+      <div className="canvas-notice" role="status">
+        {typeof notice === 'string' ? (
+          <Check size={16} aria-hidden="true" />
+        ) : (
+          <Info size={16} aria-hidden="true" />
+        )}
+        <span>
+          {typeof notice === 'string'
+            ? notice
+            : t(UPDATE_NOTICES[notice.outcome])}
+        </span>
+        <button aria-label={t('Cerrar aviso')} onClick={() => setNotice('')}>
+          <X size={16} />
+        </button>
+      </div>
+    ) : null;
   return (
     <div className="app-shell canvas-app" data-connected={online}>
       <div
@@ -1614,6 +1696,7 @@ export function App() {
                     </button>
                   )}
               </div>
+              {typeof notice !== 'string' && noticeView}
               {!online && (
                 <p role="alert">
                   {t(
@@ -1694,18 +1777,7 @@ export function App() {
                     onFocused={setFocusedStepId}
                   />
                 </ReactFlow>
-                {notice && !dialogOpen && (
-                  <div className="canvas-notice" role="status">
-                    <Check size={16} />
-                    <span>{notice}</span>
-                    <button
-                      aria-label={t('Cerrar aviso')}
-                      onClick={() => setNotice('')}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                )}
+                {noticeView}
                 {error && !dialogOpen && (
                   <div role="alert" className="canvas-alert popup-error">
                     {error}
@@ -1794,6 +1866,7 @@ export function App() {
       </div>
       {popup && !confirmation && !help && (
         <Modal
+          active={!conflictRow && !replaceConfirm}
           returnFocus={popupTrigger.current}
           onClose={() => setPopup(null)}
         >
@@ -1802,6 +1875,16 @@ export function App() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="popup-title"
+            onClickCapture={
+              popup === 'connections'
+                ? (event) => {
+                    const button = (event.target as HTMLElement).closest(
+                      'button',
+                    );
+                    if (button) connectionTrigger.current = button;
+                  }
+                : undefined
+            }
           >
             {popup !== 'connections' && (
               <button
@@ -2226,17 +2309,18 @@ export function App() {
               <ConnectionsView
                 online={online}
                 inventory={connections.inventory}
-                error={connections.error || setupNotice}
+                error={connections.error || setupError}
+                inventoryError={connections.error}
+                notice={setupNotice}
                 busy={connections.busy || busy}
                 onClose={() => setPopup(null)}
                 onRefresh={() => void connections.refresh()}
                 onSetup={(id) => void setupConnection(id)}
-                onConflict={setConflictRow}
-                onHelp={() => {
-                  setPopup(null);
-                  setHelp(true);
+                onConflict={(row) => {
+                  setSetupError(null);
+                  setConflictRow(row);
                 }}
-                onConnectAi={() => {
+                onHelp={() => {
                   setPopup(null);
                   setHelp(true);
                 }}
@@ -2447,7 +2531,8 @@ export function App() {
       )}
       {conflictRow && (
         <Modal
-          returnFocus={popupTrigger.current}
+          active={!replaceConfirm}
+          returnFocus={connectionReturnFocus}
           onClose={() => setConflictRow(null)}
         >
           <section
@@ -2460,8 +2545,11 @@ export function App() {
             <ConflictResolverBody
               row={conflictRow}
               onReplace={() => {
+                replaceTrigger.current = document.querySelector<HTMLElement>(
+                  '.conflict-resolver .primary',
+                );
+                setSetupError(null);
                 setReplaceConfirm(conflictRow);
-                setConflictRow(null);
               }}
               onCopyPath={() =>
                 void navigator.clipboard.writeText(conflictRow.path || '')
@@ -2477,14 +2565,21 @@ export function App() {
       )}
       {replaceConfirm && (
         <Modal
-          returnFocus={popupTrigger.current}
-          onClose={() => setReplaceConfirm(null)}
+          returnFocus={() =>
+            replaceTrigger.current?.isConnected
+              ? replaceTrigger.current
+              : connectionReturnFocus()
+          }
+          onClose={() => {
+            if (!connectionSetupPending.current) setReplaceConfirm(null);
+          }}
         >
           <section
             className="modal compact conflict-layer"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="replace-title"
+            aria-busy={busy}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="replace-title">{t('¿Reemplazar la conexión Hyperion?')}</h2>
@@ -2494,9 +2589,15 @@ export function App() {
                 { 0: replaceConfirm.name },
               )}
             </p>
+            {setupError && (
+              <p role="alert" className="popup-error">
+                {formatConnectionMessage(setupError)}
+              </p>
+            )}
             <div className="modal-actions">
               <button
                 className="secondary"
+                disabled={busy}
                 onClick={() => setReplaceConfirm(null)}
               >
                 {t('Cancelar')}

@@ -15,7 +15,7 @@ import { WorkflowError, type Principal } from '../domain/workflow.js';
 import type { Store } from './store.js';
 import {
   DESKTOP_CLIENTS,
-  inspectDesktopConnections,
+  inspectDesktopConnectionsWithPreflight,
   type DesktopClientId,
 } from '../adapters/connection-status.js';
 import { setupDesktopClient } from '../adapters/desktop-setup.js';
@@ -220,7 +220,7 @@ export function createApp(options: Options) {
           json(
             res,
             200,
-            inspectDesktopConnections({
+            await inspectDesktopConnectionsWithPreflight({
               directory,
               url: baseUrl || process.env.HYPERION_URL,
               version: VERSION,
@@ -257,7 +257,7 @@ export function createApp(options: Options) {
               ok: true,
               client: result.client,
               configFile: result.configFile,
-              inventory: inspectDesktopConnections({
+              inventory: await inspectDesktopConnectionsWithPreflight({
                 directory,
                 url: baseUrl || process.env.HYPERION_URL,
                 version: VERSION,

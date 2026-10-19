@@ -3,6 +3,37 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerAgent } from '../server/config.js';
 
+/** Paths owned by this installation, never taken from a client configuration. */
+export function ownedMcpRuntimePaths() {
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  return {
+    executable: process.execPath,
+    launcher: resolve(root, 'dist/adapters/mcp-launcher.js'),
+    adapter: resolve(root, 'dist/adapters/mcp.js'),
+  };
+}
+
+/** Pure expected entry; only explicit setup may register credentials or export it. */
+export function buildMcpServer(
+  agentId: string,
+  directory: string,
+  autoStart: boolean,
+  url: string,
+) {
+  const paths = ownedMcpRuntimePaths();
+  return {
+    type: 'stdio',
+    command: paths.executable,
+    args: [autoStart ? paths.launcher : paths.adapter],
+    env: {
+      ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
+      HYPERION_AGENT_ID: agentId,
+      HYPERION_DATA_DIR: resolve(directory),
+      HYPERION_URL: url,
+    },
+  };
+}
+
 export function generateConnection(
   agentId: string,
   directory?: string,
@@ -10,27 +41,9 @@ export function generateConnection(
   url = process.env.HYPERION_URL || 'http://127.0.0.1:4317',
 ) {
   const credentials = registerAgent(agentId, directory);
-  const root = fileURLToPath(new URL('../../', import.meta.url));
   const config = {
     mcpServers: {
-      hyperion: {
-        type: 'stdio',
-        command: process.execPath,
-        args: [
-          resolve(
-            root,
-            autoStart
-              ? 'dist/adapters/mcp-launcher.js'
-              : 'dist/adapters/mcp.js',
-          ),
-        ],
-        env: {
-          ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
-          HYPERION_AGENT_ID: agentId,
-          HYPERION_DATA_DIR: credentials.directory,
-          HYPERION_URL: url,
-        },
-      },
+      hyperion: buildMcpServer(agentId, credentials.directory, autoStart, url),
     },
   };
   const outputDirectory = resolve(credentials.directory, 'connections');

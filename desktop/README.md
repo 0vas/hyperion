@@ -26,6 +26,8 @@ El servicio en uso (incluido un puerto alternativo de loopback) publica su ubica
 
 Antigravity está disponible desde 0.5.1-preview.1: configura `~/.gemini/config/mcp_config.json` con el runtime incluido, respaldo y rechazo de conflictos. Esta opción no está en los instaladores publicados 0.4.0-preview.1. La prueba del runtime empaquetado incluye su identidad MCP; eso no certifica una conversación en el cliente Google.
 
+En las fuentes de desarrollo, el inventario humano de conexiones comprueba por separado los archivos del ejecutable y del lanzador generados por esta instalación. «Configurada» solo indica coincidencia del archivo de configuración; archivos legibles no demuestran inicio MCP, una llamada correcta ni herramientas cargadas en Claude. Los archivos ausentes y los permisos insuficientes tienen resultados propios; un resultado desconocido no demuestra un fallo. La inspección no ejecuta comandos guardados, lee logs, registra credenciales ni modifica archivos. No repara la instalación automáticamente y aún no está incluida en un instalador publicado. Claude Desktop no requiere Claude Code ni instalar Node por separado. Si ya reiniciaste Claude y faltan herramientas, consulta su estado real del servidor y la ubicación que abre Edit Config; no repitas reinicios sin nueva evidencia ni compartas credenciales o logs completos.
+
 ## Firma y arranque (0.5.1-preview.1)
 
 La preview 0.4.0 tiene una firma macOS incompleta: `codesign --verify --deep --strict` falla incluso en el DMG original. La suma SHA-256 del archivo descargado sí coincide. No debe describirse como una simple advertencia de descarga ni recomendarse desactivar Gatekeeper.

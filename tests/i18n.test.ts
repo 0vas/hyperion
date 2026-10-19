@@ -10,6 +10,8 @@ test('resolves explicit or system language, regional variants and unsupported lo
 test('translates product text and interpolates values without modifying their contents', () => {
   assert.equal(translate('en', 'Guardar elección'), 'Save choice');
   assert.equal(translate('es', 'Guardar elección'), 'Guardar elección');
+  assert.equal(translate('en', 'Cancelar'), 'Cancel');
+  assert.equal(translate('es', 'Cancelar'), 'Cancelar');
   assert.equal(translate('en', 'constructor'), 'constructor');
   assert.equal(
     translate('en', 'Ver datos: {0}', { 0: 'Mi tarea <script>' }),

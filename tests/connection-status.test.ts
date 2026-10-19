@@ -6,7 +6,10 @@ import {
   writeFileSync,
   rmSync,
   readFileSync,
+  readdirSync,
+  existsSync,
 } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import {
@@ -14,6 +17,68 @@ import {
   inspectDesktopClient,
 } from '../src/adapters/connection-status.js';
 import { setupDesktopClient } from '../src/adapters/desktop-setup.js';
+
+function snapshot(directory: string): Record<string, string> {
+  const entries: Record<string, string> = {};
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      entries[entry.name + '/'] = 'directory';
+      for (const [child, digest] of Object.entries(snapshot(path)))
+        entries[entry.name + '/' + child] = digest;
+    } else {
+      entries[entry.name] = createHash('sha256')
+        .update(readFileSync(path))
+        .digest('hex');
+    }
+  }
+  return entries;
+}
+
+for (const credentialsExist of [true, false]) {
+  test(`repeated inventory preserves the entire tree with ${credentialsExist ? 'other-identity credentials' : 'a missing data directory'}`, () => {
+    const home = mkdtempSync(join(tmpdir(), 'hyperion-inventory-pure-'));
+    const directory = join(home, 'data');
+    try {
+      const file = join(home, '.cursor/mcp.json');
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(
+        file,
+        JSON.stringify({
+          mcpServers: { hyperion: { command: 'untrusted-command-never-run' } },
+        }),
+      );
+      if (credentialsExist) {
+        mkdirSync(directory);
+        writeFileSync(
+          join(directory, 'credentials.json'),
+          JSON.stringify({
+            agentId: 'codex',
+            agentToken: 'a'.repeat(64),
+            humanToken: 'h'.repeat(64),
+          }),
+        );
+      }
+      const before = snapshot(home);
+      for (let repeat = 0; repeat < 2; repeat++) {
+        const options = { home, directory, platform: 'win32' as const };
+        assert.equal(
+          inspectDesktopClient('cursor', options).status,
+          'conflict',
+        );
+        assert.equal(inspectDesktopConnections(options).summary.conflicts, 1);
+        assert.deepEqual(
+          snapshot(home),
+          before,
+          'inventory must not register credentials or export connections',
+        );
+      }
+      assert.equal(existsSync(directory), credentialsExist);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+}
 
 test('inventory lists five clients as missing when no configs exist', () => {
   const home = mkdtempSync(join(tmpdir(), 'hyperion-inventory-empty-'));

@@ -182,9 +182,19 @@ export function AppMenu({
           aria-label={t('Menú')}
           onKeyDown={onPanelKeyDown}
         >
-          <div className="app-menu-version" title={t('Versión de Hyperion')}>
-            <span className="form-sr-only">{t('Versión de Hyperion')}: </span>
-            {version}
+          <div className="app-menu-group">
+            <MenuRow
+              icon={MENU_ICONS.connections}
+              onSelect={() => runAction('connections')}
+            >
+              {t('Conexiones')}
+            </MenuRow>
+            <MenuRow
+              icon={MENU_ICONS.settings}
+              onSelect={() => runAction('settings')}
+            >
+              {t('Ajustes')}
+            </MenuRow>
           </div>
           {run && (
             <>
@@ -208,30 +218,13 @@ export function AppMenu({
                     icon={run.live ? MENU_ICONS.pause : MENU_ICONS.resume}
                     onSelect={() => runAction(run.live ? 'pause' : 'resume')}
                   >
-                    {run.live ? t('Pausar') : t('Reanudar')}
+                    {t(run.live ? 'Pausar' : 'Reanudar')}
                   </MenuRow>
                 )}
               </div>
             </>
           )}
           <div className="app-menu-sep" role="separator" />
-          <p className="app-menu-section">{t('Aplicación')}</p>
-          <div className="app-menu-group">
-            <MenuRow
-              icon={MENU_ICONS.connections}
-              onSelect={() => runAction('connections')}
-            >
-              {t('Conexiones')}
-            </MenuRow>
-            <MenuRow
-              icon={MENU_ICONS.settings}
-              onSelect={() => runAction('settings')}
-            >
-              {t('Ajustes')}
-            </MenuRow>
-          </div>
-          <div className="app-menu-sep" role="separator" />
-          <p className="app-menu-section">{t('Ayuda')}</p>
           <div className="app-menu-group">
             <MenuRow
               icon={MENU_ICONS.guide}
@@ -242,16 +235,15 @@ export function AppMenu({
             <MenuRow icon={MENU_ICONS.help} onSelect={() => runAction('help')}>
               {t('Ayuda de conexión')}
             </MenuRow>
-          </div>
-          <div className="app-menu-sep" role="separator" />
-          <p className="app-menu-section">{t('Más')}</p>
-          <div className="app-menu-group">
             <MenuRow
               icon={MENU_ICONS.legend}
               onSelect={() => runAction('legend')}
             >
               {t('Colores del flujo')}
             </MenuRow>
+          </div>
+          <div className="app-menu-sep" role="separator" />
+          <div className="app-menu-group">
             {!isElectron && (
               <MenuRow
                 icon={MENU_ICONS.window}
@@ -268,15 +260,16 @@ export function AppMenu({
                 {t('Buscar actualizaciones…')}
               </MenuRow>
             )}
-          </div>
-          <div className="app-menu-sep" role="separator" />
-          <div className="app-menu-group">
             <MenuRow
               icon={MENU_ICONS.about}
               onSelect={() => runAction('about')}
             >
               {t('Acerca de Hyperion')}
             </MenuRow>
+          </div>
+          <div className="app-menu-version" title={t('Versión de Hyperion')}>
+            <span className="form-sr-only">{t('Versión de Hyperion')}: </span>
+            {version}
           </div>
         </div>
       )}
@@ -301,7 +294,7 @@ function MenuRow({
       onClick={onSelect}
     >
       <span className="app-menu-row-icon" aria-hidden="true">
-        <Icon size={18} strokeWidth={1.75} />
+        <Icon size={16} strokeWidth={1.75} />
       </span>
       {children}
     </button>

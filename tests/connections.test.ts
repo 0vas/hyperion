@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadCredentials, registerAgent } from '../src/server/config.js';
 import { createApp } from '../src/server/app.js';
 import { Store } from '../src/server/store.js';
@@ -112,6 +113,43 @@ test('connection generator emits usable absolute MCP configuration without crede
     for (const secret of Object.values(credentials.agents))
       assert.ok(!encoded.includes(secret));
     assert.ok(!encoded.includes(credentials.humanToken));
+    for (const autoStart of [false, true]) {
+      const output = generateConnection(
+        'cursor',
+        dir,
+        autoStart,
+        'http://127.0.0.1:4347',
+      );
+      const expected = {
+        type: 'stdio',
+        command: process.execPath,
+        args: [
+          fileURLToPath(
+            new URL(
+              `../dist/adapters/${autoStart ? 'mcp-launcher' : 'mcp'}.js`,
+              import.meta.url,
+            ),
+          ),
+        ],
+        env: {
+          ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
+          HYPERION_AGENT_ID: 'cursor',
+          HYPERION_DATA_DIR: dir,
+          HYPERION_URL: 'http://127.0.0.1:4347',
+        },
+      };
+      assert.deepEqual(output.config, { mcpServers: { hyperion: expected } });
+      assert.equal(output.configFile, join(dir, 'connections/cursor.mcp.json'));
+      assert.equal(
+        readFileSync(output.configFile, 'utf8'),
+        JSON.stringify(output.config, null, 2) + '\n',
+      );
+      assert.deepEqual(
+        loadCredentials(dir),
+        credentials,
+        'repeated explicit exports preserve registered credentials',
+      );
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

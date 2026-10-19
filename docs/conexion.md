@@ -21,13 +21,31 @@ No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Deskt
 | Claude Code    | Skill Hyperion en su carpeta de skills de usuario.                                   |
 | Antigravity    | Conexión MCP global con respaldo; disponible en Desktop 0.5.1-preview.1 o posterior. |
 
-La conexión usa rutas absolutas al runtime incluido y al almacenamiento local; no escribe tokens en la configuración del cliente. Guarda copia del archivo anterior, conserva otros servidores y rechaza una entrada Hyperion diferente. «Conexión configurada» confirma la instalación; el cliente debe reiniciarse y cargar las herramientas para usarla. Puedes repetir el asistente para conectar otra aplicación.
+La conexión usa rutas absolutas al runtime incluido y al almacenamiento local; no escribe tokens en la configuración del cliente. Guarda copia del archivo anterior, conserva otros servidores y rechaza una entrada Hyperion diferente. «Conexión configurada» confirma que se preparó la entrada local; no demuestra que el cliente haya cargado las herramientas. Puedes repetir el asistente para conectar otra aplicación.
 
 Para actualizar Desktop, usa **Hyperion → Buscar actualizaciones…** y **Actualizar y reiniciar** (descarga oficial con comprobación de tamaño y SHA-256, luego aplica y reinicia). Conserva Hyperion en la misma ubicación. Tras ese reinicio, Desktop actualiza automáticamente las conexiones MCP Hyperion de _esta_ instalación cuando el conflicto se debe solo a rutas/argumentos nuevos (con respaldo); no sobrescribe entradas ajenas ni deshabilitadas — esas siguen el Resolver en **Conexiones**. Si mueves Hyperion y aparece un conflicto distinto, retira la antigua entrada Hyperion desde la configuración del cliente y vuelve a conectarlo. Para desconectarlo, elimina solo esa entrada (o la skill Hyperion en Claude Code). Tus flujos se conservan.
 
 La edición actual requiere herramientas en el mismo ordenador. Claude en el navegador y los agentes que ejecutan en la nube no acceden a este servicio local. La primera conexión es necesaria: mencionar el nombre en una aplicación sin integración no instala Hyperion por sí solo.
 
 Los formatos se contrastaron con la documentación de [Codex](https://developers.openai.com/codex/mcp), [Cursor](https://prod.cursor.com/docs/mcp) y [MCP para Claude Desktop](https://modelcontextprotocol.io/docs/develop/connect-local-servers). Las políticas del cliente u organización pueden impedir cargar servidores locales.
+
+## Revisar la configuración y los archivos del adaptador
+
+En las fuentes de desarrollo, **Menú → Conexiones** muestra una lista de aplicaciones compatibles, inicialmente cerradas. Pulsa una aplicación para ver su explicación, las acciones y la ruta completa con **Copiar ruta**. Solo se despliega una aplicación; la selección se conserva al comprobar o cambiar de idioma. «Configurada localmente» y el recuento indican que los archivos coinciden con la conexión esperada; no demuestran que las aplicaciones estén instaladas o que un chat tenga herramientas. **Mensaje de diagnóstico original** permite desplegar literalmente el texto recibido, tanto reconocido como desconocido.
+
+Las explicaciones conocidas de Hyperion sobre conflictos y fallos de configuración, y los avisos de éxito, siguen el idioma de la interfaz incluso después de mostrarse. Se reconocen solo las plantillas de mensajes de conexión de Hyperion: las rutas y los diagnósticos no reconocidos se conservan literalmente. Cambiar de idioma no reintenta la configuración ni modifica el proceso.
+
+Abre **Diagnóstico**, al pie de la lista, para consultar la dirección del servicio, las sugerencias para investigar fallos y **Archivos del adaptador**: el ejecutable de Hyperion y el lanzador MCP esperados de esta instalación. El resultado **Archivo legible** solo indica que Hyperion pudo abrir ese archivo para lectura. No inicia MCP ni ejecuta comandos guardados; tampoco comprueba dependencias ni confirma que Claude haya cargado herramientas. No valida una entrada ajena en conflicto ni la skill de Claude Code. El inicio MCP y la llamada de herramienta permanecen sin comprobar; las herramientas en este chat siguen siendo desconocidas.
+
+Los avisos distinguen **Archivo no encontrado**, **No es un archivo normal**, **Hyperion no pudo leerlo por permisos** y **No se pudo comprobar**. El último es un resultado incompleto, no prueba de un archivo ausente. Un servidor anterior sin estos metadatos muestra **Sin comprobar**, sin hora inventada. **Ver diagnóstico** abre esa información; **Comprobar** actualiza una observación de lectura sin cambiar archivos ni credenciales. No se reparan archivos ni se reemplazan configuraciones automáticamente. Estos cambios todavía no están en un instalador publicado.
+
+Si Claude Desktop sigue sin mostrar herramientas después del reinicio ya realizado, revisa su estado real del servidor Hyperion y la ubicación de su configuración. Claude Code no es un requisito de Claude Desktop; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Un resultado legible no identifica la causa en Windows: hacen falta los datos del cliente. Consulta **Ayuda de conexión** y comparte solo errores revisados y sin credenciales.
+
+## Vista previa de conflictos
+
+Las fuentes de desarrollo limitan los datos enviados a **Resolver conflicto…** antes de recortarlos para la pantalla. Las URL HTTP(S) muestran solo protocolo, host y puerto: se eliminan usuario/contraseña, ruta, parámetros y fragmento. Se conservan rutas locales y opciones de conexión admitidas; desde el primer argumento no admitido o ambiguo, el resto se sustituye por `••••`. Esto incluye opciones de credenciales, cabeceras y scripts. Del entorno solo se muestran valores validados de `HYPERION_AGENT_ID`, `HYPERION_DATA_DIR`, `HYPERION_URL` y `ELECTRON_RUN_AS_NODE`; los demás valores se omiten.
+
+La comparación ámbar usa los valores visibles, no un diff completo del archivo. Los nombres de ejecutables, rutas, hosts e identificadores se consideran metadatos públicos: no pongas credenciales en ellos. La proyección no es un detector universal de secretos. No modifica la configuración ni la confirmación, el respaldo o la conservación de otros servidores al reemplazar. Esta corrección aún no se ha publicado en un instalador. [Política exacta y límites](../SECURITY.md#connection-conflict-previews).
 
 ## Alternativas para agentes y desarrolladores
 
@@ -232,6 +250,8 @@ Las aprobaciones se realizan en la interfaz. Ni CLI ni MCP ofrecen un comando pa
 El [contrato de procesos](process-contract.md) describe inicio/fin, las compuertas `+`, `X`, `○`, el tipado de inputs/outputs y las trazas públicas. El ejemplo [process-review.json](../examples/process-review.json) permite elegir documentación, código o ambos; la compuerta inclusiva activa lo elegido y la unión espera esas ramas. Si no eliges ninguna, se ejecuta una ruta por defecto explícita. Todo se responde desde popups del mismo canvas.
 
 ## Resolver problemas
+
+En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta instalación en la dirección solicitada, el lanzador MCP usa el puerto alternativo local elegido durante el arranque. No cambia la configuración guardada del cliente ni detiene la otra instancia. La corrección aún no está incluida en un instalador publicado. Comprueba una llamada de lectura, como `hyperion_list_runs`: que la configuración exista o se muestre la lista de herramientas no demuestra que las llamadas funcionen en ese chat.
 
 | Problema                                         | Comprobación                                                                            |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
