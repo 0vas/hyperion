@@ -71,6 +71,17 @@ test('replacement stays protected while pending and recovers from failure', asyn
     'Synthetic setup failure',
   );
   await expect(submit).toBeEnabled();
+  await submit.focus();
+  await page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/runs',
+  );
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await expect(submit).toBeFocused();
   await submit.click();
   await expect.poll(() => writes.length).toBe(2);
   finish!();
@@ -104,6 +115,88 @@ async function expectTrapped(page: Page, layer: Locator) {
 
 for (const locale of ['es', 'en'] as const) {
   for (const theme of ['light', 'dark'] as const) {
+    for (const entry of ['home', 'settings'] as const) {
+      test(`failed replacement keeps keyboard recovery without intervening input (${entry}, ${locale}, ${theme})`, async ({
+        page,
+      }) => {
+        await mockConnectionHome(page);
+        await setAppearance(page, theme, locale);
+        const writes: unknown[] = [];
+        let finish: (() => void) | undefined;
+        await page.route('**/api/connections/setup', async (route) => {
+          writes.push(route.request().postDataJSON());
+          await new Promise<void>((resolve) => {
+            finish = resolve;
+          });
+          await route.fulfill({
+            status: 500,
+            json: { message: 'Synthetic setup failure' },
+          });
+        });
+        await page.goto('/');
+        for (const [width, height] of [
+          [1440, 1000],
+          [390, 844],
+          [320, 740],
+        ] as const) {
+          await page.setViewportSize({ width, height });
+          const opener =
+            entry === 'home'
+              ? page.locator('.empty-actions .primary')
+              : appMenuTrigger(page);
+          if (entry === 'home') {
+            await opener.focus();
+          } else {
+            await chooseFromAppMenu(
+              page,
+              locale === 'es' ? 'Ajustes' : 'Settings',
+            );
+            await page
+              .getByRole('button', {
+                name: locale === 'es' ? 'Abrir conexiones' : 'Open connections',
+                exact: true,
+              })
+              .focus();
+          }
+          await page.keyboard.press('Enter');
+          const writesBefore = writes.length;
+          const origin = page.getByRole('button', { name: conflictName });
+          await origin.click();
+          const resolver = page.locator('.conflict-resolver');
+          const replace = resolver.getByRole('button', { name: replaceName });
+          await replace.click();
+          const confirm = page.getByRole('alertdialog', {
+            name: /¿Reemplazar|Replace the/,
+          });
+          await confirm.getByRole('button', { name: replaceName }).click();
+          await expect(confirm).toHaveAttribute('aria-busy', 'true');
+          await expect.poll(() => writes.length).toBe(writesBefore + 1);
+          // Do not press Tab or click the backdrop while pending: either can
+          // accidentally repair the focus loss this regression must expose.
+          finish!();
+          await expect(confirm.getByRole('alert')).toHaveText(
+            'Synthetic setup failure',
+          );
+          await expect(confirm).toHaveAttribute('aria-busy', 'false');
+          await expect
+            .poll(() =>
+              confirm.evaluate((el) => el.contains(document.activeElement)),
+            )
+            .toBe(true);
+          await page.keyboard.press('Escape');
+          await expect(confirm).toHaveCount(0);
+          await expect(replace).toBeFocused();
+          await page.keyboard.press('Escape');
+          await expect(origin).toBeFocused();
+          await page.keyboard.press('Escape');
+          await expect(opener).toBeFocused();
+          expect(writes.length).toBe(writesBefore + 1);
+        }
+        expect(writes).toEqual(
+          Array.from({ length: 3 }, () => ({ client: 'codex', replace: true })),
+        );
+      });
+    }
     for (const reduceMotion of [false, true]) {
       test(`connection dialogs restore each layer and focus (${locale}, ${theme}, motion=${!reduceMotion})`, async ({
         page,

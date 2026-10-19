@@ -640,12 +640,25 @@ function Modal({
       );
     };
   }, []);
-  useEffect(() => {
-    if (active)
-      root.current
-        ?.querySelector<HTMLElement>('button:not(:disabled),textarea')
-        ?.focus();
-  }, [active]);
+  useLayoutEffect(() => {
+    const container = root.current;
+    if (!active || !container) return;
+    const focused = document.activeElement;
+    // Disabling the focused submit can blur to BODY. Recover on render, while
+    // retaining a user's valid focus through polling and async error updates.
+    if (
+      focused &&
+      focused !== container &&
+      container.contains(focused) &&
+      !focused.matches(':disabled')
+    )
+      return;
+    (
+      container.querySelector<HTMLElement>(
+        'button:not(:disabled),textarea:not(:disabled)',
+      ) || container
+    ).focus();
+  });
   return (
     <div
       ref={root}
