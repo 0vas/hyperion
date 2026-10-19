@@ -1216,7 +1216,7 @@ textarea::placeholder {
   align-items: center;
   gap: 8px;
   padding: 0;
-  min-height: 28px;
+  min-height: 40px;
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -1421,9 +1421,6 @@ textarea::placeholder {
   min-height: 40px;
   margin: 0;
 }
-.connections-view .connection-overview-toggle {
-  min-height: 28px;
-}
 .connection-row-actions .primary {
   box-shadow: none;
   background: #dfc187;
@@ -1514,7 +1511,7 @@ textarea::placeholder {
     padding: 16px;
   }
   .connections-view {
-    gap: 12px;
+    gap: 8px;
   }
   .connections-identity {
     flex-direction: column;

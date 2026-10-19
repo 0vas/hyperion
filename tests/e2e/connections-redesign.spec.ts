@@ -74,7 +74,7 @@ for (const locale of ['es', 'en'] as const) {
         if (width === 900) await expect(cards.nth(2)).toBeInViewport();
         for (const control of await panel
           .locator(
-            '.connection-row-actions button, .connections-identity-actions button',
+            '.connection-row-actions button, .connections-identity-actions button, .connection-overview-toggle',
           )
           .all()) {
           expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(
