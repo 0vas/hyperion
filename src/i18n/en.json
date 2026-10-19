@@ -560,5 +560,14 @@
   "Consulta Ayuda de conexión para revisar el acceso de Hyperion al archivo.": "Open Connection help to review Hyperion's access to the file.",
   "Vuelve a comprobar. Este resultado no confirma que falte un archivo.": "Recheck. This result does not establish that a file is missing.",
   "No se pudo copiar la ruta.": "Could not copy the path.",
-  "No se ha confirmado una respuesta del servicio local.": "A response from the local service has not been confirmed."
+  "No se ha confirmado una respuesta del servicio local.": "A response from the local service has not been confirmed.",
+  "La configuración no es un objeto válido. No se modificó.": "The configuration is not a valid object. It was not modified.",
+  "Cliente desconocido. Elige Codex, Cursor, Claude o Antigravity.": "Unknown client. Choose Codex, Cursor, Claude or Antigravity.",
+  "La conexión de Claude Desktop está disponible para macOS y Windows. Usa Claude Code en este sistema.": "Claude Desktop connections are available on macOS and Windows. Use Claude Code on this system.",
+  "La configuración cambió durante la conexión. Vuelve a intentarlo.": "The configuration changed during setup. Try again.",
+  "No se pudo leer la configuración de {0}.": "Could not read the configuration for {0}.",
+  "No se pudo leer la configuración de {0}. No se modificó: {1}": "Could not read the configuration for {0}. It was not modified: {1}",
+  "Ya existe otra conexión Hyperion en {0}. No se sobrescribió: {1}": "Another Hyperion connection already exists in {0}. It was not overwritten: {1}",
+  "La estructura TOML requiere combinar la conexión manualmente. No se modificó: {0}": "The TOML structure requires manually merging the connection. It was not modified: {0}",
+  "Conflicto de skill: {0} no está administrado por Hyperion o se modificó. No se sobrescribió.": "Skill conflict: {0} is not managed by Hyperion or was modified. It was not overwritten."
 }

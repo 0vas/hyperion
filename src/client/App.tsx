@@ -83,6 +83,12 @@ import {
   useConnectionInventory,
   type ConnectionRow,
 } from './Connections';
+import {
+  connectionMessage,
+  describeConnectionMessage,
+  formatConnectionMessage,
+  type ConnectionMessage,
+} from './connection-messages';
 import { AppMenu, type AppMenuAction } from './AppMenu';
 import { requestDesktopUpdateCheck } from './desktop-updates';
 import { usePreferences } from './preferences';
@@ -784,8 +790,10 @@ export function App() {
   const [replaceConfirm, setReplaceConfirm] = useState<ConnectionRow | null>(
     null,
   );
-  const [setupNotice, setSetupNotice] = useState('');
-  const [setupError, setSetupError] = useState('');
+  const [setupNotice, setSetupNotice] = useState<ConnectionMessage | null>(
+    null,
+  );
+  const [setupError, setSetupError] = useState<ConnectionMessage | null>(null);
   const connections = useConnectionInventory(loaded && online);
   const openConnections = () => {
     setMenuOpen(false);
@@ -865,8 +873,8 @@ export function App() {
   const setupConnection = async (clientId: string, replace = false) => {
     if (busy || connectionSetupPending.current) return;
     connectionSetupPending.current = true;
-    setSetupNotice('');
-    setSetupError('');
+    setSetupNotice(null);
+    setSetupError(null);
     setBusy(true);
     try {
       const res = await fetch('/api/connections/setup', {
@@ -895,28 +903,18 @@ export function App() {
           await connections.refresh();
           return;
         }
-        throw new Error(
-          body.message || t('No se pudo completar la solicitud.'),
-        );
+        throw new Error(body.message || 'No se pudo completar la solicitud.');
       }
       setConflictRow(null);
       setReplaceConfirm(null);
       if (body.inventory) connections.setInventory(body.inventory);
       else await connections.refresh();
-      setSetupNotice(
-        replace
-          ? t(
-              'Conexión reemplazada. Reinicia tu aplicación de IA y abre un chat nuevo.',
-            )
-          : t(
-              'Conexión configurada. Reinicia tu aplicación de IA y abre un chat nuevo.',
-            ),
-      );
+      setSetupNotice(connectionMessage(replace ? 'replaced' : 'configured'));
     } catch (err) {
       setSetupError(
         err instanceof Error
-          ? err.message
-          : t('No se pudo completar la solicitud.'),
+          ? describeConnectionMessage(err.message)
+          : connectionMessage('requestFailed'),
       );
     } finally {
       connectionSetupPending.current = false;
@@ -2308,7 +2306,7 @@ export function App() {
                 onRefresh={() => void connections.refresh()}
                 onSetup={(id) => void setupConnection(id)}
                 onConflict={(row) => {
-                  setSetupError('');
+                  setSetupError(null);
                   setConflictRow(row);
                 }}
                 onHelp={() => {
@@ -2539,7 +2537,7 @@ export function App() {
                 replaceTrigger.current = document.querySelector<HTMLElement>(
                   '.conflict-resolver .primary',
                 );
-                setSetupError('');
+                setSetupError(null);
                 setReplaceConfirm(conflictRow);
               }}
               onCopyPath={() =>
@@ -2582,7 +2580,7 @@ export function App() {
             </p>
             {setupError && (
               <p role="alert" className="popup-error">
-                {setupError}
+                {formatConnectionMessage(setupError)}
               </p>
             )}
             <div className="modal-actions">

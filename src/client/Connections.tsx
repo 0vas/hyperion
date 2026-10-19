@@ -25,6 +25,12 @@ import type {
   RuntimeFileCode,
 } from '../adapters/connection-runtime';
 import { t, useLocale } from './i18n';
+import {
+  connectionMessage,
+  describeConnectionMessage,
+  formatConnectionMessage,
+  type ConnectionMessage,
+} from './connection-messages';
 
 const CLIENT_ICONS: Record<string, typeof Bot> = {
   codex: Terminal,
@@ -151,24 +157,24 @@ async function fetchInventory(
   const res = await fetch('/api/connections', { signal });
   const body = await res.json();
   if (!res.ok)
-    throw new Error(body.message || t('No se pudo completar la solicitud.'));
+    throw new Error(body.message || 'No se pudo completar la solicitud.');
   return body as ConnectionInventory;
 }
 
 export function useConnectionInventory(enabled: boolean) {
   const [inventory, setInventory] = useState<ConnectionInventory | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<ConnectionMessage | null>(null);
   const [busy, setBusy] = useState(false);
   const refresh = useCallback(async () => {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       setInventory(await fetchInventory());
     } catch (err) {
       setError(
         err instanceof Error
-          ? err.message
-          : t('No se pudo completar la solicitud.'),
+          ? describeConnectionMessage(err.message)
+          : connectionMessage('requestFailed'),
       );
     } finally {
       setBusy(false);
@@ -181,15 +187,15 @@ export function useConnectionInventory(enabled: boolean) {
     }
     const controller = new AbortController();
     setBusy(true);
-    setError('');
+    setError(null);
     void fetchInventory(controller.signal)
       .then(setInventory)
       .catch((err) => {
         if (controller.signal.aborted) return;
         setError(
           err instanceof Error
-            ? err.message
-            : t('No se pudo completar la solicitud.'),
+            ? describeConnectionMessage(err.message)
+            : connectionMessage('requestFailed'),
         );
       })
       .finally(() => {
@@ -446,7 +452,11 @@ function ConnectionAppCard({
         ) : (
           <p>{t('Ruta no disponible')}</p>
         )}
-        {row.detail && <p>{row.detail}</p>}
+        {row.detail && (
+          <p>
+            {formatConnectionMessage(describeConnectionMessage(row.detail))}
+          </p>
+        )}
         <button
           type="button"
           className="ghost-button"
@@ -477,9 +487,9 @@ export function ConnectionsView({
 }: {
   online: boolean;
   inventory: ConnectionInventory | null;
-  error: string;
-  inventoryError: string;
-  notice: string;
+  error: ConnectionMessage | null;
+  inventoryError: ConnectionMessage | null;
+  notice: ConnectionMessage | null;
   busy: boolean;
   onClose: () => void;
   onRefresh: () => void;
@@ -656,12 +666,12 @@ export function ConnectionsView({
       </div>
       {error && (
         <p role="alert" className="popup-error">
-          {error}
+          {formatConnectionMessage(error)}
         </p>
       )}
       {notice && (
         <p role="status" className="connection-setup-notice">
-          {notice}
+          {formatConnectionMessage(notice)}
         </p>
       )}
       {issues.length > 0 && (

@@ -35,7 +35,7 @@ En las fuentes de desarrollo, **Cancelar**, **Escape** o pulsar fuera de la conf
 El modo automático toma el idioma del sistema o del navegador; si no está soportado, usa inglés. La selección manual se conserva al volver a abrir la app. En Desktop, el menú y el canvas comparten la preferencia; en el navegador se guarda por separado.
 
 **Tu contenido conserva su idioma.**
-Cambiar la interfaz no traduce nombres de tareas, preguntas del agente, respuestas, resultados ni logs. Tampoco reinicia el flujo ni descarta un formulario sin enviar. Los diagnósticos originales de herramientas y del servicio mantienen su texto para poder investigarlos.
+Cambiar la interfaz no traduce nombres de tareas, preguntas del agente, respuestas, resultados ni logs. Tampoco reinicia el flujo ni descarta un formulario sin enviar. En las fuentes de desarrollo, las explicaciones conocidas de Hyperion sobre conflictos, lectura y configuración de conexiones, y sus avisos de éxito, siguen el idioma elegido incluso si ya están abiertos. Las rutas y los diagnósticos no reconocidos de herramientas o del servicio mantienen su texto original para poder investigarlos; no se traducen mensajes arbitrarios ni se deducen causas nuevas.
 
 Incluido en el instalador **2026.10.12.1722 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
 
