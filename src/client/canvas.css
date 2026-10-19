@@ -272,7 +272,7 @@ select:focus-visible {
   gap: 12px;
   width: 100%;
   min-height: 44px;
-  margin: 3px 0;
+  margin: 0;
   padding: 0 12px;
   border: 0;
   border-radius: 10px;
@@ -301,6 +301,10 @@ select:focus-visible {
 }
 .app-menu-row:active {
   transform: scale(0.97);
+}
+.app-menu-row:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
 }
 .about-panel .connections-calver {
   margin: 8px 0 12px;
@@ -1232,7 +1236,7 @@ textarea::placeholder {
 .connection-card.status-conflict .connection-client-mark {
   color: var(--ink);
 }
-.connection-card-head strong {
+.connection-card .connection-card-head strong {
   color: var(--ink);
   font-size: 16px;
   font-weight: 600;
@@ -1348,6 +1352,7 @@ textarea::placeholder {
   cursor: pointer;
 }
 .connection-row-actions .primary {
+  margin: 0;
   background: #3c5144;
   border-color: #3c5144;
   color: #fffefa;
@@ -1452,8 +1457,9 @@ textarea::placeholder {
   background: #51452f;
 }
 [data-theme='dark'] .connection-status-badge.status-missing,
+[data-theme='dark'] .connection-status-badge.status-unknown,
 [data-theme='dark'] .connection-status-badge.is-offline {
-  color: #bbbeb7;
+  color: var(--muted);
   background: #2d373e;
 }
 [data-theme='dark'] .connection-row-actions .primary {
