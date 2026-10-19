@@ -544,65 +544,117 @@ test('birth story page and home teaser ship in both languages with static diagra
   ).toBeVisible();
 });
 
-test('hero headline types through phrase pairs and freezes on pause or reduced motion', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/hyperion/');
-  const title = page.locator('#landscape-title');
-  const active = title.locator('.headline-active');
-  await expect(active).toHaveText('Tus ideas.En movimiento.');
-  await expect(title).toHaveAttribute(
-    'aria-label',
-    'Tus ideas. En movimiento.',
-  );
-  const heightBefore = (await title.boundingBox()).height;
-  await expect
-    .poll(async () => (await active.innerText()).replace(/\s+/g, ''), {
-      timeout: 12_000,
-    })
-    .not.toBe('Tusideas.Enmovimiento.');
-  const heightAfterChange = (await title.boundingBox()).height;
-  expect(Math.abs(heightAfterChange - heightBefore)).toBeLessThan(2);
-  await expect
-    .poll(
-      async () => {
-        const text = (await active.innerText()).replace(/\s+/g, '');
-        const height = (await title.boundingBox()).height;
-        return { empty: text === '', height };
-      },
-      { timeout: 12_000 },
-    )
-    .toMatchObject({ empty: true });
-  const heightWhileEmpty = (await title.boundingBox()).height;
-  expect(Math.abs(heightWhileEmpty - heightBefore)).toBeLessThan(2);
-  await page.getByRole('button', { name: 'Pausar fondo', exact: true }).click();
-  await expect(active).toHaveText('Tus ideas.En movimiento.');
-  await expect(title.locator('.headline-active .headline-caret')).toHaveCount(
-    0,
-  );
-  await page.waitForTimeout(800);
-  await expect(active).toHaveText('Tus ideas.En movimiento.');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(active).toHaveText('Tus ideas.En movimiento.');
-  await expect(title.locator('.headline-active .headline-caret')).toHaveCount(
-    0,
-  );
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/hyperion/en/');
-  const enActive = page.locator('#landscape-title .headline-active');
-  await expect(enActive).toHaveText('Your ideas.In motion.');
-  await expect(page.locator('#landscape-title')).toHaveAttribute(
-    'aria-label',
-    'Your ideas. In motion.',
-  );
-  await expect
-    .poll(async () => (await enActive.innerText()).replace(/\s+/g, ''), {
-      timeout: 12_000,
-    })
-    .not.toBe('Yourideas.Inmotion.');
-});
+for (const { path, first, next, pause, resume } of [
+  {
+    path: '/hyperion/',
+    first: ['Tus ideas.', 'En movimiento.'],
+    next: ['De un chat.', 'A un plan.'],
+    pause: 'Pausar fondo',
+    resume: 'Reanudar fondo',
+  },
+  {
+    path: '/hyperion/en/',
+    first: ['Your ideas.', 'In motion.'],
+    next: ['From a chat.', 'To a plan.'],
+    pause: 'Pause background',
+    resume: 'Resume background',
+  },
+]) {
+  test(`hero headline records phrase transitions and freezes on pause or reduced motion: ${path}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.clock.install();
+    await page.goto(path);
+    const title = page.locator('#landscape-title');
+    const active = title.locator('.headline-active');
+    const live = page.locator('.headline-live');
+    await expect(active).toHaveText(first.join(''));
+    await expect(title).toHaveAttribute('aria-label', first.join(' '));
+    await expect(active).toHaveAttribute('aria-hidden', 'true');
+    await expect(live).toHaveAttribute('aria-live', 'polite');
+    await expect(live).toHaveText(first.join(' '));
+
+    // The empty gap is only 400 ms. Capture DOM transitions and their geometry
+    // together; polling the current text can miss the entire gap between samples.
+    const observation = await title.evaluateHandle((heading) => {
+      const text = heading.querySelector('.headline-active');
+      const announcement =
+        heading.parentElement.querySelector('.headline-live');
+      const samples = [];
+      const record = () => {
+        samples.push({
+          text: text.innerText.replace(/\s+/g, ''),
+          height: heading.getBoundingClientRect().height,
+          label: heading.getAttribute('aria-label'),
+          announcement: announcement.textContent,
+        });
+      };
+      const observer = new MutationObserver(record);
+      observer.observe(text, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+      observer.observe(announcement, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+      record();
+      return { samples, disconnect: () => observer.disconnect() };
+    });
+    try {
+      await expect
+        .poll(
+          () =>
+            observation.evaluate(
+              ({ samples }, label) =>
+                samples.some(
+                  (sample) =>
+                    sample.text === label.replace(/\s+/g, '') &&
+                    sample.announcement === label,
+                ),
+              next.join(' '),
+            ),
+          { timeout: 12_000 },
+        )
+        .toBe(true);
+      const samples = await observation.evaluate(({ samples }) => samples);
+      expect(samples.some(({ text }) => text === '')).toBe(true);
+      const heightBefore = samples[0].height;
+      for (const sample of samples) {
+        expect(Math.abs(sample.height - heightBefore)).toBeLessThan(2);
+        expect(sample.label).toBe(first.join(' '));
+      }
+    } finally {
+      await observation.evaluate(({ disconnect }) => disconnect());
+      await observation.dispose();
+    }
+
+    await page.getByRole('button', { name: pause, exact: true }).click();
+    await expect(active).toHaveText(first.join(''));
+    await expect(active.locator('.headline-caret')).toHaveCount(0);
+    // Advance browser timers beyond a whole phrase cycle without a wall-clock sleep.
+    await page.clock.runFor(6000);
+    await expect(active).toHaveText(first.join(''));
+    await expect(active.locator('.headline-caret')).toHaveCount(0);
+
+    // Release manual pause before reduced motion hides the motion control.
+    await page.getByRole('button', { name: resume, exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: pause, exact: true }),
+    ).toBeVisible();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(active).toHaveText(first.join(''));
+    await expect(active.locator('.headline-caret')).toHaveCount(0);
+    await page.clock.runFor(6000);
+    await expect(active).toHaveText(first.join(''));
+    await expect(active.locator('.headline-caret')).toHaveCount(0);
+    await expect(title).toHaveAttribute('aria-label', first.join(' '));
+  });
+}
 
 test('cinematic landing stays readable in split windows and small phones', async ({
   page,
