@@ -220,6 +220,7 @@ export function AppMenu({
             <MenuRow
               icon={MENU_ICONS.connections}
               onSelect={() => runAction('connections')}
+              description={t('Configura tus aplicaciones de IA')}
             >
               {t('Conexiones')}
             </MenuRow>
@@ -242,16 +243,16 @@ export function AppMenu({
             <MenuRow icon={MENU_ICONS.help} onSelect={() => runAction('help')}>
               {t('Ayuda de conexión')}
             </MenuRow>
-          </div>
-          <div className="app-menu-sep" role="separator" />
-          <p className="app-menu-section">{t('Más')}</p>
-          <div className="app-menu-group">
             <MenuRow
               icon={MENU_ICONS.legend}
               onSelect={() => runAction('legend')}
             >
               {t('Colores del flujo')}
             </MenuRow>
+          </div>
+          <div className="app-menu-sep" role="separator" />
+          <p className="app-menu-section">{t('Más')}</p>
+          <div className="app-menu-group">
             {!isElectron && (
               <MenuRow
                 icon={MENU_ICONS.window}
@@ -268,9 +269,6 @@ export function AppMenu({
                 {t('Buscar actualizaciones…')}
               </MenuRow>
             )}
-          </div>
-          <div className="app-menu-sep" role="separator" />
-          <div className="app-menu-group">
             <MenuRow
               icon={MENU_ICONS.about}
               onSelect={() => runAction('about')}
@@ -288,22 +286,34 @@ function MenuRow({
   children,
   icon: Icon,
   onSelect,
+  description,
 }: {
   children: ReactNode;
   icon: LucideIcon;
   onSelect: () => void;
+  description?: string;
 }) {
+  const descriptionId = useId();
   return (
     <button
       type="button"
       role="menuitem"
-      className="app-menu-row"
+      className={`app-menu-row${description ? ' is-featured' : ''}`}
+      aria-label={description ? t('Conexiones') : undefined}
+      aria-describedby={description ? descriptionId : undefined}
       onClick={onSelect}
     >
       <span className="app-menu-row-icon" aria-hidden="true">
         <Icon size={18} strokeWidth={1.75} />
       </span>
-      {children}
+      {description ? (
+        <span className="app-menu-row-copy">
+          <span>{children}</span>
+          <small id={descriptionId}>{description}</small>
+        </span>
+      ) : (
+        children
+      )}
     </button>
   );
 }

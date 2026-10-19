@@ -21,13 +21,23 @@ No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Deskt
 | Claude Code    | Skill Hyperion en su carpeta de skills de usuario.                                   |
 | Antigravity    | Conexión MCP global con respaldo; disponible en Desktop 0.5.1-preview.1 o posterior. |
 
-La conexión usa rutas absolutas al runtime incluido y al almacenamiento local; no escribe tokens en la configuración del cliente. Guarda copia del archivo anterior, conserva otros servidores y rechaza una entrada Hyperion diferente. «Conexión configurada» confirma la instalación; el cliente debe reiniciarse y cargar las herramientas para usarla. Puedes repetir el asistente para conectar otra aplicación.
+La conexión usa rutas absolutas al runtime incluido y al almacenamiento local; no escribe tokens en la configuración del cliente. Guarda copia del archivo anterior, conserva otros servidores y rechaza una entrada Hyperion diferente. «Conexión configurada» confirma que se preparó la entrada local; no demuestra que el cliente haya cargado las herramientas. Puedes repetir el asistente para conectar otra aplicación.
 
 Para actualizar Desktop, usa **Hyperion → Buscar actualizaciones…** y **Actualizar y reiniciar** (descarga oficial con comprobación de tamaño y SHA-256, luego aplica y reinicia). Conserva Hyperion en la misma ubicación. Tras ese reinicio, Desktop actualiza automáticamente las conexiones MCP Hyperion de _esta_ instalación cuando el conflicto se debe solo a rutas/argumentos nuevos (con respaldo); no sobrescribe entradas ajenas ni deshabilitadas — esas siguen el Resolver en **Conexiones**. Si mueves Hyperion y aparece un conflicto distinto, retira la antigua entrada Hyperion desde la configuración del cliente y vuelve a conectarlo. Para desconectarlo, elimina solo esa entrada (o la skill Hyperion en Claude Code). Tus flujos se conservan.
 
 La edición actual requiere herramientas en el mismo ordenador. Claude en el navegador y los agentes que ejecutan en la nube no acceden a este servicio local. La primera conexión es necesaria: mencionar el nombre en una aplicación sin integración no instala Hyperion por sí solo.
 
 Los formatos se contrastaron con la documentación de [Codex](https://developers.openai.com/codex/mcp), [Cursor](https://prod.cursor.com/docs/mcp) y [MCP para Claude Desktop](https://modelcontextprotocol.io/docs/develop/connect-local-servers). Las políticas del cliente u organización pueden impedir cargar servidores locales.
+
+## Revisar la configuración y los archivos del adaptador
+
+En las fuentes de desarrollo, **Menú → Conexiones** muestra las aplicaciones compatibles con una acción principal y **Detalles** por aplicación. Los detalles conservan su apertura al comprobar o cambiar de idioma y permiten ver y copiar la ruta completa. «Configurada localmente» indica que el archivo coincide con la conexión esperada; no demuestra que esa aplicación esté instalada o que un chat tenga herramientas.
+
+Despliega **Servicio local** para consultar **Archivos del adaptador**: el ejecutable de Hyperion y el lanzador MCP esperados de esta instalación. El resultado **Archivo legible** solo indica que Hyperion pudo abrir ese archivo para lectura. No inicia MCP ni ejecuta comandos guardados; tampoco comprueba dependencias ni confirma que Claude haya cargado herramientas. No valida una entrada ajena en conflicto ni la skill de Claude Code. El inicio MCP y la llamada de herramienta permanecen sin comprobar; las herramientas en este chat siguen siendo desconocidas.
+
+Los avisos distinguen **Archivo no encontrado**, **No es un archivo normal**, **Hyperion no pudo leerlo por permisos** y **No se pudo comprobar**. El último es un resultado incompleto, no prueba de un archivo ausente. Un servidor anterior sin estos metadatos muestra **Sin comprobar**, sin hora inventada. **Ver detalles** abre esa información; **Comprobar** actualiza una observación de lectura sin cambiar archivos ni credenciales. No se reparan archivos ni se reemplazan configuraciones automáticamente. Estos cambios todavía no están en un instalador publicado.
+
+Si Claude Desktop sigue sin mostrar herramientas después del reinicio ya realizado, revisa su estado real del servidor Hyperion y la ubicación de su configuración. Claude Code no es un requisito de Claude Desktop; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Un resultado legible no identifica la causa en Windows: hacen falta los datos del cliente. Consulta **Ayuda de conexión** y comparte solo errores revisados y sin credenciales.
 
 ## Vista previa de conflictos
 

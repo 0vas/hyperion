@@ -71,6 +71,24 @@ for (const locale of ['es', 'en'] as const) {
       expect(narrow.x).toBeGreaterThanOrEqual(0);
       expect(narrow.x + narrow.width).toBeLessThanOrEqual(390);
       await page.screenshot({ path: testInfo.outputPath('menu-narrow.png') });
+      await page.setViewportSize({ width: 320, height: 740 });
+      await menu.evaluate((el) => {
+        for (const node of el.querySelectorAll<HTMLElement>(
+          '.app-menu-version,.app-menu-section,.app-menu-row,.app-menu-row-copy small',
+        )) {
+          node.style.fontSize = `${parseFloat(getComputedStyle(node).fontSize) * 2}px`;
+        }
+      });
+      expect(
+        await menu.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      ).toBe(true);
+      await rows.first().focus();
+      await page.keyboard.press('Shift+Tab');
+      await expect(rows.last()).toBeFocused();
+      await expect(rows.last()).toBeInViewport();
+      await page.screenshot({
+        path: testInfo.outputPath('menu-320-double-text.png'),
+      });
     });
 
     test(`guide list numbers have readable contrast (${locale}, ${theme})`, async ({
@@ -116,7 +134,7 @@ for (const locale of ['es', 'en'] as const) {
       await expect(popup.locator('.connection-card')).toHaveCount(5);
       await expectReadableText(
         popup.locator(
-          '.connection-card strong, .connection-path, .connection-path .eyebrow, .connection-status-badge, .connection-row-actions button',
+          '.connection-card strong, .connection-path:visible, .connection-status-badge, .connection-row-actions button',
         ),
       );
       for (const [width, height] of [
@@ -144,9 +162,13 @@ for (const locale of ['es', 'en'] as const) {
             expect((await card.boundingBox())!.width).toBeGreaterThanOrEqual(
               260,
             );
-          const path = (await card.locator('.connection-path').boundingBox())!;
+          const status = (await card
+            .locator('.connection-card-status')
+            .boundingBox())!;
           const buttonBoxes = [];
-          for (const button of await card.getByRole('button').all()) {
+          for (const button of await card
+            .locator('.connection-row-actions button')
+            .all()) {
             const buttonBox = (await button.boundingBox())!;
             buttonBoxes.push(buttonBox);
             if (width <= 390) {
@@ -161,10 +183,10 @@ for (const locale of ['es', 'en'] as const) {
                 expect.soft(buttonBox.y - previous.y - previous.height).toBe(8);
               }
             }
-            expect(buttonBox.height).toBe(36);
-            expect(buttonBox.y - (path.y + path.height)).toBeGreaterThanOrEqual(
-              8,
-            );
+            expect(buttonBox.height).toBeGreaterThanOrEqual(40);
+            expect(
+              buttonBox.y - (status.y + status.height),
+            ).toBeGreaterThanOrEqual(8);
           }
           for (const a of buttonBoxes) {
             for (const b of buttonBoxes) {

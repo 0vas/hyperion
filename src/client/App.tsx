@@ -711,13 +711,19 @@ export function App() {
   const connectionTrigger = useRef<HTMLElement | null>(null);
   const replaceTrigger = useRef<HTMLElement | null>(null);
   const connectionSetupPending = useRef(false);
-  const connectionReturnFocus = () =>
-    connectionTrigger.current?.isConnected &&
-    !connectionTrigger.current.matches(':disabled')
-      ? connectionTrigger.current
-      : document.querySelector<HTMLElement>(
-          '.connections-identity-actions button',
-        );
+  const connectionReturnFocus = () => {
+    const target =
+      connectionTrigger.current?.isConnected &&
+      !connectionTrigger.current.matches(':disabled')
+        ? connectionTrigger.current
+        : document.querySelector<HTMLElement>(
+            '.connections-identity-actions button',
+          );
+    // Reactivating Connections may focus its header before the Resolver's
+    // return-focus callback runs. Reveal the original card below that header.
+    target?.scrollIntoView({ block: 'nearest' });
+    return target;
+  };
   const [runs, setRuns] = useState<Run[]>([]);
   const [runId, setRunId] = useState(
     new URLSearchParams(location.search).get('run') || '',
@@ -2294,7 +2300,9 @@ export function App() {
               <ConnectionsView
                 online={online}
                 inventory={connections.inventory}
-                error={connections.error || setupError || setupNotice}
+                error={connections.error || setupError}
+                inventoryError={connections.error}
+                notice={setupNotice}
                 busy={connections.busy || busy}
                 onClose={() => setPopup(null)}
                 onRefresh={() => void connections.refresh()}
@@ -2304,10 +2312,6 @@ export function App() {
                   setConflictRow(row);
                 }}
                 onHelp={() => {
-                  setPopup(null);
-                  setHelp(true);
-                }}
-                onConnectAi={() => {
                   setPopup(null);
                   setHelp(true);
                 }}

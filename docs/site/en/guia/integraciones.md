@@ -16,6 +16,16 @@ Install Desktop and open **Hyperion → Conectar con mi IA**. The assistant conf
 
 Restart the tool and open a new chat. The assistant reports conflicts and backs up the configuration files it changes. Installing a connection does not guarantee that an existing chat has loaded it. Naming Hyperion in an unconnected application is not enough.
 
+## Review local configuration
+
+In development source, **Menu → Connections** puts compatible apps and their actions first. Menu groups are **Application** (Connections, Settings), **Help** (User guide, Connection help, Workflow colors), and **More** (Open in a window on web or Check for updates on Desktop, then About Hyperion). The version stays visible in the Connections header.
+
+Cards show **Configured locally**, **Not configured**, **Conflict**, or **Could not check**. Counts describe local configuration, not installed apps or tools loaded in a chat. **Details** shows the full local path and **Copy path**; it stays open through rechecks and language changes. Copy success is announced only after the clipboard accepts it; a failed copy shows an error. Loading or unavailable inventory is never presented as a completed zero-configured result.
+
+Expand **Local service** to see its URL and **Adapter files**. This checks only whether Hyperion can read this installation’s expected executable and MCP launcher. It does not check execution permission, dependencies, authentication or the client environment; it does not start MCP. **MCP startup and tool call: not checked** and **Tools in this chat: unknown** remain separate. Readable files do not validate a conflicting saved entry or Claude Code’s skill.
+
+A shared notice distinguishes a missing file, a nonregular file, a file Hyperion could not read due to permissions, and an incomplete check. **Could not check** does not prove a file is missing. Older servers without this metadata show **Not checked**, with no invented timestamp. **View details** opens the existing service disclosure; **Recheck** refreshes this read-only observation without changing files or registering credentials. There is no automatic repair or replacement. This redesign and these diagnostics are not yet in a published installer.
+
 ## Review a conflict
 
 In the development source, **Menu → Connections → Resolve conflict…** compares a limited preview. URLs show only scheme, host and port; credentials, paths, queries and fragments are removed. Private environment values are omitted. Arguments are shown only while they follow supported formats; from the first unsupported or ambiguous item, the remaining tail becomes `••••`. The amber cue compares visible values, including permitted environment values.
@@ -29,9 +39,11 @@ In development source, **Cancel**, **Escape**, or clicking outside the confirmat
 In development source, if another Hyperion instance rejects this installation’s credentials at the requested address, the MCP launcher uses the alternate local port selected during startup. It does not change the saved client configuration or stop the other instance. This correction is not yet included in a published installer. Verify a read-only call such as `hyperion_list_runs`: an existing configuration or a visible tool list does not establish that calls work in that chat.
 
 1. Check that you selected the right tool in the assistant.
-2. Restart it and open a new chat.
+2. If setup is new, restart it and open a new chat. If you already did that and tools are still absent, inspect the actual Hyperion server status and configuration in the client.
 3. Ask “Use Hyperion to…” with a concrete goal.
 4. Check the assistant or MCP server error if it still fails.
+
+Claude Desktop does not require Claude Code; the packaged Desktop connection also needs no separate system Node installation. Readable adapter files do not identify the cause of missing tools on Windows. Actual client evidence is still needed.
 
 Do not share credentials or tokens when reporting an issue.
 

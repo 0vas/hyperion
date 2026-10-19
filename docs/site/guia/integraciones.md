@@ -18,6 +18,16 @@ Después reinicia la herramienta y abre un chat nuevo. Las integraciones existen
 
 Una conexión instalada no garantiza que un chat ya abierto haya cargado las herramientas. Tampoco basta mencionar «Hyperion» en una aplicación sin integración.
 
+## Revisar la configuración local
+
+En las fuentes de desarrollo, **Menú → Conexiones** da prioridad a las aplicaciones compatibles y sus acciones. El menú agrupa **Aplicación** (Conexiones, Ajustes), **Ayuda** (Guía de uso, Ayuda de conexión, Colores del flujo) y **Más** (Abrir en ventana en web o Buscar actualizaciones en Desktop, y Acerca de Hyperion). La versión permanece visible en la cabecera de Conexiones.
+
+Las tarjetas muestran **Configurada localmente**, **Sin configurar**, **Conflicto** o **No se pudo comprobar**. Los recuentos describen la configuración local, no las aplicaciones instaladas ni las herramientas cargadas en un chat. **Detalles** muestra la ruta local completa y **Copiar ruta**; conserva su apertura al comprobar o cambiar de idioma. Solo se anuncia éxito si el portapapeles acepta la copia; un fallo muestra un error. Una lista cargando o no disponible no se presenta como un resultado completo de cero aplicaciones configuradas.
+
+Despliega **Servicio local** para ver su dirección y **Archivos del adaptador**. Solo se comprueba si Hyperion puede leer el ejecutable y el lanzador MCP esperados de esta instalación. No comprueba permiso de ejecución, dependencias, autenticación ni el entorno del cliente; no inicia MCP. **Inicio MCP y llamada de herramienta: sin comprobar** y **Herramientas en este chat: desconocidas** permanecen separados. Los archivos legibles no validan una entrada guardada en conflicto ni la skill de Claude Code.
+
+Un aviso compartido distingue un archivo ausente, no regular, que Hyperion no pudo leer por permisos y una comprobación incompleta. **No se pudo comprobar** no demuestra que falte un archivo. Los servidores anteriores sin estos metadatos muestran **Sin comprobar**, sin inventar una hora. **Ver detalles** abre el despliegue existente del servicio; **Comprobar** repite esta observación de lectura sin modificar archivos ni registrar credenciales. No hay reparación ni reemplazo automático. Este rediseño y estos diagnósticos aún no están en un instalador publicado.
+
 ## Revisar un conflicto
 
 En las fuentes de desarrollo, **Menú → Conexiones → Resolver conflicto…** compara una vista previa limitada. Las URL muestran solo protocolo, host y puerto; se eliminan credenciales, rutas, parámetros y fragmentos. Los valores privados del entorno se omiten. Los argumentos se muestran solo mientras sigan los formatos admitidos; desde el primero no admitido o ambiguo, el resto aparece como `••••`. La marca ámbar compara los valores visibles, incluidos los valores permitidos del entorno.
@@ -31,9 +41,11 @@ En las fuentes de desarrollo, **Cancelar**, **Escape** o pulsar fuera de la conf
 En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta instalación en la dirección solicitada, el lanzador MCP usa el puerto alternativo local elegido durante el arranque. No cambia la configuración guardada del cliente ni detiene la otra instancia. La corrección aún no está incluida en un instalador publicado. Comprueba una llamada de lectura, como `hyperion_list_runs`: que la configuración exista o se muestre la lista de herramientas no demuestra que las llamadas funcionen en ese chat.
 
 1. Comprueba que elegiste la herramienta correcta en el asistente.
-2. Reinicia esa herramienta y abre un chat nuevo.
+2. Si acabas de configurar, reinicia esa herramienta y abre un chat nuevo. Si ya lo hiciste y siguen faltando herramientas, revisa el estado real del servidor Hyperion y su configuración en el cliente.
 3. Pide «Usa Hyperion para…» con un objetivo concreto.
 4. Si sigue fallando, revisa el error del asistente o del servidor MCP de tu herramienta.
+
+Claude Desktop no requiere Claude Code; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Los archivos del adaptador legibles no identifican la causa de herramientas ausentes en Windows. Todavía hacen falta los datos reales del cliente.
 
 No compartas archivos de credenciales ni tokens al reportar un error.
 
