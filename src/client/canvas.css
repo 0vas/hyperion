@@ -212,14 +212,14 @@ select:focus-visible {
   top: calc(100% + 8px);
   right: 0;
   z-index: 50;
-  width: min(460px, calc(100vw - 24px));
+  width: min(336px, calc(100vw - 24px));
   max-height: min(70vh, 560px);
   overflow: auto;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 12px;
   background: #fffefa;
-  box-shadow: 0 18px 48px color-mix(in srgb, #000 16%, transparent);
+  box-shadow: 0 12px 32px color-mix(in srgb, #000 16%, transparent);
   transform-origin: top right;
 }
 .app-menu-panel.is-animated {
@@ -239,11 +239,14 @@ select:focus-visible {
   }
 }
 .app-menu-version {
-  padding: 10px 12px 10px;
-  margin: 0 0 2px;
-  font-size: 13px;
+  padding: 8px 10px 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  color: var(--muted);
+  overflow-wrap: anywhere;
   user-select: text;
 }
 .app-menu-section {
@@ -267,41 +270,24 @@ select:focus-visible {
 .app-menu-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   min-height: 44px;
   margin: 0;
-  padding: 0 12px;
+  padding: 4px 10px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 6px;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.43;
   text-align: left;
+  overflow-wrap: anywhere;
   cursor: pointer;
   transition:
     background-color 110ms ease,
-    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
     color 110ms ease;
-}
-.app-menu-row.is-featured {
-  min-height: 60px;
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
-}
-.app-menu-row-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 8px 0;
-}
-.app-menu-row-copy > span {
-  font-weight: 600;
-}
-.app-menu-row-copy small {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
 }
 .app-menu-row-icon {
   display: inline-flex;
@@ -310,7 +296,7 @@ select:focus-visible {
   transition: color 110ms ease;
 }
 .app-menu-row:hover {
-  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 .app-menu-row:hover .app-menu-row-icon {
   color: var(--ink);
@@ -330,9 +316,9 @@ select:focus-visible {
   .app-menu-panel {
     position: fixed;
     top: calc(var(--topbar-safe-top, 0px) + 68px);
-    left: 12px;
+    left: auto;
     right: 12px;
-    width: auto;
+    width: min(336px, calc(100vw - 24px));
     transform-origin: top center;
   }
   .connection small {
@@ -1129,9 +1115,9 @@ textarea::placeholder {
 .canvas-popup.connections-popup {
   display: flex;
   flex-direction: column;
-  width: min(1040px, calc(100vw - 32px));
-  max-width: 1040px;
-  max-height: min(88vh, 900px);
+  width: min(760px, calc(100vw - 32px));
+  max-width: 760px;
+  max-height: min(88dvh, 780px);
   padding: 24px;
   overflow: hidden;
 }
@@ -1140,7 +1126,7 @@ textarea::placeholder {
   scroll-padding-bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   min-height: 0;
   flex: 1;
   overflow: auto;
@@ -1150,6 +1136,7 @@ textarea::placeholder {
 }
 .connections-view p,
 .connections-view h3,
+.connections-view h4,
 .connections-view ul,
 .connections-view dl,
 .connections-view dd {
@@ -1164,6 +1151,12 @@ textarea::placeholder {
   color: var(--ink);
   font-size: 16px;
   line-height: 1.375;
+  font-weight: 600;
+}
+.connections-view h4 {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
   font-weight: 600;
 }
 .connections-view strong {
@@ -1181,6 +1174,7 @@ textarea::placeholder {
   top: 0;
   z-index: 5;
   isolation: isolate;
+  flex-shrink: 0;
   margin: 0;
   padding: 0 0 12px;
   background: #fffefa;
@@ -1192,8 +1186,8 @@ textarea::placeholder {
 }
 .connections-identity h2 {
   margin: 0 0 4px;
-  font-size: 24px;
-  line-height: 1.25;
+  font-size: 22px;
+  line-height: 1.273;
   font-weight: 600;
 }
 .connections-view .connections-calver {
@@ -1210,21 +1204,14 @@ textarea::placeholder {
 }
 .connection-overview {
   flex-shrink: 0;
+  display: grid;
+  gap: 4px;
 }
-.connection-overview-toggle {
-  display: inline-flex;
+.connections-view .connection-service-state {
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0;
-  min-height: 40px;
-  border: 0;
-  background: transparent;
   color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  line-height: 1.43;
-  cursor: pointer;
-  text-align: left;
 }
 .connections-view svg {
   flex-shrink: 0;
@@ -1241,12 +1228,9 @@ textarea::placeholder {
   background: var(--muted);
 }
 .connection-service-details {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  display: grid;
-  gap: 12px;
+  flex-shrink: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
 }
 .connection-service-url {
   overflow-wrap: anywhere;
@@ -1272,15 +1256,11 @@ textarea::placeholder {
   color: var(--muted);
 }
 .connection-runtime-notice {
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  flex-shrink: 0;
+  padding: 8px 0;
+  border-block: 1px solid var(--line);
   display: grid;
-  gap: 8px;
-}
-.connection-runtime-notice[data-severity='warning'] {
-  border-color: var(--gold);
-  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  gap: 4px;
 }
 .connection-runtime-notice [role='status'] {
   display: grid;
@@ -1290,6 +1270,9 @@ textarea::placeholder {
 .connection-runtime-notice [role='status'] svg {
   grid-column: 1;
   grid-row: 1;
+}
+.connection-runtime-notice[data-severity='warning'] svg {
+  color: #705623;
 }
 .connection-runtime-notice [role='status'] p,
 .connection-runtime-notice [role='status'] strong {
@@ -1301,6 +1284,7 @@ textarea::placeholder {
   justify-self: start;
 }
 .connections-apps-heading {
+  flex-shrink: 0;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -1310,105 +1294,100 @@ textarea::placeholder {
 .connections-summary {
   max-width: 52ch;
 }
-.connections-view .connection-card-grid {
+.connections-view .connection-list {
+  flex-shrink: 0;
   list-style: none;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
+  display: block;
   position: relative;
   z-index: 0;
-  align-items: start;
 }
-.connections-view .connection-card {
+.connections-view .connection-row {
+  list-style: none;
+  display: block;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #fffefa;
-  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
-.connection-card-title {
+.connections-view .connection-row-toggle {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
+  width: 100%;
+  min-height: 56px;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
 }
-.connections-view .connection-card .connection-client-mark {
+.connections-view .connection-client-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--ink);
+}
+.connections-view .connection-row-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  gap: 8px 16px;
+  margin: 0;
+}
+.connections-view .connection-row-label strong {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.connections-view .connection-status {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 4px;
   margin: 0;
-  flex-shrink: 0;
-  color: var(--ink);
-}
-.connection-card .connection-card-head strong {
-  display: block;
-  color: var(--ink);
-  font-size: 16px;
-  line-height: 1.375;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-.connections-view .connection-subtype {
-  margin: 0;
-  display: block;
-  font-size: 12px;
-  line-height: 1.5;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.385;
   color: var(--muted);
 }
-.connections-view .connection-status-badge {
-  margin: 0;
-  display: inline-flex;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  line-height: 1.5;
-  background: var(--bg-soft, #ece8df);
-  color: var(--ink);
-}
-.connection-status-badge.status-configured {
-  color: #1f4d38;
-  background: color-mix(in srgb, #2f6b4f 18%, #fffefa);
-}
-.connection-status-badge.status-missing,
-.connection-status-badge.status-unknown {
-  color: var(--muted);
-  background: color-mix(in srgb, var(--line) 35%, #fffefa);
-}
-.connection-status-badge.status-conflict {
+.connection-status.status-conflict svg {
   color: #705623;
-  background: #f5e6c8;
 }
-.connections-view .connection-conflict-note {
-  margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.5;
+.connection-row-toggle[aria-expanded='true'] .connection-row-chevron,
+.connection-diagnostics-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
 }
-.connection-row-actions,
-.connection-detail-actions {
+.connection-row-toggle:hover {
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+.connection-row-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 .connection-row-actions button,
-.connections-footer-actions button,
 .ghost-button {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 40px;
   padding: 6px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -1435,32 +1414,20 @@ textarea::placeholder {
   background: transparent;
   color: var(--ink);
 }
-.connection-row-actions .connection-details-toggle {
-  border-color: transparent;
-  padding-inline: 6px;
-}
-.connection-details-toggle[aria-expanded='true'] svg,
-.connection-overview-toggle[aria-expanded='true'] svg {
-  transform: rotate(180deg);
-}
 .connection-row-actions button:hover,
 .ghost-button:hover {
   border-color: var(--gold);
 }
-.connection-details-toggle:hover,
-.connection-overview-toggle:hover {
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
-}
 .connections-view button:focus-visible,
 .connection-runtime-details:focus-visible {
   outline: 2px solid var(--gold);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 .connections-view button:disabled {
   cursor: wait;
 }
 .connection-app-details {
-  padding-top: 12px;
+  padding: 12px 0 16px 30px;
   border-top: 1px solid var(--line);
   display: grid;
   gap: 8px;
@@ -1468,6 +1435,7 @@ textarea::placeholder {
 .connection-app-details .ghost-button {
   justify-self: start;
 }
+.connections-view .connection-subtype,
 .connection-detail-label {
   font-size: 12px;
   line-height: 1.5;
@@ -1482,31 +1450,26 @@ textarea::placeholder {
   overflow-wrap: anywhere;
   user-select: text;
 }
+.connection-original-diagnostic p {
+  white-space: pre-wrap;
+  user-select: text;
+}
 .connection-copy-result:empty {
   display: none;
 }
 .connections-footer {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-.connections-footer p {
-  flex: 1;
-  min-width: 180px;
+  gap: 8px;
 }
 .connections-footer > span {
+  margin-left: auto;
   font-size: 12px;
   color: var(--muted);
 }
-@media (min-width: 721px) and (max-width: 1000px) {
-  .connections-view .connection-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 720px) {
+@media (max-width: 600px) {
   .canvas-popup.connections-popup {
     padding: 16px;
   }
@@ -1528,8 +1491,16 @@ textarea::placeholder {
     flex: 1;
     padding-inline: 6px;
   }
-  .connections-view .connection-card-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .connections-view .connection-row-toggle {
+    min-height: 64px;
+  }
+  .connections-view .connection-row-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .connection-app-details {
+    padding-left: 0;
   }
   .connection-row-actions {
     flex-direction: column;
@@ -1621,24 +1592,6 @@ textarea::placeholder {
 [data-theme='dark'] .app-menu-trigger,
 [data-theme='dark'] .app-menu-panel {
   background: #232c33;
-}
-[data-theme='dark'] .connections-view .connection-card {
-  background: #232c33;
-}
-[data-theme='dark'] .connection-status-badge.status-configured,
-[data-theme='dark'] .connection-status-badge.is-online {
-  color: #dce6dd;
-  background: #35463e;
-}
-[data-theme='dark'] .connection-status-badge.status-conflict {
-  color: #f1dab2;
-  background: #51452f;
-}
-[data-theme='dark'] .connection-status-badge.status-missing,
-[data-theme='dark'] .connection-status-badge.status-unknown,
-[data-theme='dark'] .connection-status-badge.is-offline {
-  color: var(--muted);
-  background: #2d373e;
 }
 [data-theme='dark'] .connection-row-actions .primary {
   background: #dfc187;
@@ -2010,4 +1963,9 @@ button:active:not(:disabled) {
 [data-theme='dark'] :is(.port code, .trace-event code) {
   color: var(--gold);
   background: #3e3d32;
+}
+
+[data-theme='dark'] .connection-status.status-conflict svg,
+[data-theme='dark'] .connection-runtime-notice[data-severity='warning'] svg {
+  color: #eed3a0;
 }

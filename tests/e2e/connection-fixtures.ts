@@ -82,6 +82,15 @@ export async function setAppearance(
   );
 }
 
+export async function openConnectionRow(page: Page, id: string) {
+  const row = page.locator(`[data-client-id="${id}"]`);
+  const toggle = row.locator('.connection-row-toggle');
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true')
+    await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  return row;
+}
+
 // Resolve computed CSS colors, including color-mix and alpha, against the solid
 // surfaces used by these views. Sampling avoids rounded-button axe false alarms.
 export async function expectReadableText(

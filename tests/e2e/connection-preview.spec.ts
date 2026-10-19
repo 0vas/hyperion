@@ -4,6 +4,7 @@ import { chooseFromAppMenu } from './app-menu';
 import {
   connectionInventory,
   mockConnectionHome,
+  openConnectionRow,
   setAppearance,
 } from './connection-fixtures';
 
@@ -49,6 +50,7 @@ for (const locale of ['es', 'en'] as const) {
       page,
       locale === 'es' ? 'Conexiones' : 'Connections',
     );
+    await openConnectionRow(page, 'codex');
     await page
       .getByRole('button', { name: /Resolver conflicto|Resolve conflict/ })
       .click();
@@ -86,6 +88,7 @@ for (const locale of ['es', 'en'] as const) {
       page,
       locale === 'es' ? 'Conexiones' : 'Connections',
     );
+    await openConnectionRow(page, 'codex');
     await page
       .getByRole('button', { name: /Resolver conflicto|Resolve conflict/ })
       .click();
@@ -155,6 +158,7 @@ for (const locale of ['es', 'en'] as const) {
       page,
       locale === 'es' ? 'Conexiones' : 'Connections',
     );
+    await openConnectionRow(page, 'codex');
     await page
       .getByRole('button', { name: /Resolver conflicto|Resolve conflict/ })
       .click();

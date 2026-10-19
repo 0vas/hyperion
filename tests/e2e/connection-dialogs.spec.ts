@@ -3,6 +3,7 @@ import { appMenuTrigger, chooseFromAppMenu } from './app-menu';
 import {
   connectionInventory,
   mockConnectionHome,
+  openConnectionRow,
   setAppearance,
   expectReadableText,
 } from './connection-fixtures';
@@ -39,6 +40,7 @@ test('replacement stays protected while pending and recovers from failure', asyn
   });
   await page.goto('/');
   await chooseFromAppMenu(page, 'Connections');
+  await openConnectionRow(page, 'codex');
   await page.getByRole('button', { name: conflictName }).click();
   await page
     .locator('.conflict-resolver')
@@ -87,7 +89,7 @@ test('replacement stays protected while pending and recovers from failure', asyn
   finish!();
   await expect(confirm).toHaveCount(0);
   await expect(page.locator('.conflict-resolver')).toHaveCount(0);
-  await expect(page.locator('.connection-card.status-configured')).toHaveCount(
+  await expect(page.locator('.connection-row.status-configured')).toHaveCount(
     2,
   );
   await expect(
@@ -160,6 +162,7 @@ for (const locale of ['es', 'en'] as const) {
           }
           await page.keyboard.press('Enter');
           const writesBefore = writes.length;
+          await openConnectionRow(page, 'codex');
           const origin = page.getByRole('button', { name: conflictName });
           await origin.click();
           const resolver = page.locator('.conflict-resolver');
@@ -235,6 +238,7 @@ for (const locale of ['es', 'en'] as const) {
           ).toBeFocused();
           await page.keyboard.press('Enter');
           const connections = page.locator('.connections-popup');
+          await openConnectionRow(page, 'codex');
           const origin = connections.getByRole('button', {
             name: conflictName,
           });

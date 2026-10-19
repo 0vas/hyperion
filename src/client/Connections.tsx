@@ -46,7 +46,7 @@ function ClientMark({ id }: { id: string }) {
   const Icon = CLIENT_ICONS[id] || Bot;
   return (
     <span className="connection-client-mark" aria-hidden="true">
-      <Icon size={28} strokeWidth={1.75} />
+      <Icon size={20} strokeWidth={1.75} />
     </span>
   );
 }
@@ -111,12 +111,7 @@ export function connectionsSummaryLine(summary: {
   conflicts: number;
   total: number;
 }) {
-  if (summary.conflicts > 0)
-    return t('{0} configuradas · {1} en conflicto', {
-      0: summary.configured,
-      1: summary.conflicts,
-    });
-  return t('{0} de {1} aplicaciones configuradas.', {
+  return t('Configuradas localmente: {0}/{1}', {
     0: summary.configured,
     1: summary.total,
   });
@@ -331,8 +326,10 @@ function fileCode(value: string | undefined): RuntimeFileCode {
     : 'check_failed';
 }
 
-function ConnectionAppCard({
+function ConnectionAppRow({
   row,
+  expanded,
+  onToggle,
   busy,
   onRefresh,
   onSetup,
@@ -340,18 +337,23 @@ function ConnectionAppCard({
   onHelp,
 }: {
   row: ConnectionRow;
+  expanded: boolean;
+  onToggle: () => void;
   busy: boolean;
   onRefresh: () => void;
   onSetup: (id: string) => void;
   onConflict: (row: ConnectionRow) => void;
   onHelp: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const [copyResult, setCopyResult] = useState<{
     path: string;
     status: 'success' | 'error';
   }>();
   const detailId = useId();
+  const toggle = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    if (expanded) toggle.current?.scrollIntoView({ block: 'nearest' });
+  }, [expanded]);
   async function copyPath() {
     setCopyResult(undefined);
     const path = row.path!;
@@ -384,50 +386,74 @@ function ConnectionAppCard({
       : row.id === 'claude-code'
         ? 'Herramienta de desarrollo'
         : '';
+  const message = row.detail ? describeConnectionMessage(row.detail) : null;
+  const explanations = {
+    configured:
+      'La configuración local de {0} coincide con la esperada. No confirma que el chat tenga herramientas.',
+    missing: 'No se encontró una conexión Hyperion configurada para {0}.',
+    conflict:
+      'La entrada de Hyperion existente es distinta. Se conserva sin cambios.',
+    unknown: 'No se pudo comprobar la configuración local de {0}.',
+  };
   return (
-    <li className={`connection-card status-${row.status}`}>
-      <div className="connection-card-head">
-        <div className="connection-card-title">
-          <ClientMark id={row.id} />
-          <div>
-            <strong>{row.name}</strong>
-            {subtype && (
-              <span className="connection-subtype">{t(subtype)}</span>
+    <li
+      className={`connection-row status-${row.status}`}
+      data-client-id={row.id}
+    >
+      <button
+        type="button"
+        className="connection-row-toggle"
+        ref={toggle}
+        aria-expanded={expanded}
+        aria-controls={detailId}
+        onClick={onToggle}
+      >
+        <ClientMark id={row.id} />
+        <span className="connection-row-label">
+          <strong>{row.name}</strong>
+          <span className={`connection-status status-${row.status}`}>
+            {row.status === 'conflict' && (
+              <TriangleAlert size={14} strokeWidth={1.75} aria-hidden="true" />
             )}
-          </div>
-        </div>
-      </div>
-      <div className="connection-card-status">
-        <span className={`connection-status-badge status-${row.status}`}>
-          {t(STATUS_LABEL[row.status])}
+            {t(
+              row.status === 'conflict'
+                ? 'Conflicto · sin cambios'
+                : STATUS_LABEL[row.status],
+            )}
+          </span>
         </span>
-        {row.status === 'conflict' && (
-          <p className="connection-conflict-note">
-            {t('La entrada existente se conserva.')}
-          </p>
-        )}
-      </div>
-      <div className="connection-row-actions">
-        <button
-          type="button"
-          className={`connection-main-action ${row.status === 'configured' ? 'secondary' : 'primary'}`}
-          disabled={busy && row.status !== 'configured'}
-          onClick={action}
-        >
-          {t(label)}
-        </button>
-        <button
-          type="button"
-          className="connection-details-toggle"
-          aria-expanded={expanded}
-          aria-controls={detailId}
-          onClick={() => setExpanded(!expanded)}
-        >
-          {t('Detalles')}
-          <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
-        </button>
-      </div>
+        <ChevronDown
+          className="connection-row-chevron"
+          size={16}
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
+      </button>
       <div className="connection-app-details" id={detailId} hidden={!expanded}>
+        {subtype && <p className="connection-subtype">{t(subtype)}</p>}
+        <p className="connection-explanation">
+          {message?.kind === 'product'
+            ? formatConnectionMessage(message)
+            : t(explanations[row.status], { 0: row.name })}
+        </p>
+        <div className="connection-row-actions">
+          <button
+            type="button"
+            className={`connection-main-action ${row.status === 'configured' ? 'secondary' : 'primary'}`}
+            disabled={busy && row.status !== 'configured'}
+            onClick={action}
+          >
+            {t(label)}
+          </button>
+          <button
+            type="button"
+            className="ghost-button"
+            disabled={busy && row.status === 'configured'}
+            onClick={row.status === 'configured' ? onRefresh : onHelp}
+          >
+            {t(row.status === 'configured' ? 'Comprobar' : 'Ayuda de conexión')}
+          </button>
+        </div>
         {row.path ? (
           <>
             <span className="connection-detail-label">{t('Ruta local')}</span>
@@ -441,10 +467,9 @@ function ConnectionAppCard({
               {t('Copiar ruta')}
             </button>
             <p role="status" className="connection-copy-result">
-              {copyResult?.path === row.path && copyResult?.status === 'success'
+              {copyResult?.path === row.path && copyResult.status === 'success'
                 ? t('Ruta copiada')
-                : copyResult?.path === row.path &&
-                    copyResult?.status === 'error'
+                : copyResult?.path === row.path && copyResult.status === 'error'
                   ? t('No se pudo copiar la ruta.')
                   : ''}
             </p>
@@ -452,21 +477,14 @@ function ConnectionAppCard({
         ) : (
           <p>{t('Ruta no disponible')}</p>
         )}
-        {row.detail && (
-          <p>
-            {formatConnectionMessage(describeConnectionMessage(row.detail))}
-          </p>
+        {message?.kind === 'diagnostic' && (
+          <div className="connection-original-diagnostic">
+            <span className="connection-detail-label">
+              {t('Mensaje de diagnóstico original')}
+            </span>
+            <p>{message.text}</p>
+          </div>
         )}
-        <button
-          type="button"
-          className="ghost-button"
-          disabled={busy && row.status === 'configured'}
-          onClick={row.status === 'configured' ? onRefresh : onHelp}
-        >
-          {row.status === 'configured'
-            ? t('Comprobar')
-            : t('Ayuda de conexión')}
-        </button>
       </div>
     </li>
   );
@@ -498,9 +516,10 @@ export function ConnectionsView({
   onHelp: () => void;
 }) {
   useLocale();
-  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [revealRuntime, setRevealRuntime] = useState(0);
-  const overviewId = useId();
+  const diagnosticsId = useId();
   const view = useRef<HTMLDivElement>(null);
   const identity = useRef<HTMLElement>(null);
   const runtimeDetails = useRef<HTMLDivElement>(null);
@@ -568,89 +587,18 @@ export function ConnectionsView({
         </div>
       </header>
       <section className="connection-overview">
-        <button
-          type="button"
-          className="connection-overview-toggle"
-          aria-expanded={overviewOpen}
-          aria-controls={overviewId}
-          onClick={() => setOverviewOpen(!overviewOpen)}
-        >
+        <p className="connection-service-state">
           <span
             className={`connection-online-dot${online ? '' : ' is-offline'}`}
             aria-hidden="true"
           />
-          {online
-            ? t('Servicio local · Conectado')
-            : t('Servicio local · Sin conexión')}
-          <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
-        </button>
-        <p>{t('Herramientas en este chat: desconocidas.')}</p>
-        <div
-          className="connection-service-details"
-          id={overviewId}
-          hidden={!overviewOpen}
-        >
-          {inventory?.serviceUrl && (
-            <p className="connection-service-url">{inventory.serviceUrl}</p>
+          {t(
+            online
+              ? 'Servicio local · Conectado'
+              : 'Servicio local · Sin conexión',
           )}
-          <p>
-            {online
-              ? t(
-                  'El servicio local responde en este equipo. No indica qué aplicación de IA está en uso.',
-                )
-              : t('No se ha confirmado una respuesta del servicio local.')}
-          </p>
-          <div
-            className="connection-runtime-details"
-            ref={runtimeDetails}
-            tabIndex={-1}
-          >
-            <h3>{t('Archivos del adaptador')}</h3>
-            {bothReadable && (
-              <p>{t('Hyperion puede leer los archivos del adaptador.')}</p>
-            )}
-            <dl>
-              {results.map((result) => (
-                <div
-                  key={result.key}
-                  data-runtime-target={result.key}
-                  data-code={result.code || 'not_checked'}
-                >
-                  <dt>{t(result.label)}</dt>
-                  <dd>
-                    {result.code
-                      ? t(FILE_LABELS[result.code])
-                      : t('Sin comprobar')}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            {checkedAt && (
-              <p>
-                <time dateTime={checkedAt}>
-                  {t('Comprobado a las {0} UTC', {
-                    0: checkedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ''),
-                  })}
-                </time>
-              </p>
-            )}
-            <p>{t('Inicio MCP y llamada de herramienta: sin comprobar.')}</p>
-            <p>{t('Herramientas en este chat: desconocidas.')}</p>
-          </div>
-          <div className="connection-detail-actions">
-            <button
-              type="button"
-              className="ghost-button"
-              disabled={busy}
-              onClick={onRefresh}
-            >
-              {t('Comprobar')}
-            </button>
-            <button type="button" className="ghost-button" onClick={onHelp}>
-              {t('Ayuda de conexión')}
-            </button>
-          </div>
-        </div>
+        </p>
+        <p>{t('Herramientas en este chat: desconocidas.')}</p>
       </section>
       <div className="connections-apps-heading">
         <h3>{t('Aplicaciones compatibles')}</h3>
@@ -697,6 +645,108 @@ export function ConnectionsView({
               </p>
             ))}
           </div>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setDiagnosticsOpen(true);
+              setRevealRuntime((value) => value + 1);
+            }}
+          >
+            {t('Ver diagnóstico')}
+          </button>
+        </aside>
+      )}
+      <ul className="connection-list">
+        {(inventory?.integrations || []).map((row) => (
+          <ConnectionAppRow
+            key={row.id}
+            row={row}
+            expanded={selectedClient === row.id}
+            onToggle={() =>
+              setSelectedClient((value) => (value === row.id ? null : row.id))
+            }
+            busy={busy}
+            onRefresh={onRefresh}
+            onSetup={onSetup}
+            onConflict={onConflict}
+            onHelp={onHelp}
+          />
+        ))}
+      </ul>
+      <footer className="connections-footer">
+        <button
+          type="button"
+          className="ghost-button connection-diagnostics-toggle"
+          aria-expanded={diagnosticsOpen}
+          aria-controls={diagnosticsId}
+          onClick={() => {
+            setDiagnosticsOpen(!diagnosticsOpen);
+            if (!diagnosticsOpen) setRevealRuntime((value) => value + 1);
+          }}
+        >
+          {t('Diagnóstico')}
+          <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+        <button type="button" className="ghost-button" onClick={onHelp}>
+          {t('Ayuda de conexión')}
+        </button>
+        <span>MIT</span>
+      </footer>
+      <section
+        className="connection-service-details"
+        id={diagnosticsId}
+        hidden={!diagnosticsOpen}
+      >
+        <div
+          className="connection-runtime-details"
+          role="region"
+          aria-labelledby={`${diagnosticsId}-title`}
+          ref={runtimeDetails}
+          tabIndex={-1}
+        >
+          <h3 id={`${diagnosticsId}-title`}>{t('Diagnóstico')}</h3>
+          {inventory?.serviceUrl && (
+            <p className="connection-service-url">{inventory.serviceUrl}</p>
+          )}
+          <p>
+            {t(
+              online
+                ? 'El servicio local responde en este equipo. No indica qué aplicación de IA está en uso.'
+                : 'No se ha confirmado una respuesta del servicio local.',
+            )}
+          </p>
+          <h4>{t('Archivos del adaptador')}</h4>
+          {bothReadable && (
+            <p>{t('Hyperion puede leer los archivos del adaptador.')}</p>
+          )}
+          <dl>
+            {results.map((result) => (
+              <div
+                key={result.key}
+                data-runtime-target={result.key}
+                data-code={result.code || 'not_checked'}
+              >
+                <dt>{t(result.label)}</dt>
+                <dd>
+                  {result.code
+                    ? t(FILE_LABELS[result.code])
+                    : t('Sin comprobar')}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {checkedAt && (
+            <p>
+              <time dateTime={checkedAt}>
+                {t('Comprobado a las {0} UTC', {
+                  0: checkedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ''),
+                })}
+              </time>
+            </p>
+          )}
+          <p>{t('Inicio MCP y llamada de herramienta: sin comprobar.')}</p>
+          <p>{t('Herramientas en este chat: desconocidas.')}</p>
           {issues.some(
             (result) =>
               result.code === 'missing' || result.code === 'not_regular_file',
@@ -721,42 +771,8 @@ export function ConnectionsView({
               )}
             </p>
           )}
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => {
-              setOverviewOpen(true);
-              setRevealRuntime((value) => value + 1);
-            }}
-          >
-            {t('Ver detalles')}
-          </button>
-        </aside>
-      )}
-      <ul className="connection-card-grid">
-        {(inventory?.integrations || []).map((row) => (
-          <ConnectionAppCard
-            key={row.id}
-            row={row}
-            busy={busy}
-            onRefresh={onRefresh}
-            onSetup={onSetup}
-            onConflict={onConflict}
-            onHelp={onHelp}
-          />
-        ))}
-      </ul>
-      <footer className="connections-footer">
-        <button type="button" className="ghost-button" onClick={onHelp}>
-          {t('Ayuda de conexión')}
-        </button>
-        <p>
-          {t(
-            'Las entradas en conflicto requieren tu confirmación antes de reemplazarse.',
-          )}
-        </p>
-        <span>MIT</span>
-      </footer>
+        </div>
+      </section>
     </div>
   );
 }

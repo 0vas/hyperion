@@ -4,6 +4,7 @@ import {
   connectionInventory,
   expectReadableText,
   mockConnectionHome,
+  openConnectionRow,
   setAppearance,
 } from './connection-fixtures';
 
@@ -17,18 +18,12 @@ for (const locale of ['es', 'en'] as const) {
       await page.goto('/');
       await openAppMenu(page);
       const menu = page.getByRole('menu');
-      await expect(menu.locator(':scope > :first-child')).toContainText(
+      await expect(menu.locator(':scope > :last-child')).toContainText(
         'Hyperion 2026.10.18.2241 UTC · preview',
       );
-      await expect(menu.locator('.app-menu-section')).toHaveText(
-        locale === 'es'
-          ? ['Aplicación', 'Ayuda', 'Más']
-          : ['Application', 'Help', 'More'],
-      );
+      await expect(menu.locator('.app-menu-section')).toHaveCount(0);
       const box = (await menu.boundingBox())!;
-      // The visual-parity brief supersedes the earlier 360px menu spec.
-      expect(box.width).toBeGreaterThanOrEqual(420);
-      expect(box.width).toBeLessThanOrEqual(480);
+      expect(box.width).toBe(336);
       const rows = menu.getByRole('menuitem');
       await expect(rows).toHaveCount(7);
       const first = (await rows.nth(0).boundingBox())!;
@@ -44,23 +39,11 @@ for (const locale of ['es', 'en'] as const) {
       await expect(rows.last()).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(rows.first()).toBeFocused();
-      const focusClearance = await rows.first().evaluate((el) => {
-        const row = el.getBoundingClientRect();
-        const label = el.parentElement!.previousElementSibling!;
-        const style = getComputedStyle(el);
-        const ring = Math.max(
-          0,
-          parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset),
-        );
-        const labelBottom =
-          label.getBoundingClientRect().bottom -
-          parseFloat(getComputedStyle(label).paddingBottom);
-        return row.top - ring - labelBottom;
+      await expect(rows.first()).toHaveCSS('outline-style', 'solid');
+      await expectReadableText(rows.first(), {
+        property: 'outlineColor',
+        min: 3,
       });
-      expect(
-        focusClearance,
-        'Focus ring clears the section label',
-      ).toBeGreaterThanOrEqual(0);
       await page.screenshot({ path: testInfo.outputPath('menu-desktop.png') });
       await page.keyboard.press('Escape');
       await expect(menu).toHaveCount(0);
@@ -119,7 +102,7 @@ for (const locale of ['es', 'en'] as const) {
       }
     });
 
-    test(`connection cards retain contrast, hierarchy and an opaque header (${locale}, ${theme})`, async ({
+    test(`connection rows retain contrast, hierarchy and an opaque header (${locale}, ${theme})`, async ({
       page,
     }, testInfo) => {
       await mockConnectionHome(page);
@@ -131,10 +114,10 @@ for (const locale of ['es', 'en'] as const) {
       );
       const popup = page.locator('.connections-popup');
       await expect(popup.locator('.modal-close')).toHaveCount(0);
-      await expect(popup.locator('.connection-card')).toHaveCount(5);
+      await expect(popup.locator('.connection-row')).toHaveCount(5);
       await expectReadableText(
         popup.locator(
-          '.connection-card strong, .connection-path:visible, .connection-status-badge, .connection-row-actions button',
+          '.connection-row strong, .connection-path:visible, .connection-status, .connection-row-actions button:visible',
         ),
       );
       for (const [width, height] of [
@@ -145,7 +128,7 @@ for (const locale of ['es', 'en'] as const) {
       ] as const) {
         await page.setViewportSize({ width, height });
         const panelBox = (await popup.boundingBox())!;
-        if (width === 1440) expect.soft(panelBox.width).toBe(1040);
+        if (width === 1440) expect.soft(panelBox.width).toBe(760);
         expect.soft(panelBox.x).toBeGreaterThanOrEqual(16);
         expect
           .soft(panelBox.x + panelBox.width)
@@ -156,18 +139,19 @@ for (const locale of ['es', 'en'] as const) {
         await expect(
           popup.locator('.connections-identity .connections-calver'),
         ).toBeInViewport();
-        for (const card of await popup.locator('.connection-card').all()) {
+        for (const card of await popup.locator('.connection-row').all()) {
+          await card.locator('.connection-row-toggle').click();
           expect(await card.locator('.primary').count()).toBeLessThanOrEqual(1);
           if (width >= 900)
             expect((await card.boundingBox())!.width).toBeGreaterThanOrEqual(
               260,
             );
           const status = (await card
-            .locator('.connection-card-status')
+            .locator('.connection-status')
             .boundingBox())!;
           const buttonBoxes = [];
           for (const button of await card
-            .locator('.connection-row-actions button')
+            .locator('.connection-row-actions button:visible')
             .all()) {
             const buttonBox = (await button.boundingBox())!;
             buttonBoxes.push(buttonBox);
@@ -195,7 +179,11 @@ for (const locale of ['es', 'en'] as const) {
               }
             }
           }
+          await card.locator('.connection-row-toggle').click();
         }
+        await popup.locator('.connections-view').evaluate((el) => {
+          el.scrollTop = 0;
+        });
         expect
           .soft(
             await popup
@@ -253,8 +241,9 @@ for (const locale of ['es', 'en'] as const) {
       page,
       locale === 'es' ? 'Conexiones' : 'Connections',
     );
+    await openConnectionRow(page, 'codex');
     await page
-      .locator('.connection-card.status-conflict')
+      .locator('.connection-row.status-conflict')
       .getByRole('button', { name: /Resolver conflicto|Resolve conflict/ })
       .click();
     const resolver = page.locator('.conflict-resolver');

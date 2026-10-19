@@ -9,7 +9,7 @@ import {
 
 for (const locale of ['es', 'en'] as const) {
   for (const theme of ['light', 'dark'] as const) {
-    test(`apps and primary actions lead the Connections view (${locale}, ${theme})`, async ({
+    test(`list metadata and controls remain readable at each size (${locale}, ${theme})`, async ({
       page,
     }, info) => {
       await mockConnectionHome(page);
@@ -20,17 +20,12 @@ for (const locale of ['es', 'en'] as const) {
         locale === 'es' ? 'Conexiones' : 'Connections',
       );
       const panel = page.locator('.connections-popup');
-      const cards = panel.locator('.connection-card');
+      const cards = panel.locator('.connection-row');
       await expect(cards).toHaveCount(5);
-      const initialPanel = (await panel.boundingBox())!;
-      const initialCard = (await cards.first().boundingBox())!;
-      expect
-        .soft(initialCard.y - initialPanel.y, 'First card starts within 220px')
-        .toBeLessThanOrEqual(220);
       await expect(panel.locator('.connections-summary')).toHaveText(
         locale === 'es'
-          ? '1 configuradas · 1 en conflicto'
-          : '1 configured · 1 in conflict',
+          ? 'Configuradas localmente: 1/5'
+          : 'Configured locally: 1/5',
       );
       await expect(panel.locator('.connection-overview')).toContainText(
         locale === 'es'
@@ -51,39 +46,22 @@ for (const locale of ['es', 'en'] as const) {
         await panel.locator('.connections-view').evaluate((el) => {
           el.scrollTop = 0;
         });
-        const box = (await panel.boundingBox())!;
-        const first = (await cards.first().boundingBox())!;
-        expect(first.y - box.y).toBeLessThanOrEqual(width >= 900 ? 220 : 260);
-        const columns = await panel
-          .locator('.connection-card-grid')
-          .evaluate(
-            (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
-          );
-        expect(columns).toBe(width === 1440 ? 3 : width === 900 ? 2 : 1);
+        expect((await panel.boundingBox())!.width).toBeLessThanOrEqual(760);
         expect(
           await panel.evaluate((el) => el.scrollWidth <= el.clientWidth),
         ).toBe(true);
-        await expect(
-          cards.first().locator('.connection-main-action'),
-        ).toBeInViewport({ ratio: 1 });
-        if (width === 1440)
-          for (const card of await cards.all())
-            await expect(
-              card.locator('.connection-main-action'),
-            ).toBeInViewport({ ratio: 1 });
-        if (width === 900) await expect(cards.nth(2)).toBeInViewport();
-        for (const control of await panel
-          .locator(
-            '.connection-row-actions button, .connections-identity-actions button, .connection-overview-toggle',
-          )
-          .all()) {
+        for (const row of await cards.all())
+          await expect(row.locator('.connection-row-toggle')).toBeInViewport({
+            ratio: 1,
+          });
+        for (const control of await panel.locator('button:visible').all()) {
           expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(
             40,
           );
         }
         await expectReadableText(
           panel.locator(
-            '.connection-card strong, .connection-status-badge, .connections-calver, .connection-subtype, .connections-summary, .connection-overview > p, .connections-apps-heading h3',
+            '.connection-row strong, .connection-status, .connections-calver, .connection-subtype:visible, .connections-summary, .connection-overview > p, .connections-apps-heading h3',
           ),
         );
         await page.screenshot({ path: info.outputPath(`apps-${width}.png`) });
@@ -91,7 +69,7 @@ for (const locale of ['es', 'en'] as const) {
       // Double text size without scaling the viewport or suppressing wrapping.
       await panel.evaluate((el) => {
         for (const node of el.querySelectorAll<HTMLElement>(
-          'h2,h3,p,strong,button,.connection-status-badge,.connection-subtype',
+          'h2,h3,p,strong,button,.connection-status,.connection-subtype',
         )) {
           node.style.fontSize = `${parseFloat(getComputedStyle(node).fontSize) * 2}px`;
         }
@@ -125,8 +103,8 @@ for (const locale of ['es', 'en'] as const) {
       page,
       locale === 'es' ? 'Conexiones' : 'Connections',
     );
-    const card = page.locator('.connection-card').nth(1);
-    const toggle = card.getByRole('button', { name: /^(Detalles|Details)$/ });
+    const card = page.locator('.connection-row').nth(1);
+    const toggle = card.locator('.connection-row-toggle');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await toggle.focus();
     await page.keyboard.press('Enter');
@@ -156,8 +134,8 @@ for (const locale of ['es', 'en'] as const) {
         ),
       nextLocale,
     );
-    await expect(toggle).toHaveText(
-      nextLocale === 'es' ? 'Detalles' : 'Details',
+    await expect(toggle).toContainText(
+      nextLocale === 'es' ? 'Configurada localmente' : 'Configured locally',
     );
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(card.locator('.connection-path')).toHaveText(
@@ -200,10 +178,9 @@ for (const locale of ['es', 'en'] as const) {
         locale === 'es' ? 'Conexiones' : 'Connections',
       );
       const panel = page.locator('.connections-popup');
-      const overview = panel.locator('.connection-overview');
-      await overview
-        .getByRole('button', { name: /Servicio local|Local service/ })
-        .click();
+      const overview = panel.locator('.connection-service-details');
+      const diagnosticsToggle = panel.locator('.connection-diagnostics-toggle');
+      await diagnosticsToggle.click();
       await expect(overview).toContainText(
         locale === 'es' ? 'Sin comprobar' : 'Not checked',
       );
@@ -269,9 +246,9 @@ for (const locale of ['es', 'en'] as const) {
               : 'Tools in this chat: unknown.',
           );
           await expect(
-            panel.locator('.connection-card.status-conflict'),
+            panel.locator('.connection-row.status-conflict'),
           ).toHaveCount(1);
-          await expect(panel.locator('.connection-card').nth(3)).toHaveClass(
+          await expect(panel.locator('.connection-row').nth(3)).toHaveClass(
             /status-unknown/,
           );
           if (code === 'readable_file') {
@@ -290,9 +267,7 @@ for (const locale of ['es', 'en'] as const) {
               'data-severity',
               code === 'check_failed' ? 'unknown' : 'warning',
             );
-            await overview
-              .getByRole('button', { name: /Servicio local|Local service/ })
-              .click();
+            await diagnosticsToggle.click();
             await panel.locator('.connections-view').evaluate((el) => {
               el.scrollTop = 0;
             });
@@ -303,13 +278,12 @@ for (const locale of ['es', 'en'] as const) {
               path: info.outputPath(`runtime-${target}-${code}-notice.png`),
             });
             await notice
-              .getByRole('button', { name: /Ver detalles|View details/ })
+              .getByRole('button', { name: /Ver diagnóstico|View diagnostics/ })
               .click();
-            await expect(
-              overview.getByRole('button', {
-                name: /Servicio local|Local service/,
-              }),
-            ).toHaveAttribute('aria-expanded', 'true');
+            await expect(diagnosticsToggle).toHaveAttribute(
+              'aria-expanded',
+              'true',
+            );
             await expect(
               overview.locator('.connection-runtime-details'),
             ).toBeFocused();
@@ -384,17 +358,16 @@ for (const locale of ['es', 'en'] as const) {
     });
 }
 
-test('menu features Connections with one divider and preserves exact groups', async ({
-  page,
-}) => {
+test('menu keeps uniform actions and exact groups', async ({ page }) => {
   await mockConnectionHome(page);
   await setAppearance(page, 'light', 'en');
   await page.goto('/');
   await openAppMenu(page);
   const menu = page.getByRole('menu');
   const featured = menu.getByRole('menuitem', { name: 'Connections' });
-  await expect(featured).toContainText('Set up your AI apps');
-  expect((await featured.boundingBox())!.height).toBeGreaterThanOrEqual(60);
+  await expect(featured).toHaveText('Connections');
+  expect((await featured.boundingBox())!.height).toBe(44);
+  await expect(menu.locator('.app-menu-sep')).toHaveCount(2);
   await expect(
     menu.locator('.app-menu-group').nth(1).getByRole('menuitem'),
   ).toHaveText(['User guide', 'Connection help', 'Workflow colors']);
@@ -440,7 +413,7 @@ test('inventory loading and errors never imply zero configured applications', as
     (el) =>
       el
         .querySelector('[role="alert"]')!
-        .compareDocumentPosition(el.querySelector('.connection-card-grid')!) &
+        .compareDocumentPosition(el.querySelector('.connection-list')!) &
       Node.DOCUMENT_POSITION_FOLLOWING,
   );
   expect(aboveGrid).toBeTruthy();
@@ -460,7 +433,7 @@ for (const scale of [1, 2])
     await panel.evaluate((el, scale) => {
       if (scale === 1) return;
       for (const node of el.querySelectorAll<HTMLElement>(
-        'h2,h3,p,strong,button,.connection-status-badge,.connection-subtype',
+        'h2,h3,p,strong,button,.connection-status,.connection-subtype',
       )) {
         node.style.fontSize = `${parseFloat(getComputedStyle(node).fontSize) * scale}px`;
       }

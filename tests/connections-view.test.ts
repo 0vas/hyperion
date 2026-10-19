@@ -17,7 +17,7 @@ test('connections summary distinguishes empty, partial, all-ok and conflict stat
   );
   assert.match(
     connectionsSummaryLine({ configured: 1, conflicts: 2, total: 5 }),
-    /conflicto|conflict/,
+    /1\/5/,
   );
 });
 
@@ -33,6 +33,6 @@ test('configuration counts never imply chat readiness or require a restart', () 
   }
   assert.match(
     connectionsSummaryLine({ configured: 0, conflicts: 2, total: 5 }),
-    /0.*2/,
+    /0\/5/,
   );
 });

@@ -3,6 +3,7 @@ import { chooseFromAppMenu } from './app-menu';
 import {
   connectionInventory,
   mockConnectionHome,
+  openConnectionRow,
   setAppearance,
 } from './connection-fixtures';
 
@@ -43,32 +44,38 @@ test('real inventory explanations follow the language while original diagnostics
   });
   await page.goto('/');
   await chooseFromAppMenu(page, 'Connections');
-  const rows = page.locator('.connection-card');
-  for (const index of [0, 1, 3])
-    await rows
-      .nth(index)
-      .getByRole('button', { name: 'Details', exact: true })
-      .click();
+  const rows = page.locator('.connection-row');
   for (const locale of ['en', 'es', 'en'] as const) {
     await changeLanguage(page, locale);
+    await openConnectionRow(page, 'codex');
     await expect(rows.nth(0)).toContainText(
       locale === 'en'
         ? 'Another Hyperion connection already exists in Codex. It was not overwritten.'
         : 'Ya existe otra conexión Hyperion en Codex. No se sobrescribió.',
     );
+    await expect(rows.nth(0).locator('.connection-path')).toHaveText(
+      inventory.integrations[0]!.path!,
+    );
+    await openConnectionRow(page, 'cursor');
     await expect(rows.nth(1)).toContainText(
       locale === 'en'
         ? 'Could not read the configuration for Cursor.'
         : 'No se pudo leer la configuración de Cursor.',
     );
-    await expect(rows.nth(3)).toContainText(original);
-    await expect(rows.nth(0).locator('.connection-path')).toHaveText(
-      inventory.integrations[0]!.path!,
+    await openConnectionRow(page, 'claude-code');
+    await expect(
+      rows.nth(3).locator('.connection-original-diagnostic'),
+    ).toContainText(original);
+    await expect(
+      rows.nth(3).locator('.connection-original-diagnostic'),
+    ).toContainText(
+      locale === 'en'
+        ? 'Original diagnostic message'
+        : 'Mensaje de diagnóstico original',
     );
-    for (const index of [0, 1, 3])
-      await expect(
-        rows.nth(index).locator('.connection-details-toggle'),
-      ).toHaveAttribute('aria-expanded', 'true');
+    await expect(
+      page.locator('.connection-row-toggle[aria-expanded="true"]'),
+    ).toHaveCount(1);
   }
   expect(writes).toEqual([]);
 });
@@ -115,8 +122,9 @@ test('known setup failures translate live without modifying the original path or
   await setAppearance(page, 'light', 'en');
   await page.goto('/');
   await chooseFromAppMenu(page, 'Connections');
+  await openConnectionRow(page, 'claude-desktop');
   await page
-    .locator('.connection-card')
+    .locator('.connection-row')
     .filter({ hasText: 'Claude Desktop' })
     .getByRole('button', { name: 'Set up…', exact: true })
     .click();
@@ -151,6 +159,7 @@ test('known replacement errors translate in the confirmation without changing co
   await setAppearance(page, 'dark', 'es');
   await page.goto('/');
   await chooseFromAppMenu(page, 'Conexiones');
+  await openConnectionRow(page, 'codex');
   await page
     .getByRole('button', { name: 'Resolver conflicto…', exact: true })
     .click();
@@ -190,6 +199,7 @@ for (const replace of [false, true])
     await page.goto('/');
     await chooseFromAppMenu(page, 'Conexiones');
     if (replace) {
+      await openConnectionRow(page, 'codex');
       await page
         .getByRole('button', { name: 'Resolver conflicto…', exact: true })
         .click();
@@ -202,8 +212,9 @@ for (const replace of [false, true])
         .getByRole('button', { name: 'Reemplazar conexión', exact: true })
         .click();
     } else {
+      await openConnectionRow(page, 'claude-desktop');
       await page
-        .locator('.connection-card')
+        .locator('.connection-row')
         .filter({ hasText: 'Claude Desktop' })
         .getByRole('button', { name: 'Configurar…', exact: true })
         .click();
