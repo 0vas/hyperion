@@ -570,6 +570,7 @@ for (const { path, first, next, pause, resume } of [
     const title = page.locator('#landscape-title');
     const active = title.locator('.headline-active');
     const live = page.locator('.headline-live');
+    await expect(title).toBeVisible();
     await expect(active).toHaveText(first.join(''));
     await expect(title).toHaveAttribute('aria-label', first.join(' '));
     await expect(active).toHaveAttribute('aria-hidden', 'true');
@@ -624,6 +625,7 @@ for (const { path, first, next, pause, resume } of [
       const samples = await observation.evaluate(({ samples }) => samples);
       expect(samples.some(({ text }) => text === '')).toBe(true);
       const heightBefore = samples[0].height;
+      expect(heightBefore).toBeGreaterThan(0);
       for (const sample of samples) {
         expect(Math.abs(sample.height - heightBefore)).toBeLessThan(2);
         expect(sample.label).toBe(first.join(' '));
