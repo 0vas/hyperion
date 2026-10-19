@@ -31,7 +31,7 @@ Los formatos se contrastaron con la documentación de [Codex](https://developers
 
 ## Revisar la configuración y los archivos del adaptador
 
-En las fuentes de desarrollo, **Menú → Conexiones** muestra una lista de aplicaciones compatibles, inicialmente cerradas. Pulsa una aplicación para ver su explicación, las acciones y la ruta completa con **Copiar ruta**. Solo se despliega una aplicación; la selección se conserva al comprobar o cambiar de idioma. «Configurada localmente» y el recuento indican que los archivos coinciden con la conexión esperada; no demuestran que las aplicaciones estén instaladas o que un chat tenga herramientas. Los diagnósticos no reconocidos aparecen literalmente bajo **Mensaje de diagnóstico original**.
+En las fuentes de desarrollo, **Menú → Conexiones** muestra una lista de aplicaciones compatibles, inicialmente cerradas. Pulsa una aplicación para ver su explicación, las acciones y la ruta completa con **Copiar ruta**. Solo se despliega una aplicación; la selección se conserva al comprobar o cambiar de idioma. «Configurada localmente» y el recuento indican que los archivos coinciden con la conexión esperada; no demuestran que las aplicaciones estén instaladas o que un chat tenga herramientas. **Mensaje de diagnóstico original** permite desplegar literalmente el texto recibido, tanto reconocido como desconocido.
 
 Las explicaciones conocidas de Hyperion sobre conflictos y fallos de configuración, y los avisos de éxito, siguen el idioma de la interfaz incluso después de mostrarse. Se reconocen solo las plantillas de mensajes de conexión de Hyperion: las rutas y los diagnósticos no reconocidos se conservan literalmente. Cambiar de idioma no reintenta la configuración ni modifica el proceso.
 

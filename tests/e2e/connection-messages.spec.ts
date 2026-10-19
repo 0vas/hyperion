@@ -50,8 +50,8 @@ test('real inventory explanations follow the language while original diagnostics
     await openConnectionRow(page, 'codex');
     await expect(rows.nth(0)).toContainText(
       locale === 'en'
-        ? 'Another Hyperion connection already exists in Codex. It was not overwritten.'
-        : 'Ya existe otra conexión Hyperion en Codex. No se sobrescribió.',
+        ? 'The existing Hyperion entry differs. It has been left unchanged.'
+        : 'La entrada de Hyperion existente es distinta. Se conserva sin cambios.',
     );
     await expect(rows.nth(0).locator('.connection-path')).toHaveText(
       inventory.integrations[0]!.path!,
@@ -59,8 +59,8 @@ test('real inventory explanations follow the language while original diagnostics
     await openConnectionRow(page, 'cursor');
     await expect(rows.nth(1)).toContainText(
       locale === 'en'
-        ? 'Could not read the configuration for Cursor.'
-        : 'No se pudo leer la configuración de Cursor.',
+        ? "Could not read Cursor's local configuration."
+        : 'No se pudo leer la configuración local de Cursor.',
     );
     await openConnectionRow(page, 'claude-code');
     await expect(
@@ -94,13 +94,17 @@ test('inventory product failures update in place after a language change', async
   await page.goto('/');
   await chooseFromAppMenu(page, 'Conexiones');
   const alert = page.locator('.connections-popup').getByRole('alert');
-  await expect(alert).toHaveText('No se pudo leer la configuración de Cursor.');
+  await expect(alert).toHaveText(
+    'No se pudo leer la configuración local de Cursor.',
+  );
   await changeLanguage(page, 'en');
   await expect(alert).toHaveText(
-    'Could not read the configuration for Cursor.',
+    "Could not read Cursor's local configuration.",
   );
   await changeLanguage(page, 'es');
-  await expect(alert).toHaveText('No se pudo leer la configuración de Cursor.');
+  await expect(alert).toHaveText(
+    'No se pudo leer la configuración local de Cursor.',
+  );
 });
 
 test('known setup failures translate live without modifying the original path or retrying', async ({

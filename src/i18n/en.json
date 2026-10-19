@@ -571,12 +571,13 @@
   "La estructura TOML requiere combinar la conexión manualmente. No se modificó: {0}": "The TOML structure requires manually merging the connection. It was not modified: {0}",
   "Conflicto de skill: {0} no está administrado por Hyperion o se modificó. No se sobrescribió.": "Skill conflict: {0} is not managed by Hyperion or was modified. It was not overwritten.",
   "Diagnóstico": "Diagnostics",
-  "Ver diagnóstico": "View diagnostics",
   "Configuradas localmente: {0}/{1}": "Configured locally: {0}/{1}",
   "Conflicto · sin cambios": "Conflict · unchanged",
   "Mensaje de diagnóstico original": "Original diagnostic message",
   "La configuración local de {0} coincide con la esperada. No confirma que el chat tenga herramientas.": "The local configuration for {0} matches the expected entry. This does not confirm tools in chat.",
   "No se encontró una conexión Hyperion configurada para {0}.": "No configured Hyperion connection was found for {0}.",
   "La entrada de Hyperion existente es distinta. Se conserva sin cambios.": "The existing Hyperion entry differs. It has been left unchanged.",
-  "No se pudo comprobar la configuración local de {0}.": "Could not check the local configuration for {0}."
+  "No se pudo comprobar la configuración local de {0}.": "Could not check the local configuration for {0}.",
+  "No se pudo leer la configuración local de {0}.": "Could not read {0}'s local configuration.",
+  "La conexión de Claude Desktop está disponible en macOS y Windows.": "The Claude Desktop connection is available on macOS and Windows."
 }

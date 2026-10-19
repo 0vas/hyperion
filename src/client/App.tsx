@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Copy,
   History,
+  Info,
   Layers3,
   LoaderCircle,
   LockKeyhole,
@@ -709,10 +710,19 @@ function Modal({
     </div>
   );
 }
+type CanvasNoticeMessage =
+  string | { kind: 'desktop-update'; outcome: 'unavailable' | 'failed' };
+const UPDATE_NOTICES = {
+  unavailable:
+    'Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.',
+  failed:
+    'No se pudo buscar actualizaciones. Inténtalo de nuevo desde Hyperion → Buscar actualizaciones…',
+} as const;
+
 export function App() {
   const locale = useLocale();
   const [preferences, setPreferences] = usePreferences();
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState<CanvasNoticeMessage>('');
   const popupTrigger = useRef<HTMLElement | null>(null);
   const connectionTrigger = useRef<HTMLElement | null>(null);
   const replaceTrigger = useRef<HTMLElement | null>(null);
@@ -851,18 +861,9 @@ export function App() {
       void requestDesktopUpdateCheck(window.hyperionDesktop).then(
         (result) => {
           if (result === 'unavailable')
-            setNotice(
-              t(
-                'Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.',
-              ),
-            );
+            setNotice({ kind: 'desktop-update', outcome: 'unavailable' });
         },
-        () =>
-          setNotice(
-            t(
-              'No se pudo buscar actualizaciones. Inténtalo de nuevo desde Hyperion → Buscar actualizaciones…',
-            ),
-          ),
+        () => setNotice({ kind: 'desktop-update', outcome: 'failed' }),
       );
       return;
     }
@@ -1535,6 +1536,26 @@ export function App() {
     </div>
   );
   const dialogOpen = Boolean(popup || help || confirmation);
+  // Only native Menu update outcomes use descriptors here. Workflow notices and
+  // recorded content remain literal; this is not a general notice translation.
+  const noticeView =
+    notice && !dialogOpen ? (
+      <div className="canvas-notice" role="status">
+        {typeof notice === 'string' ? (
+          <Check size={16} aria-hidden="true" />
+        ) : (
+          <Info size={16} aria-hidden="true" />
+        )}
+        <span>
+          {typeof notice === 'string'
+            ? notice
+            : t(UPDATE_NOTICES[notice.outcome])}
+        </span>
+        <button aria-label={t('Cerrar aviso')} onClick={() => setNotice('')}>
+          <X size={16} />
+        </button>
+      </div>
+    ) : null;
   return (
     <div className="app-shell canvas-app" data-connected={online}>
       <div
@@ -1675,6 +1696,7 @@ export function App() {
                     </button>
                   )}
               </div>
+              {typeof notice !== 'string' && noticeView}
               {!online && (
                 <p role="alert">
                   {t(
@@ -1755,18 +1777,7 @@ export function App() {
                     onFocused={setFocusedStepId}
                   />
                 </ReactFlow>
-                {notice && !dialogOpen && (
-                  <div className="canvas-notice" role="status">
-                    <Check size={16} />
-                    <span>{notice}</span>
-                    <button
-                      aria-label={t('Cerrar aviso')}
-                      onClick={() => setNotice('')}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                )}
+                {noticeView}
                 {error && !dialogOpen && (
                   <div role="alert" className="canvas-alert popup-error">
                     {error}

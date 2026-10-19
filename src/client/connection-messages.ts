@@ -1,6 +1,10 @@
 import { translate, type Locale } from '../i18n/core';
 import { getLocale } from './i18n';
 
+// Keep complete producer text separate from the wording shown in the UI.
+const UNSUPPORTED_PLATFORM_SOURCE =
+  'La conexión de Claude Desktop está disponible para macOS y Windows. Usa Claude Code en este sistema.';
+
 const MESSAGES = {
   requestFailed: 'No se pudo completar la solicitud.',
   configured:
@@ -12,13 +16,14 @@ const MESSAGES = {
   unknownClient:
     'Cliente desconocido. Elige Codex, Cursor, Claude o Antigravity.',
   unsupportedPlatform:
-    'La conexión de Claude Desktop está disponible para macOS y Windows. Usa Claude Code en este sistema.',
+    'La conexión de Claude Desktop está disponible en macOS y Windows.',
   configurationChanged:
     'La configuración cambió durante la conexión. Vuelve a intentarlo.',
-  unreadable: 'No se pudo leer la configuración de {0}.',
+  unreadable: 'No se pudo leer la configuración local de {0}.',
   unreadableUnchanged:
     'No se pudo leer la configuración de {0}. No se modificó: {1}',
-  conflict: 'Ya existe otra conexión Hyperion en {0}. No se sobrescribió.',
+  conflict:
+    'La entrada de Hyperion existente es distinta. Se conserva sin cambios.',
   conflictUnchanged:
     'Ya existe otra conexión Hyperion en {0}. No se sobrescribió: {1}',
   tomlMerge:
@@ -64,7 +69,11 @@ export function describeConnectionMessage(text: string): ConnectionMessage {
     'unsupportedPlatform',
     'configurationChanged',
   ] as const) {
-    if (text === MESSAGES[key]) return connectionMessage(key);
+    const source =
+      key === 'unsupportedPlatform'
+        ? UNSUPPORTED_PLATFORM_SOURCE
+        : MESSAGES[key];
+    if (text === source) return connectionMessage(key);
   }
   for (const [id, name] of Object.entries(CLIENT_NAMES)) {
     if (text === `No se pudo leer la configuración de ${id}.`)

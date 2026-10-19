@@ -19,7 +19,7 @@ test('recognizes only exact inventory templates for known client IDs', () => {
         describeConnectionMessage(`No se pudo leer la configuración de ${id}.`),
         'en',
       ),
-      `Could not read the configuration for ${name}.`,
+      `Could not read ${name}'s local configuration.`,
     );
     assert.equal(
       formatConnectionMessage(
@@ -28,7 +28,7 @@ test('recognizes only exact inventory templates for known client IDs', () => {
         ),
         'en',
       ),
-      `Another Hyperion connection already exists in ${name}. It was not overwritten.`,
+      'The existing Hyperion entry differs. It has been left unchanged.',
     );
   }
 });
@@ -72,7 +72,7 @@ test('known fixed product failures and retained success notices render in the re
     ],
     [
       'La conexión de Claude Desktop está disponible para macOS y Windows. Usa Claude Code en este sistema.',
-      'Claude Desktop connections are available on macOS and Windows. Use Claude Code on this system.',
+      'The Claude Desktop connection is available on macOS and Windows.',
     ],
     [
       'La configuración cambió durante la conexión. Vuelve a intentarlo.',
@@ -83,7 +83,12 @@ test('known fixed product failures and retained success notices render in the re
   for (const [source, english] of examples) {
     const message = describeConnectionMessage(source!);
     assert.equal(formatConnectionMessage(message, 'en'), english);
-    assert.equal(formatConnectionMessage(message, 'es'), source);
+    assert.equal(
+      formatConnectionMessage(message, 'es'),
+      source?.includes('Usa Claude Code')
+        ? 'La conexión de Claude Desktop está disponible en macOS y Windows.'
+        : source,
+    );
     assert.equal(formatConnectionMessage(message, 'en'), english);
   }
   for (const key of ['configured', 'replaced'] as const) {

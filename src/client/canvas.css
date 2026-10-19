@@ -1450,6 +1450,20 @@ textarea::placeholder {
   overflow-wrap: anywhere;
   user-select: text;
 }
+.connection-original-diagnostic summary {
+  display: list-item;
+  min-height: 40px;
+  padding-block: 10px;
+  box-sizing: border-box;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.connection-original-diagnostic summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
 .connection-original-diagnostic p {
   white-space: pre-wrap;
   user-select: text;
@@ -1694,6 +1708,16 @@ button.linkish {
   box-shadow: 0 4px 30px #0002;
   border: 1px solid var(--line);
   font-size: 13px;
+}
+.empty-state .canvas-notice {
+  position: static;
+  transform: none;
+  margin: 20px auto 0;
+  text-align: left;
+}
+.canvas-notice > svg,
+.canvas-notice > button {
+  flex-shrink: 0;
 }
 .canvas-notice button {
   min-width: 32px;

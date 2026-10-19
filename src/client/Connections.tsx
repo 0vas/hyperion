@@ -477,13 +477,11 @@ function ConnectionAppRow({
         ) : (
           <p>{t('Ruta no disponible')}</p>
         )}
-        {message?.kind === 'diagnostic' && (
-          <div className="connection-original-diagnostic">
-            <span className="connection-detail-label">
-              {t('Mensaje de diagnóstico original')}
-            </span>
-            <p>{message.text}</p>
-          </div>
+        {row.detail && (
+          <details className="connection-original-diagnostic">
+            <summary>{t('Mensaje de diagnóstico original')}</summary>
+            <p>{row.detail}</p>
+          </details>
         )}
       </div>
     </li>
