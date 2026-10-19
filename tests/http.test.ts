@@ -126,6 +126,14 @@ test('HTTP connection inventory is human-only and lists five clients without cla
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const home = mkdtempSync(join(tmpdir(), 'hyperion-http-conn-'));
+  const saved = {
+    HYPERION_HOME: process.env.HYPERION_HOME,
+    CODEX_HOME: process.env.CODEX_HOME,
+    APPDATA: process.env.APPDATA,
+  };
+  process.env.HYPERION_HOME = home;
+  process.env.CODEX_HOME = join(home, '.codex');
+  process.env.APPDATA = join(home, 'Roaming');
   const store = new Store(':memory:');
   const app = createApp({
     store,
@@ -165,6 +173,10 @@ test('HTTP connection inventory is human-only and lists five clients without cla
   } finally {
     await app.close();
     store.close();
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
     rmSync(home, { recursive: true, force: true });
   }
 });

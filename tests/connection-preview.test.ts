@@ -201,8 +201,10 @@ test('authenticated inventory response contains only the projected preview', asy
   const home = mkdtempSync(join(tmpdir(), 'hyperion-preview-http-'));
   const priorHome = process.env.HYPERION_HOME;
   const priorCodex = process.env.CODEX_HOME;
+  const priorAppData = process.env.APPDATA;
   process.env.HYPERION_HOME = home;
   process.env.CODEX_HOME = join(home, '.codex');
+  process.env.APPDATA = join(home, 'Roaming');
   const store = new Store(':memory:');
   const app = createApp({
     store,
@@ -246,6 +248,8 @@ test('authenticated inventory response contains only the projected preview', asy
     else process.env.HYPERION_HOME = priorHome;
     if (priorCodex === undefined) delete process.env.CODEX_HOME;
     else process.env.CODEX_HOME = priorCodex;
+    if (priorAppData === undefined) delete process.env.APPDATA;
+    else process.env.APPDATA = priorAppData;
     rmSync(home, { recursive: true, force: true });
   }
 });

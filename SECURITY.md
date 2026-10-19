@@ -27,6 +27,12 @@ The development source projects an allowlisted summary of a conflicting client e
 
 This is not a universal secret detector or shell parser. Executable/path names, URL hosts and allowed client IDs are treated as public metadata; an arbitrary secret disguised as one of those values cannot be recognized reliably. Do not put credentials in those fields or share raw configurations. The amber comparison cue compares the displayed projection, including allowed environment values; hidden credentials and truncated differences are not a complete configuration diff. Authentication and the local single-user trust boundary still apply.
 
+## Owned runtime file checks
+
+In development source, connection inventory builds expected entries without registering credentials or writing exports. Only explicit setup keeps those writes. The human-only inventory additionally checks the generated executable and launcher paths owned by the running Hyperion installation. It checks for regular files, opens them read-only, rechecks the descriptors and closes them without reading contents. Saved client commands, arguments, environment and working directories cannot select runtime-check targets and are never executed. No child process, network probe, log reader or new listener is involved.
+
+The preflight returns bounded file-result codes and a UTC timestamp, without raw errors, new paths, log contents or secrets. Human authentication and existing Host/Origin/no-store controls precede inspection. A missing file or permission error is an observation under Hyperion's identity; other I/O errors remain unknown. File readability does not prove executability, Windows security acceptance, MCP initialization, tool-call success or tools loaded by Claude. This is a filesystem snapshot within the existing trusted local-user boundary, not protection against local file replacement or another program with that user's privileges. It does not automatically repair or replace files. These diagnostics are not yet included in a published installer.
+
 ## Reporting
 
 Do not disclose vulnerabilities or credentials in public issues. Use the repository's private vulnerability reporting feature if enabled; otherwise arrange a private channel with the repository owner through their GitHub profile before sending sensitive details. Include the affected revision, reproduction steps, impact, and a minimal sanitized example.

@@ -89,6 +89,12 @@ Verify with `codex mcp get hyperion` and use a session in which the tools are lo
 
 Create/step tools require `commandId`. Reuse it when retrying a transport request with the same content. A different action or changed content requires a new ID. The MCP server intentionally exposes no human approval tool. It uses the same HTTP contract as the CLI, with no direct access to the database.
 
+## What connection diagnostics establish
+
+In development source, the human-only connection inventory separates saved configuration from an owned-file preflight. Configured means the entry matches the expected connection. The file check only indicates whether Hyperion can open this installation's executable and launcher as regular files for reading. Inspection does not register credentials or create exports; explicit setup still does. Missing files and permission failures have distinct results; an unknown result does not prove failure. These diagnostics are not yet included in a published installer.
+
+The check does not execute saved commands, start MCP, read logs or confirm that Claude loaded tools. MCP initialization and a tool call remain not checked; tools in the current chat remain unknown. Claude Desktop's bundled-runtime connection does not require Claude Code or a separately installed Node. If tools remain absent after restarting, inspect the actual Hyperion server status in Claude and the configuration location opened by Claude's own Edit Config. Use only a short sanitized startup error when needed; do not share credentials or full logs. Do not infer account-plan restrictions from missing tools alone. Recheck after correcting a confirmed installation problem; reinstall/update is a separate human action.
+
 ## Other providers and environments
 
 An agent with HTTP or shell access can use the same protocol. MCP support alone does not guarantee that an agent can remain alive waiting for a decision or wake a conversation. Document those capabilities per integration. A remote/cloud agent cannot reach `127.0.0.1` on your laptop; remote access is outside this release.

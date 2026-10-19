@@ -7,8 +7,12 @@ import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'smol-toml';
-import { generateConnection } from './connections.js';
+import { buildMcpServer } from './connections.js';
 import { defaultDirectory } from './install.js';
+import {
+  inspectOwnedMcpRuntime,
+  type OwnedRuntimePreflight,
+} from './connection-runtime.js';
 
 export const DESKTOP_CLIENTS = [
   'codex',
@@ -195,6 +199,10 @@ export type ConnectionInventory = {
   };
 };
 
+export type InventoryWithPreflight = ConnectionInventory & {
+  runtimePreflight: OwnedRuntimePreflight;
+};
+
 type Options = {
   home?: string;
   directory?: string;
@@ -268,8 +276,12 @@ function expectedServer(
   url: string,
 ): Record<string, unknown> {
   const agentId = id === 'claude-desktop' ? 'claude' : id;
-  const generated = generateConnection(agentId, directory, true, url);
-  const { type: _type, ...server } = generated.config.mcpServers.hyperion;
+  const { type: _type, ...server } = buildMcpServer(
+    agentId,
+    directory,
+    true,
+    url,
+  );
   return server;
 }
 
@@ -429,5 +441,15 @@ export function inspectDesktopConnections(
       conflicts,
       total: integrations.length,
     },
+  };
+}
+
+/** Add owned-file observations without changing the synchronous config API. */
+export async function inspectDesktopConnectionsWithPreflight(
+  options: Options = {},
+): Promise<InventoryWithPreflight> {
+  return {
+    ...inspectDesktopConnections(options),
+    runtimePreflight: await inspectOwnedMcpRuntime(),
   };
 }

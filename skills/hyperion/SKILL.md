@@ -22,6 +22,8 @@ Use a stable lowercase identity for your tool (for example `codex`, `chatgpt`, `
 
 For MCP, use the URL returned by the tools rather than assuming port 4317. The development-source MCP launcher follows startup's authenticated alternate loopback URL when another Hyperion instance occupies the requested address, preserving the saved client configuration and foreign service. This correction is not yet in a published installer. A saved configuration or successful tool listing alone does not prove tool calls work in the current chat; verify a read-only call such as `hyperion_list_runs` before claiming the connection works.
 
+The development-source human Connections inventory can check whether Hyperion can read its own generated executable and launcher files. Configured means the saved entry matches; readable files do not prove MCP startup, tool calls or tools loaded in this chat. Missing files and permission failures are specific observations; other I/O failures remain unknown. Inspection does not execute saved commands, read logs, register credentials or repair files. These diagnostics are not yet in a published installer. Claude Desktop's bundled-runtime connection does not require Claude Code or a separate Node installation. If tools are absent after a restart, use Claude's actual server status and Edit Config location to diagnose; do not invent an account-plan restriction, repeat blind restarts or expose the local service. Request only sanitized evidence, never credentials or full logs.
+
 Read [the protocol](references/protocol.md) for commands and [the process contract](references/process-contract.md) for gates, typed I/O and public traces. Generate a plan specific to the request, write it to a temporary JSON file, then run:
 
 ```sh

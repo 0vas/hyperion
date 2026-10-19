@@ -16,16 +16,50 @@ Never commit or include `.hyperion/credentials.json` in a report. The agent inte
 
 ## Routes
 
-| Method | Route                    | Result                                         |
-| ------ | ------------------------ | ---------------------------------------------- |
-| GET    | `/api/health`            | Health and version, no credentials required    |
-| GET    | `/api/session`           | Bootstrap a local human browser session        |
-| GET    | `/api/runs`              | Up to 100 most recent snapshots, newest first  |
-| POST   | `/api/runs`              | Agent creates `{commandId, plan}`; returns 201 |
-| GET    | `/api/runs/:id`          | A complete run snapshot                        |
-| POST   | `/api/runs/:id/commands` | Apply one command atomically                   |
+| Method | Route                    | Result                                                      |
+| ------ | ------------------------ | ----------------------------------------------------------- |
+| GET    | `/api/health`            | Health and version, no credentials required                 |
+| GET    | `/api/session`           | Bootstrap a local human browser session                     |
+| GET    | `/api/connections`       | Human-only configuration inventory and owned-file preflight |
+| POST   | `/api/connections/setup` | Human-only explicit setup; returns updated inventory        |
+| GET    | `/api/runs`              | Up to 100 most recent snapshots, newest first               |
+| POST   | `/api/runs`              | Agent creates `{commandId, plan}`; returns 201              |
+| GET    | `/api/runs/:id`          | A complete run snapshot                                     |
+| POST   | `/api/runs/:id/commands` | Apply one command atomically                                |
 
 The session bootstrap is protected by exact Host/Origin and Fetch Metadata checks. It assumes trusted local programs and does not establish user identity over the Internet.
+
+## Connection inventory (development source)
+
+`GET /api/connections` requires the human session or human bearer credential: anonymous requests return 401; agent credentials return 403 before inspection. Responses retain `Cache-Control: no-store` and the same Host/Origin checks. Inspection does not register credentials, create connection exports or change client files. Explicit `POST /api/connections/setup` accepts `{client, replace?}` and retains its existing registration, backup and conflict-confirmation behavior; its `inventory` uses the same schema as GET.
+
+Inventory retains `version`, `channel`, `serviceUrl`, `integrations` and `summary`. A row's `configured` status and `summary.configured` mean that the saved entry matches the expected configuration, not that tools are loaded. The additive `runtimePreflight` describes only this installation's generated executable and auto-start launcher:
+
+```json
+{
+  "scope": "expected_mcp_files",
+  "checkedAt": "2026-10-19T04:00:00.000Z",
+  "executable": { "code": "readable_file" },
+  "launcher": { "code": "missing" },
+  "mcpInitialization": "not_checked",
+  "toolCall": "not_checked",
+  "chatTools": "unknown"
+}
+```
+
+`checkedAt` is the actual UTC completion time of the filesystem observation; the timestamp above is illustrative. Each file code is one of:
+
+| Code               | Observation under Hyperion's OS identity                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `readable_file`    | A regular file was opened read-only and its descriptor closed; contents were not read.     |
+| `missing`          | The filesystem returned ENOENT or ENOTDIR.                                                 |
+| `not_regular_file` | The path or opened descriptor was not a regular file.                                      |
+| `read_denied`      | Metadata lookup or read-only open/inspection returned EACCES or EPERM.                     |
+| `check_failed`     | Another I/O error, including failure to close the descriptor, prevented a reliable result. |
+
+File failures remain HTTP 200 diagnostics. They neither change configuration status nor authorize replacement. An absent preflight field from an older server means not checked. No raw paths, errors, logs or secrets are added by the preflight. It accepts no client-selected paths or commands, starts no process and makes no network request. Saved conflicting entries and Claude Code's skill are not validated by these shared MCP-file observations.
+
+Readability is a snapshot, not proof of executability, Windows policy/ACL access in Claude, MCP initialization, authentication, a successful tool call or tools enabled in a chat. Those latter fields remain explicitly unverified. The preflight does not repair files or establish why tools were absent on a particular computer. This addition is not yet included in a published installer.
 
 ## Plan
 
