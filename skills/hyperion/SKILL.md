@@ -20,6 +20,8 @@ node /absolute/path/to/this/skill/scripts/hyperion.mjs --agent YOUR_AGENT_ID up
 
 Use a stable lowercase identity for your tool (for example `codex`, `chatgpt`, `claude`, `claude-code`, `cursor`, `hermes`, `antigravity`, or another ID). The script starts/reuses the local service, registers that identity and returns the canvas URL. No API key, manual server startup or MCP configuration is needed. The launcher automatically backs up and replaces an older authenticated service from this same installation. An unrelated process, different installation, credential mismatch or newer server is left untouched; resolve that conflict without deleting workflow data.
 
+For MCP, use the URL returned by the tools rather than assuming port 4317. The development-source MCP launcher follows startup's authenticated alternate loopback URL when another Hyperion instance occupies the requested address, preserving the saved client configuration and foreign service. This correction is not yet in a published installer. A saved configuration or successful tool listing alone does not prove tool calls work in the current chat; verify a read-only call such as `hyperion_list_runs` before claiming the connection works.
+
 Read [the protocol](references/protocol.md) for commands and [the process contract](references/process-contract.md) for gates, typed I/O and public traces. Generate a plan specific to the request, write it to a temporary JSON file, then run:
 
 ```sh
