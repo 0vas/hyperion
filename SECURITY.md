@@ -16,6 +16,17 @@ Do not expose the server publicly, put it behind an Internet tunnel, or treat it
 
 A paused or cancelled workflow does not kill external processes or undo their effects. A disconnected executor may leave a step marked running. Reconcile the external action before retrying it.
 
+## Connection conflict previews
+
+The development source projects an allowlisted summary of a conflicting client entry before JSON delivery to the authenticated human-only connection inventory. This fix is not yet part of a published installer. The preview is read-only: it does not change the client file, conflict classification, replacement confirmation, backup, or preservation of other servers.
+
+- HTTP(S) URLs show only their normalized origin (scheme, host and port). Userinfo, the entire path, all query parameters and the fragment are removed. This applies to the entry URL, `HYPERION_URL`, positional URL arguments and supported URL options. Malformed URLs, whitespace/backslash ambiguity and other schemes are withheld.
+- Arguments retain only a supported prefix: local path-shaped arguments, HTTP(S) origins, `--stdio`, and split or `=` values for `--agent`, `--agent-id`, `--client`, `--data-dir`, `--cwd`, `--url`, `--server-url`, `--base-url`, and `--endpoint`. IDs must be lowercase identifiers; directories must be path-shaped. At the first unsupported argument, invalid value or non-string item, that item and the entire remaining tail become `••••`. This also withholds credential flags, header/authorization forms, environment assignments and shell scripts without guessing their arity. Useful values after an unsupported item will therefore also be hidden.
+- Environment variable names are shown only when they use ordinary identifier syntax. Values are omitted except for a validated `HYPERION_AGENT_ID`, path-shaped `HYPERION_DATA_DIR`, the projected `HYPERION_URL`, and `ELECTRON_RUN_AS_NODE` set to `0` or `1`. Invalid allowed values become `••••`.
+- Commands must be an executable basename or local path; working directories and skill paths must be local paths. Path projection accepts POSIX absolute paths with a single leading slash, `./` or `../` relative paths, and drive-qualified Windows paths, including spaces. Network paths and protocol-relative URLs are withheld, as are control characters, shell/URL metacharacters and embedded option text. Transport types are restricted to `stdio`, `http`, `sse`, and `streamable-http`; only the known owner `hyperion` is shown. Other values become `••••`. Display truncation happens after this projection.
+
+This is not a universal secret detector or shell parser. Executable/path names, URL hosts and allowed client IDs are treated as public metadata; an arbitrary secret disguised as one of those values cannot be recognized reliably. Do not put credentials in those fields or share raw configurations. The amber comparison cue compares the displayed projection, including allowed environment values; hidden credentials and truncated differences are not a complete configuration diff. Authentication and the local single-user trust boundary still apply.
+
 ## Reporting
 
 Do not disclose vulnerabilities or credentials in public issues. Use the repository's private vulnerability reporting feature if enabled; otherwise arrange a private channel with the repository owner through their GitHub profile before sending sensitive details. Include the affected revision, reproduction steps, impact, and a minimal sanitized example.

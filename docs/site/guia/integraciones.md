@@ -18,6 +18,12 @@ Después reinicia la herramienta y abre un chat nuevo. Las integraciones existen
 
 Una conexión instalada no garantiza que un chat ya abierto haya cargado las herramientas. Tampoco basta mencionar «Hyperion» en una aplicación sin integración.
 
+## Revisar un conflicto
+
+En las fuentes de desarrollo, **Menú → Conexiones → Resolver conflicto…** compara una vista previa limitada. Las URL muestran solo protocolo, host y puerto; se eliminan credenciales, rutas, parámetros y fragmentos. Los valores privados del entorno se omiten. Los argumentos se muestran solo mientras sigan los formatos admitidos; desde el primero no admitido o ambiguo, el resto aparece como `••••`. La marca ámbar compara los valores visibles, incluidos los valores permitidos del entorno.
+
+Esta vista previa no es un detector universal de secretos: los nombres de ejecutables, rutas locales, hosts e identificadores se consideran metadatos públicos. No pongas credenciales en ellos ni compartas archivos de configuración sin revisarlos. **Reemplazar conexión** requiere confirmación, crea un respaldo y conserva los demás servidores MCP. Esta corrección aún no está en un instalador publicado. [Política exacta y límites](https://github.com/0vas/hyperion/blob/main/SECURITY.md#connection-conflict-previews).
+
 ## Si no reconoce Hyperion
 
 1. Comprueba que elegiste la herramienta correcta en el asistente.

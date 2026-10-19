@@ -29,6 +29,12 @@ La edición actual requiere herramientas en el mismo ordenador. Claude en el nav
 
 Los formatos se contrastaron con la documentación de [Codex](https://developers.openai.com/codex/mcp), [Cursor](https://prod.cursor.com/docs/mcp) y [MCP para Claude Desktop](https://modelcontextprotocol.io/docs/develop/connect-local-servers). Las políticas del cliente u organización pueden impedir cargar servidores locales.
 
+## Vista previa de conflictos
+
+Las fuentes de desarrollo limitan los datos enviados a **Resolver conflicto…** antes de recortarlos para la pantalla. Las URL HTTP(S) muestran solo protocolo, host y puerto: se eliminan usuario/contraseña, ruta, parámetros y fragmento. Se conservan rutas locales y opciones de conexión admitidas; desde el primer argumento no admitido o ambiguo, el resto se sustituye por `••••`. Esto incluye opciones de credenciales, cabeceras y scripts. Del entorno solo se muestran valores validados de `HYPERION_AGENT_ID`, `HYPERION_DATA_DIR`, `HYPERION_URL` y `ELECTRON_RUN_AS_NODE`; los demás valores se omiten.
+
+La comparación ámbar usa los valores visibles, no un diff completo del archivo. Los nombres de ejecutables, rutas, hosts e identificadores se consideran metadatos públicos: no pongas credenciales en ellos. La proyección no es un detector universal de secretos. No modifica la configuración ni la confirmación, el respaldo o la conservación de otros servidores al reemplazar. Esta corrección aún no se ha publicado en un instalador. [Política exacta y límites](../SECURITY.md#connection-conflict-previews).
+
 ## Alternativas para agentes y desarrolladores
 
 Si ya recibes un canvas al pedir «usa Hyperion», sigue el [manual de uso](manual-uso.md). Los comandos siguientes son alternativas de instalación, no pasos del uso cotidiano.

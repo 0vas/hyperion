@@ -131,8 +131,7 @@ function fieldDiffers(
   key: keyof ConnectionEntryPreview,
 ): boolean {
   return (
-    JSON.stringify(existing?.[key] ?? null) !==
-    JSON.stringify(expected?.[key] ?? null)
+    formatPreviewValue(existing, key) !== formatPreviewValue(expected, key)
   );
 }
 
@@ -268,7 +267,7 @@ export function ConflictResolverBody({
       )}
       <p className="muted">
         {t(
-          'Se creará un respaldo del archivo antes de escribir la entrada Hyperion esperada.',
+          'Se creará un respaldo del archivo antes de escribir la entrada Hyperion esperada. Se conservarán los demás servidores MCP.',
         )}
       </p>
       <div className="modal-actions">
