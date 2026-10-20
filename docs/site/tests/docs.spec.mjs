@@ -1193,7 +1193,7 @@ test('CalVer minute and macOS opening instructions remain visible in both themes
         await expect(downloads.locator('time')).toHaveText('2026.10.20.0234');
         await expect(downloads.locator('time')).toHaveAttribute(
           'datetime',
-          '2026-10-19T21:11:00Z',
+          '2026-10-20T02:34:00Z',
         );
         await expect(downloads.locator('.download-status')).toContainText(
           locale
