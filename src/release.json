@@ -1,1 +1,5 @@
-{"version": "2026.10.20.0232", "channel": "preview", "timezone": "UTC"}
+{
+  "channel": "preview",
+  "timezone": "UTC",
+  "version": "2026.10.20.0234"
+}
