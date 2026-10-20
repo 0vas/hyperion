@@ -36,7 +36,7 @@ Use the repository CLI. New MCP configuration does not automatically inject tool
 4. Read `get RUN_ID`. Start only agent steps whose status is `ready` while the run is `active`.
 5. Execute real work. Report progress with `log`; report an actual result with `complete`, or a failure with `fail`.
 6. For `manual` and `approval` steps, wait for the user's action in the browser. Never submit or approve on the user's behalf.
-7. Show the URL in a progress message and use `wait RUN_ID REVISION 30` (or MCP `hyperion_wait`) before ending the turn. On a revision change, read the human decision and continue ready work in this same turn. A timeout is not approval. If ending the turn, explain that the idle chat needs the canvas continuation message; do not promise automatic wakeups.
+7. Show the URL in a progress message and use `wait RUN_ID REVISION 30` (or MCP `hyperion_wait`) before ending the turn. On a revision change, read the human decision and continue ready work in this same turn. Ending the turn without an active wait leaves ready agent tasks idle in the canvas (Claude Desktop and similar hosts do not resume by themselves). A timeout is not approval. If ending the turn, explain that the idle chat needs the canvas continuation message; do not promise automatic wakeups.
 8. If the run is cancelled or rejected, stop scheduling. Respect pauses. A pause permits reporting the result of work already started.
 
 Independent ready steps may be active together. Only do this when the underlying actions are genuinely independent. A running indicator means a start was recorded; it does not prove the external agent is still alive.
@@ -103,7 +103,7 @@ Set `HYPERION_AGENT_ID` to a registered identity when using CLI/MCP. Each identi
 
 ## User-selected presentation
 
-MCP offers `hyperion_open` with `runId` and `presentation: split|desktop`, including hosts without shell access. `hyperion open RUN_ID split` returns the existing browser URL. `hyperion open RUN_ID desktop` authenticates that run and launches the Desktop executable registered by its first launch, with explicit argument arrays (no shell). Presentation changes never create a run. The same loopback service and data directory back both views. Desktop intentionally refuses switching to a different service while a window is open.
+MCP offers `hyperion_open` with `runId` and `presentation: split|desktop`, including hosts without shell access. `hyperion open RUN_ID split` returns the existing browser URL for the person to open; it does not create a side pane inside Claude Desktop or other chat clients. `hyperion open RUN_ID desktop` authenticates that run and launches the Desktop executable registered by its first launch, with explicit argument arrays (no shell). Presentation changes never create a run. The same loopback service and data directory back both views. Desktop intentionally refuses switching to a different service while a window is open.
 
 The executable registration is local to the current user (`~/.hyperion/desktop.json`); it contains paths, not agent credentials. A development installation can override its home using `HYPERION_HOME`. Desktop includes Electron's Node runtime to start the service when absent. Closing the client preserves the service for chat/split continuation.
 

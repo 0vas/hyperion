@@ -47,7 +47,7 @@ En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta 
 3. Pide «Usa Hyperion para…» con un objetivo concreto.
 4. Si sigue fallando, revisa el error del asistente o del servidor MCP de tu herramienta.
 
-Claude Desktop no requiere Claude Code; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Los archivos del adaptador legibles no identifican la causa de herramientas ausentes en Windows. Todavía hacen falta los datos reales del cliente.
+Claude Desktop no requiere Claude Code; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Tras una decisión en el canvas, el agente debe mantener `hyperion_wait` en el mismo turno; sin esa espera el chat no retoma solo. `hyperion_open` en modo split solo entrega la URL del navegador—no abre un panel Hyperion dentro de Claude. Los archivos del adaptador legibles no identifican la causa de herramientas ausentes en Windows. Todavía hacen falta los datos reales del cliente.
 
 No compartas archivos de credenciales ni tokens al reportar un error.
 

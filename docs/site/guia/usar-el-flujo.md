@@ -31,7 +31,7 @@ En **I/O** ves las entradas y salidas; en **Logs**, resúmenes, acciones y obser
 
 **Espera al agente** significa que la tarea está habilitada y aún no se ha iniciado. Guardar tu respuesta no ejecuta por sí mismo acciones en otra aplicación.
 
-Si el chat está esperando mediante la integración, recibe el cambio y puede seguir en el mismo turno. Si terminó su turno, usa **Copiar continuación** en Hyperion y envía el texto en el chat conectado. Incluye el ID del flujo para recuperar la decisión y continuar sin empezar otro proceso.
+Si el chat está esperando mediante la integración (`hyperion_wait`), recibe el cambio y puede seguir en el mismo turno. Si terminó su turno sin espera—frecuente en Claude Desktop—, usa **Copiar continuación** en Hyperion y envía el texto en el chat conectado. Incluye el ID del flujo para recuperar la decisión y continuar sin empezar otro proceso. Pedir «split» solo obtiene la URL del navegador; Claude Desktop no abre un panel Hyperion nativo.
 
 Si no avanza, comprueba si está pausado, si falta otra respuesta o si el agente informó un error. Consulta la actividad de la tarea; no vuelvas a aprobar lo mismo ni crees otro flujo para eludir el bloqueo.
 

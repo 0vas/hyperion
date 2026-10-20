@@ -171,7 +171,7 @@ Puedes decir:
 
 > Vuelve a mostrarlo junto al chat.
 
-El agente mantiene el mismo flujo: decisiones y resultados aparecen en ambas vistas. **Split** usa el enlace web. **Escritorio** abre Hyperion Desktop después de instalarlo y abrirlo una vez. El usuario no tiene que copiar comandos ni configurar puertos. La herramienta de IA sí necesita la integración local de Hyperion, como en el uso web.
+El agente mantiene el mismo flujo: decisiones y resultados aparecen en ambas vistas. **Split** usa el enlace web: la herramienta `hyperion_open` con presentación split **solo devuelve esa URL**; no abre un panel nativo dentro de Claude Desktop u otros chats. Debes abrir el enlace en el navegador (o en una ventana web) tú mismo. **Escritorio** abre Hyperion Desktop después de instalarlo y abrirlo una vez. El usuario no tiene que copiar comandos ni configurar puertos. La herramienta de IA sí necesita la integración local de Hyperion, como en el uso web.
 
 Los instaladores son **DMG para macOS** y **EXE para Windows**. Se generaron DMG para Apple Silicon e Intel y EXE x64 para Windows; se probó la aplicación en Apple Silicon. Windows e Intel aún requieren una prueba en su plataforma. El repositorio contiene la compilación reproducible; la distribución pública firmada aún está pendiente. El DMG local es de desarrollo y no está notarizado.
 
@@ -186,7 +186,7 @@ Los instaladores son **DMG para macOS** y **EXE para Windows**. Se generaron DMG
 
 ## Si aprobaste y el flujo está esperando
 
-**Espera al agente** significa que tu decisión se guardó y la siguiente tarea está habilitada. Si el agente sigue conectado, debe retomarla en su turno. Si la conexión terminó, pulsa **Copiar continuación**, vuelve al mismo chat y pega la petición. También puedes escribir «Continúa mi flujo de Hyperion». No necesitas comandos. En esta versión el canvas no puede despertar por sí solo un chat inactivo.
+**Espera al agente** significa que tu decisión se guardó y la siguiente tarea está habilitada. Si el agente sigue conectado con una espera activa (`hyperion_wait`), debe retomarla en el mismo turno. Si terminó el turno sin esperar—común cuando Claude Desktop no dejó la herramienta en espera—, el canvas no despierta el chat solo: pulsa **Copiar continuación**, vuelve al mismo chat y pega la petición. También puedes escribir «Continúa mi flujo de Hyperion». No necesitas comandos. En esta versión el canvas no puede despertar por sí solo un chat inactivo.
 
 **I/O** abre las entradas, salidas y el contexto anterior. Expande solo la fuente que necesitas consultar. **Logs** muestra registros reales del paso; selecciona **Todo el proceso** para ampliar la vista. Los iconos pulsan brevemente al recibir registros o valores nuevos. Si dejan de pulsar, no significa necesariamente un error: no han llegado datos nuevos. La interfaz no puede mostrar acciones que la herramienta de IA no haya registrado.
 

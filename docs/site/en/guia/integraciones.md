@@ -45,7 +45,7 @@ In development source, if another Hyperion instance rejects this installation’
 3. Ask “Use Hyperion to…” with a concrete goal.
 4. Check the assistant or MCP server error if it still fails.
 
-Claude Desktop does not require Claude Code; the packaged Desktop connection also needs no separate system Node installation. Readable adapter files do not identify the cause of missing tools on Windows. Actual client evidence is still needed.
+Claude Desktop does not require Claude Code; the packaged Desktop connection also needs no separate system Node installation. After a canvas decision, the agent must keep `hyperion_wait` in the same turn; without that wait the chat does not resume by itself. `hyperion_open` in split mode only returns the browser URL—it does not open a Hyperion pane inside Claude. Readable adapter files do not identify the cause of missing tools on Windows. Actual client evidence is still needed.
 
 Do not share credentials or tokens when reporting an issue.
 

@@ -203,6 +203,8 @@ Para la aplicación de escritorio de Claude, usa el mismo comando `connect claud
 
 Reinicia la aplicación y comprueba que muestre las herramientas. La [guía oficial de servidores MCP locales](https://modelcontextprotocol.io/docs/develop/connect-local-servers) describe este mecanismo. Claude en el navegador no puede usar directamente este proceso stdio local; no equivale a Claude Desktop o Claude Code.
 
+Tras una decisión humana en el canvas, el agente debe llamar a `hyperion_wait` (o equivalente CLI) en el mismo turno; si termina sin esperar, Claude Desktop no retoma solo cuando guardas la respuesta. `hyperion_open` con presentación split solo entrega la URL del navegador: Claude Desktop no abre un panel Hyperion nativo.
+
 ### Cursor
 
 Genera la configuración:
