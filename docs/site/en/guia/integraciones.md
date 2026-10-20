@@ -41,11 +41,12 @@ In development source, **Cancel**, **Escape**, or clicking outside the confirmat
 In development source, if another Hyperion instance rejects this installation’s credentials at the requested address, the MCP launcher uses the alternate local port selected during startup. It does not change the saved client configuration or stop the other instance. This correction is not yet included in a published installer. Verify a read-only call such as `hyperion_list_runs`: an existing configuration or a visible tool list does not establish that calls work in that chat.
 
 1. Check that you selected the right tool in the assistant.
-2. If setup is new, restart it and open a new chat. If you already did that and tools are still absent, inspect the actual Hyperion server status and configuration in the client.
-3. Ask “Use Hyperion to…” with a concrete goal.
-4. Check the assistant or MCP server error if it still fails.
+2. If setup is new, restart it and open a **new** chat (do not regenerate an old non-Hyperion thread). If you already did that and tools are still absent, inspect the actual Hyperion server status and configuration in the client.
+3. In Claude Desktop, expand Loaded tools and confirm `hyperion_*` entries (for example `hyperion_create_run`).
+4. Ask “Use Hyperion to…” with a concrete goal.
+5. Check the assistant or MCP server error if it still fails.
 
-Claude Desktop does not require Claude Code; the packaged Desktop connection also needs no separate system Node installation. After a canvas decision, the agent must keep `hyperion_wait` in the same turn; without that wait the chat does not resume by itself. `hyperion_open` in split mode only returns the browser URL—it does not open a Hyperion pane inside Claude. Readable adapter files do not identify the cause of missing tools on Windows. Actual client evidence is still needed.
+Claude Desktop does not require Claude Code; the packaged Desktop connection also needs no separate system Node installation. Connecting Claude Desktop also refreshes the skill under `~/.claude/skills/hyperion`. After a canvas decision, the agent must keep `hyperion_wait` in the same turn; without that wait the chat does not resume by itself. `hyperion_open` in split mode only returns the browser URL—it does not open a Hyperion pane inside Claude. Readable adapter files do not identify the cause of missing tools on Windows. Actual client evidence is still needed.
 
 Do not share credentials or tokens when reporting an issue.
 

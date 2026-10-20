@@ -57,6 +57,14 @@ test('desktop connects Codex, Cursor, Claude Desktop and Antigravity without ven
       await setupDesktopClient(id, options);
       assert.equal(readFileSync(file, 'utf8'), text);
       assert.doesNotMatch(text, /agentToken|humanToken/);
+      if (id === 'claude-desktop') {
+        const skill = join(home, '.claude/skills/hyperion/SKILL.md');
+        assert.match(readFileSync(skill, 'utf8'), /Usa Hyperion/);
+        assert.match(
+          readFileSync(skill, 'utf8'),
+          /call Hyperion first|hyperion_create_run/,
+        );
+      }
     }
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -108,7 +116,7 @@ test('desktop setup refuses conflicts and malformed configuration without changi
   }
 });
 
-test('Claude Desktop uses Windows roaming data and Claude Code receives its own skill', async () => {
+test('Claude Desktop uses Windows roaming data and installs/refreshes the portable skill; Claude Code keeps skill-only setup', async () => {
   const home = mkdtempSync(join(tmpdir(), 'hyperion-setup-platform-'));
   try {
     const result = await setupDesktopClient('claude-desktop', {
@@ -116,11 +124,29 @@ test('Claude Desktop uses Windows roaming data and Claude Code receives its own 
       directory: join(home, 'data'),
       platform: 'win32',
       appData: join(home, 'Roaming'),
+      url: 'http://127.0.0.1:4341',
     });
     assert.equal(
       result.configFile,
       join(home, 'Roaming/Claude/claude_desktop_config.json'),
     );
+    const desktopSkill = join(home, '.claude/skills/hyperion/SKILL.md');
+    assert.match(readFileSync(desktopSkill, 'utf8'), /name: hyperion/);
+    assert.equal(
+      JSON.parse(
+        readFileSync(join(dirname(desktopSkill), 'runtime.json'), 'utf8'),
+      ).url,
+      'http://127.0.0.1:4341',
+    );
+    // Matching MCP entry still refreshes the skill (hashes stay managed).
+    await setupDesktopClient('claude-desktop', {
+      home,
+      directory: join(home, 'data'),
+      platform: 'win32',
+      appData: join(home, 'Roaming'),
+      url: 'http://127.0.0.1:4341',
+    });
+    assert.match(readFileSync(desktopSkill, 'utf8'), /call Hyperion first/);
     const code = await setupDesktopClient('claude-code', {
       home,
       directory: join(home, 'data'),

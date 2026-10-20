@@ -31,7 +31,7 @@ Forms should ask a concrete question using dropdowns, Yes/No, numbers or text. N
 
 **Espera al agente** (Waiting for the agent) means that the task is ready but has not started. Saving an answer does not itself execute actions in another application.
 
-During an active integration wait (`hyperion_wait`), the agent can receive the change in the same turn. If the chat ended without waiting—common with Claude Desktop—use **Copiar continuación** (Copy continuation) and send the text in the connected chat. Its run ID preserves your existing decision. Asking for “split” only returns the browser URL; Claude Desktop does not open a native Hyperion pane.
+During an active integration wait (`hyperion_wait`), the agent can receive the change in the same turn. If the chat ended without waiting—common with Claude Desktop—use **Copiar continuación** (Copy continuation) and send the text in the connected chat. Its run ID preserves your existing decision. Asking for “split” only returns the browser URL; Claude Desktop does not open a native Hyperion pane. Do not regenerate an old chat (for example yesterday’s Excel thread) to resume Hyperion: open a **new** chat, confirm `hyperion_*` tools are loaded, then paste the continuation or say “Use Hyperion to…”.
 
 Check for a paused run, another unanswered question or a reported error before retrying. Do not approve the same decision again to bypass a block.
 

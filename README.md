@@ -34,7 +34,7 @@ The simplest path is **Hyperion Desktop**; it includes its runtime:
 2. In the first-launch assistant, choose **Codex**, **Cursor**, **Claude Desktop**, **Claude Code**, or **Antigravity** (0.5.1-preview.1+). You can connect another application later from **Hyperion → Conectar con mi IA**.
 3. Restart your AI application, open a new chat, and say **“Usa Hyperion para preparar una guía breve de bienvenida a mi proyecto.”**
 
-No terminal, Node installation, API key or hand-written configuration is needed for this Desktop path. Codex, Cursor, Claude Desktop and Antigravity receive a local MCP connection; Claude Code receives the portable skill. Hyperion preserves other connections and backs up existing configuration before changing it. A conflicting Hyperion entry is reported without overwriting it.
+No terminal, Node installation, API key or hand-written configuration is needed for this Desktop path. Codex, Cursor, Claude Desktop and Antigravity receive a local MCP connection; Claude Desktop and Claude Code also receive the portable skill under `~/.claude/skills/hyperion`. Hyperion preserves other connections and backs up existing configuration before changing it. A conflicting Hyperion entry is reported without overwriting it.
 
 Google Antigravity is supported by the Desktop connection assistant and `setup antigravity` in `main`. [Setup and version availability](docs/conexion.md#antigravity): 0.5.1-preview.1 installers include this option; users of 0.4.0 need a manual upgrade. Configuration and MCP contract tests pass; a real Antigravity conversation and native resume connector remain unverified.
 

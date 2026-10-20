@@ -43,11 +43,12 @@ En las fuentes de desarrollo, **Cancelar**, **Escape** o pulsar fuera de la conf
 En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta instalación en la dirección solicitada, el lanzador MCP usa el puerto alternativo local elegido durante el arranque. No cambia la configuración guardada del cliente ni detiene la otra instancia. La corrección aún no está incluida en un instalador publicado. Comprueba una llamada de lectura, como `hyperion_list_runs`: que la configuración exista o se muestre la lista de herramientas no demuestra que las llamadas funcionen en ese chat.
 
 1. Comprueba que elegiste la herramienta correcta en el asistente.
-2. Si acabas de configurar, reinicia esa herramienta y abre un chat nuevo. Si ya lo hiciste y siguen faltando herramientas, revisa el estado real del servidor Hyperion y su configuración en el cliente.
-3. Pide «Usa Hyperion para…» con un objetivo concreto.
-4. Si sigue fallando, revisa el error del asistente o del servidor MCP de tu herramienta.
+2. Si acabas de configurar, reinicia esa herramienta y abre un **chat nuevo** (no regenerues un hilo antiguo sin Hyperion). Si ya lo hiciste y siguen faltando herramientas, revisa el estado real del servidor Hyperion y su configuración en el cliente.
+3. En Claude Desktop, confirma en herramientas cargadas que aparecen `hyperion_*` (p. ej. `hyperion_create_run`).
+4. Pide «Usa Hyperion para…» con un objetivo concreto.
+5. Si sigue fallando, revisa el error del asistente o del servidor MCP de tu herramienta.
 
-Claude Desktop no requiere Claude Code; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Tras una decisión en el canvas, el agente debe mantener `hyperion_wait` en el mismo turno; sin esa espera el chat no retoma solo. `hyperion_open` en modo split solo entrega la URL del navegador—no abre un panel Hyperion dentro de Claude. Los archivos del adaptador legibles no identifican la causa de herramientas ausentes en Windows. Todavía hacen falta los datos reales del cliente.
+Claude Desktop no requiere Claude Code; la conexión de Desktop empaquetado tampoco necesita una instalación separada de Node. Conectar Claude Desktop también refresca la skill en `~/.claude/skills/hyperion`. Tras una decisión en el canvas, el agente debe mantener `hyperion_wait` en el mismo turno; sin esa espera el chat no retoma solo. `hyperion_open` en modo split solo entrega la URL del navegador—no abre un panel Hyperion dentro de Claude. Los archivos del adaptador legibles no identifican la causa de herramientas ausentes en Windows. Todavía hacen falta los datos reales del cliente.
 
 No compartas archivos de credenciales ni tokens al reportar un error.
 

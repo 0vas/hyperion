@@ -44,13 +44,15 @@ export async function setupDesktopClient(id: string, options: Options = {}) {
     );
   const home = options.home || process.env.HYPERION_HOME || homedir();
   const directory = options.directory || defaultDirectory(home);
-  if (id === 'claude-code') {
-    const result = installSkill({
+  const installClaudeSkill = () =>
+    installSkill({
       home,
       directory,
       destination: resolve(home, '.claude/skills'),
       url: options.url,
     });
+  if (id === 'claude-code') {
+    const result = installClaudeSkill();
     return {
       client: id,
       configFile: resolve(result.paths[0]!, 'SKILL.md'),
@@ -119,8 +121,11 @@ export async function setupDesktopClient(id: string, options: Options = {}) {
     if (
       (!existingType || existingType === 'stdio') &&
       isDeepStrictEqual(JSON.parse(JSON.stringify(comparable)), server)
-    )
+    ) {
+      // Claude Desktop still refreshes the portable skill when MCP already matches.
+      if (id === 'claude-desktop') installClaudeSkill();
       return { client: id, configFile: file, backupFile: undefined };
+    }
     if (!options.replace)
       throw new Error(
         `Ya existe otra conexión Hyperion en ${id}. No se sobrescribió: ${file}`,
@@ -171,5 +176,7 @@ export async function setupDesktopClient(id: string, options: Options = {}) {
   } finally {
     rmSync(temporary, { force: true });
   }
+  // Desktop MCP entry alone does not refresh Claude Code's skill path; install it here too.
+  if (id === 'claude-desktop') installClaudeSkill();
   return { client: id, configFile: file, backupFile };
 }

@@ -6,8 +6,9 @@ La pausa persistente y el alcance por herramienta se explican en [Reanudación a
 
 1. Instala **Hyperion Desktop**: `.dmg` en macOS o `.exe` en Windows. En macOS, arrastra Hyperion a Aplicaciones antes de abrirlo.
 2. Al abrirlo, elige **Codex**, **Cursor**, **Claude Desktop**, **Claude Code** o **Antigravity** (desde 0.5.1-preview.1). Si ya lo usabas, entra en **Hyperion → Conectar con mi IA**.
-3. Reinicia la aplicación elegida y abre un chat nuevo. Si solicita habilitar Hyperion, acepta para usar sus herramientas.
-4. Escribe tu objetivo: **«Usa Hyperion para preparar una guía breve de bienvenida a mi proyecto»**.
+3. Reinicia la aplicación elegida y abre un **chat nuevo** (no regenerues un hilo antiguo de Excel u otra tarea sin Hyperion). Si solicita habilitar Hyperion, acepta para usar sus herramientas.
+4. En Claude Desktop, despliega **Loaded tools** / herramientas cargadas y confirma entradas `hyperion_*` (por ejemplo `hyperion_create_run`) antes de pedir el objetivo.
+5. Escribe tu objetivo: **«Usa Hyperion para preparar una guía breve de bienvenida a mi proyecto»**.
 
 No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Desktop incluye el runtime. La conexión sirve para otros proyectos y chats sin contexto previo. La IA pide solo los datos que falten y genera el proceso; no debes explicarle cómo dibujar el canvas ni cómo registrar los pasos.
 
@@ -17,7 +18,7 @@ No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Deskt
 | -------------- | ------------------------------------------------------------------------------------ |
 | Codex          | Conexión MCP de usuario; también respeta `CODEX_HOME` cuando está definido.          |
 | Cursor         | Conexión MCP de usuario para los proyectos locales.                                  |
-| Claude Desktop | Conexión MCP en la configuración de escritorio de macOS o Windows.                   |
+| Claude Desktop | Conexión MCP y skill portable en `~/.claude/skills/hyperion` (macOS o Windows).      |
 | Claude Code    | Skill Hyperion en su carpeta de skills de usuario.                                   |
 | Antigravity    | Conexión MCP global con respaldo; disponible en Desktop 0.5.1-preview.1 o posterior. |
 
@@ -203,7 +204,7 @@ Para la aplicación de escritorio de Claude, usa el mismo comando `connect claud
 
 Reinicia la aplicación y comprueba que muestre las herramientas. La [guía oficial de servidores MCP locales](https://modelcontextprotocol.io/docs/develop/connect-local-servers) describe este mecanismo. Claude en el navegador no puede usar directamente este proceso stdio local; no equivale a Claude Desktop o Claude Code.
 
-Tras una decisión humana en el canvas, el agente debe llamar a `hyperion_wait` (o equivalente CLI) en el mismo turno; si termina sin esperar, Claude Desktop no retoma solo cuando guardas la respuesta. `hyperion_open` con presentación split solo entrega la URL del navegador: Claude Desktop no abre un panel Hyperion nativo.
+Tras una decisión humana en el canvas, el agente debe llamar a `hyperion_wait` (o equivalente CLI) en el mismo turno; si termina sin esperar, Claude Desktop no retoma solo cuando guardas la respuesta. `hyperion_open` con presentación split solo entrega la URL del navegador: Claude Desktop no abre un panel Hyperion nativo. Conectar Claude Desktop también actualiza la skill en `~/.claude/skills/hyperion`; un chat regenerado que ignore las herramientas `hyperion_*` no es un fallo de MCP.
 
 ### Cursor
 

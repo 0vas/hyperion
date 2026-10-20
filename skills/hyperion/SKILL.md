@@ -12,6 +12,8 @@ The user describes the activity in their chat. You construct and advance its vis
 
 ## Start from a request
 
+When the user says **Usa Hyperion**, **Use Hyperion**, **quiero usar Hyperion**, or asks to guide an activity through Hyperion, **call Hyperion first**. With MCP: invoke `hyperion_create_run` (or `hyperion_list_runs` / `hyperion_get_run` to resume) before answering in free text. Put missing scope and choices in the Hyperion canvas as human steps with typed forms—not as chat-only questions that replace Hyperion. **Never** claim a missing filesystem, Cowork, Browser or other connector instead of Hyperion when `hyperion_*` tools are loaded in this chat. Do not regenerate an old non-Hyperion thread as a substitute for creating or continuing a run.
+
 Use loaded `hyperion_*` MCP tools when available. Otherwise run the script next to this skill:
 
 ```sh
