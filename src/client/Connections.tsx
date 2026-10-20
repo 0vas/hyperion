@@ -672,6 +672,18 @@ export function ConnectionsView({
           />
         ))}
       </ul>
+      <aside
+        className="connection-limit-notice"
+        role="note"
+        aria-label={t('ChatGPT Desktop no es una conexión local')}
+      >
+        <strong>{t('ChatGPT Desktop no es una conexión local')}</strong>
+        <p>
+          {t(
+            'ChatGPT Desktop no usa el MCP stdio de este equipo. Work mode no es un requisito de Hyperion. Para Hyperion en local usa Cursor, Codex, Claude Desktop o Claude Code.',
+          )}
+        </p>
+      </aside>
       <footer className="connections-footer">
         <button
           type="button"

@@ -32,6 +32,16 @@ for (const locale of ['es', 'en'] as const) {
           ? 'Herramientas en este chat: desconocidas.'
           : 'Tools in this chat: unknown.',
       );
+      await expect(panel.locator('.connection-limit-notice')).toContainText(
+        locale === 'es'
+          ? 'ChatGPT Desktop no es una conexión local'
+          : 'ChatGPT Desktop is not a local connection',
+      );
+      await expect(panel.locator('.connection-limit-notice')).toContainText(
+        locale === 'es'
+          ? 'Work mode no es un requisito de Hyperion'
+          : 'Work mode is not a Hyperion requirement',
+      );
       await expect(
         panel.locator('.connections-hero, .connection-service-strip'),
       ).toHaveCount(0);
@@ -61,7 +71,7 @@ for (const locale of ['es', 'en'] as const) {
         }
         await expectReadableText(
           panel.locator(
-            '.connection-row strong, .connection-status, .connections-calver, .connection-subtype:visible, .connections-summary, .connection-overview > p, .connections-apps-heading h3',
+            '.connection-row strong, .connection-status, .connections-calver, .connection-subtype:visible, .connections-summary, .connection-overview > p, .connection-limit-notice strong, .connections-apps-heading h3',
           ),
         );
         await page.screenshot({ path: info.outputPath(`apps-${width}.png`) });

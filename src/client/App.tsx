@@ -2490,6 +2490,11 @@ export function App() {
                 'Haz la petición en Codex, Claude, Cursor o tu herramienta conectada. El agente registra un plan y ejecuta sus tareas; tú respondes y apruebas aquí.',
               )}
             </p>
+            <p className="muted">
+              {t(
+                'ChatGPT Desktop no usa el MCP stdio de este equipo. Work mode no es un requisito de Hyperion. Para Hyperion en local usa Cursor, Codex, Claude Desktop o Claude Code.',
+              )}
+            </p>
             <ol>
               <li>
                 <strong>{t('Plantea tu objetivo')}</strong>

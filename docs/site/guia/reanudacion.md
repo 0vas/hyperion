@@ -18,15 +18,15 @@ El canvas distingue **Reanudación pendiente**, **Conector retomando** y **Solic
 
 ## Qué necesita cada herramienta
 
-| Herramienta    | Situación actual                                                                                                  |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Codex          | MCP/skill local disponible. Conector de reanudación vía App Server pendiente.                                     |
-| ChatGPT        | Requiere integración remota autenticada y eventos; pendiente. No conecta al MCP stdio de tu equipo.               |
-| Claude Desktop | MCP local disponible. Sin wakeup del mismo chat verificado.                                                       |
-| Claude Code    | MCP/skill disponible. Conector de sesión Agent SDK pendiente.                                                     |
-| Cursor         | MCP/skill disponible. Conector de sesión CLI pendiente.                                                           |
-| Hermes Agent   | MCP stdio configurable. Conector de sesión persistida pendiente.                                                  |
-| Antigravity    | MCP y asistente Desktop desde 0.5.1-preview.1. Sin validación en cliente real; conector de reanudación pendiente. |
+| Herramienta    | Situación actual                                                                                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Codex          | MCP/skill local disponible. Conector de reanudación vía App Server pendiente.                                                                 |
+| ChatGPT        | Requiere integración remota autenticada y eventos; pendiente. No conecta al MCP stdio de tu equipo. Work mode no es un requisito de Hyperion. |
+| Claude Desktop | MCP local disponible. Sin wakeup del mismo chat verificado.                                                                                   |
+| Claude Code    | MCP/skill disponible. Conector de sesión Agent SDK pendiente.                                                                                 |
+| Cursor         | MCP/skill disponible. Conector de sesión CLI pendiente.                                                                                       |
+| Hermes Agent   | MCP stdio configurable. Conector de sesión persistida pendiente.                                                                              |
+| Antigravity    | MCP y asistente Desktop desde 0.5.1-preview.1. Sin validación en cliente real; conector de reanudación pendiente.                             |
 
 Si ves **Continuar desde el chat**, la respuesta ya está guardada pero no hay un conector de reanudación asignado. Reintentar no crea un agente ni abre un chat por sí solo.
 

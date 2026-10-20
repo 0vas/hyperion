@@ -71,7 +71,9 @@ Tests cover configuration, backups, conflicts and the MCP protocol with an Antig
 
 ## Other applications
 
-Compatible clients can use MCP, the CLI or the local API. They must supply an agent that plans and executes; Hyperion does not include an AI model. Hermes can use a manually configured MCP stdio connection. ChatGPT requires a remote authenticated integration, which is not included.
+Compatible clients can use MCP, the CLI or the local API. They must supply an agent that plans and executes; Hyperion does not include an AI model. Hermes can use a manually configured MCP stdio connection.
+
+**ChatGPT Desktop** cannot use the local stdio MCP on this computer. An authenticated remote integration remains pending and is not included. ChatGPT **Work mode** is not a Hyperion requirement: for local work use Cursor, Codex, Claude Desktop or Claude Code from **Menu → Connections**.
 
 The current edition connects applications on the same computer. Do not expose the local service as a remote server.
 

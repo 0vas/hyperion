@@ -18,15 +18,15 @@ The canvas distinguishes pending resumption, connector dispatch and delivery to 
 
 ## Requirements by tool
 
-| Tool           | Current status                                                                                           |
-| -------------- | -------------------------------------------------------------------------------------------------------- |
-| Codex          | Local MCP/skill available. App Server resume connector pending.                                          |
-| ChatGPT        | Requires authenticated remote integration and events; pending. Cannot use your local stdio MCP directly. |
-| Claude Desktop | Local MCP available. Same-chat wakeup unverified.                                                        |
-| Claude Code    | MCP/skill available. Agent SDK session connector pending.                                                |
-| Cursor         | MCP/skill available. CLI session connector pending.                                                      |
-| Hermes Agent   | Configurable stdio MCP. Persisted-session connector pending.                                             |
-| Antigravity    | MCP and Desktop setup from 0.5.1-preview.1. Not validated in the real client; resume connector pending.  |
+| Tool           | Current status                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Codex          | Local MCP/skill available. App Server resume connector pending.                                                                                   |
+| ChatGPT        | Requires authenticated remote integration and events; pending. Cannot use your local stdio MCP directly. Work mode is not a Hyperion requirement. |
+| Claude Desktop | Local MCP available. Same-chat wakeup unverified.                                                                                                 |
+| Claude Code    | MCP/skill available. Agent SDK session connector pending.                                                                                         |
+| Cursor         | MCP/skill available. CLI session connector pending.                                                                                               |
+| Hermes Agent   | Configurable stdio MCP. Persisted-session connector pending.                                                                                      |
+| Antigravity    | MCP and Desktop setup from 0.5.1-preview.1. Not validated in the real client; resume connector pending.                                           |
 
 **Continuar desde el chat** (Continue from the chat) means your response is saved but no resume connector is assigned. Retry does not create an agent or open a chat.
 

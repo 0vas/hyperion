@@ -579,5 +579,7 @@
   "La entrada de Hyperion existente es distinta. Se conserva sin cambios.": "The existing Hyperion entry differs. It has been left unchanged.",
   "No se pudo comprobar la configuración local de {0}.": "Could not check the local configuration for {0}.",
   "No se pudo leer la configuración local de {0}.": "Could not read {0}'s local configuration.",
-  "La conexión de Claude Desktop está disponible en macOS y Windows.": "The Claude Desktop connection is available on macOS and Windows."
+  "La conexión de Claude Desktop está disponible en macOS y Windows.": "The Claude Desktop connection is available on macOS and Windows.",
+  "ChatGPT Desktop no es una conexión local": "ChatGPT Desktop is not a local connection",
+  "ChatGPT Desktop no usa el MCP stdio de este equipo. Work mode no es un requisito de Hyperion. Para Hyperion en local usa Cursor, Codex, Claude Desktop o Claude Code.": "ChatGPT Desktop does not use the local stdio MCP on this computer. Work mode is not a Hyperion requirement. For local Hyperion use Cursor, Codex, Claude Desktop, or Claude Code."
 }
