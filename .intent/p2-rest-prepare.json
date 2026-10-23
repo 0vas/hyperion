@@ -1,0 +1,29 @@
+{
+  "releaseJson": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.2144\"\n}\n",
+  "pkg": "2026.10.23-build.1304\n",
+  "diff": " package-lock.json | 4 ++--\n package.json      | 2 +-\n src/release.json  | 2 +-\n 3 files changed, 4 insertions(+), 4 deletions(-)\n",
+  "pushCommitsExit": 0,
+  "pushCommitsErr": "To https://github.com/0vas/hyperion\n   679b71e..6c95ba4  main -> main\n",
+  "commit": {
+    "ok": true,
+    "hash": "3b5c05e9ff2a39d952220f2e88cd1fb89f68f2ed",
+    "files": [
+      "package-lock.json",
+      "package.json",
+      "src/release.json"
+    ],
+    "fileCount": 3
+  },
+  "pushPrepExit": 0,
+  "pushPrepErr": "To https://github.com/0vas/hyperion\n   6c95ba4..3b5c05e  main -> main\n",
+  "head": "3b5c05e9ff2a39d952220f2e88cd1fb89f68f2ed",
+  "target": {
+    "createdAt": "2026-10-23T21:44:31Z",
+    "databaseId": 40028957057,
+    "event": "workflow_dispatch",
+    "headSha": "3b5c05e9ff2a39d952220f2e88cd1fb89f68f2ed",
+    "status": "pending",
+    "url": "https://github.com/0vas/hyperion/actions/runs/40028957057"
+  },
+  "sendOk": true
+}

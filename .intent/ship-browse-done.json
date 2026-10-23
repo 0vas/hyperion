@@ -1,0 +1,29 @@
+{
+  "remaining": "",
+  "remainingErr": "",
+  "releaseJson": "{\n  \"version\": \"2026.10.23.2125\",\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"macNotarized\": true\n}\n",
+  "diff": " README.md                            | 10 +++++-----\n desktop/README.md                    |  2 +-\n docs/conexion.md                     |  2 +-\n docs/manual-uso.md                   |  6 +++---\n docs/site/.vitepress/release.json    |  2 +-\n docs/site/en/guia/usar-el-flujo.md   |  2 +-\n docs/site/en/referencia/limites.md   |  2 +-\n docs/site/guia/primeros-pasos.md     |  2 +-\n docs/site/guia/usar-el-flujo.md      |  2 +-\n docs/site/referencia/limites.md      |  2 +-\n docs/site/tests/docs.spec.mjs        |  8 ++++----\n tests/e2e/connection-fixtures.ts     |  2 +-\n tests/e2e/connections-polish.spec.ts |  2 +-\n 13 files changed, 22 insertions(+), 22 deletions(-)\n",
+  "commit": {
+    "ok": true,
+    "hash": "9ec9db58d8edc55075c60279cae6a6560d2f6980",
+    "files": [
+      "README.md",
+      "desktop/README.md",
+      "docs/conexion.md",
+      "docs/manual-uso.md",
+      "docs/site/.vitepress/release.json",
+      "docs/site/en/guia/usar-el-flujo.md",
+      "docs/site/en/referencia/limites.md",
+      "docs/site/guia/primeros-pasos.md",
+      "docs/site/guia/usar-el-flujo.md",
+      "docs/site/referencia/limites.md",
+      "docs/site/tests/docs.spec.mjs",
+      "tests/e2e/connection-fixtures.ts",
+      "tests/e2e/connections-polish.spec.ts"
+    ],
+    "fileCount": 13
+  },
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   ffde9cb..9ec9db5  main -> main\n",
+  "sendOk": true
+}

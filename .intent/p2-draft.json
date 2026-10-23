@@ -1,0 +1,7 @@
+{
+  "createExit": 0,
+  "createOut": "https://github.com/0vas/hyperion/releases/tag/untagged-58c3238479287793df43\n",
+  "createErr": "",
+  "publishExit": 0,
+  "plist": "[{\"conclusion\":\"\",\"createdAt\":\"2026-10-23T21:42:44Z\",\"databaseId\":40028743980,\"status\":\"in_progress\",\"url\":\"https://github.com/0vas/hyperion/actions/runs/40028743980\"},{\"conclusion\":\"success\",\"createdAt\":\"2026-10-23T21:33:48Z\",\"databaseId\":40027677806,\"status\":\"completed\",\"url\":\"https://github.com/0vas/hyperion/actions/runs/40027677806\"}]\n"
+}

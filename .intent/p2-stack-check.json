@@ -1,0 +1,34 @@
+{
+  "origin": "679b71e Point public download registry at published Preview 2026.10.23.2135.\n20677fd Prepare Desktop Preview 2026.10.23.2135 for notarized distribution.\n67ecea7 Show honest stuck-running canvas copy when no agent wait is active.\n9ec9db5 Point public download registry at published Preview 2026.10.23.2125.\nffde9cb Prepare Desktop Preview 2026.10.23.2125 for notarized distribution.\n4bb9517 Instruct hosts to open split URLs in Browse and fail steps blocked by OS permission.\na8e0751 chore: register commit intent and ignore Olimpo metadata\n5c8bbdc chore: register Preview 2026.10.23.1732 publish intent\n",
+  "releaseJson": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.2135\"\n}\n",
+  "release": "{\"isDraft\":false,\"tagName\":\"v2026.10.23.2135\",\"targetCommitish\":\"20677fd34a325542f98a07adf7699e488f07a846\",\"url\":\"https://github.com/0vas/hyperion/releases/tag/v2026.10.23.2135\"}\n",
+  "presence": {
+    "2a495d1": {
+      "onMain": false,
+      "log": "2a495d1 Show honest stuck-running canvas copy when no agent wait is active.",
+      "showExit": 0
+    },
+    "c61c9b2": {
+      "onMain": false,
+      "log": "c61c9b2 Align permission-stall banner with Designer Posible atasco copy.",
+      "showExit": 0
+    },
+    "968cd85": {
+      "onMain": false,
+      "log": "968cd85 Format App.tsx and stuck-running tests with Prettier.",
+      "showExit": 0
+    },
+    "e033fe3": {
+      "onMain": false,
+      "log": "e033fe3 Use static icons for stalled running step hints.",
+      "showExit": 0
+    },
+    "67ecea7": {
+      "onMain": true,
+      "log": "67ecea7 Show honest stuck-running canvas copy when no agent wait is active.",
+      "showExit": 0
+    }
+  },
+  "range": "e033fe3 Use static icons for stalled running step hints.\n968cd85 Format App.tsx and stuck-running tests with Prettier.\nc61c9b2 Align permission-stall banner with Designer Posible atasco copy.\n2a495d1 Show honest stuck-running canvas copy when no agent wait is active.\n",
+  "rangeErr": ""
+}

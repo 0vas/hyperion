@@ -1,0 +1,8 @@
+{
+  "cherryExit": 0,
+  "cherryOut": "[main 4d0479c] Align permission-stall banner with Designer Posible atasco copy.\n Date: Fri Oct 23 16:27:08 2026 -0500\n 4 files changed, 75 insertions(+), 21 deletions(-)\n[main 8397ba3] Format App.tsx and stuck-running tests with Prettier.\n Date: Fri Oct 23 16:27:49 2026 -0500\n 2 files changed, 6 insertions(+), 3 deletions(-)\n[main 6c95ba4] Use static icons for stalled running step hints.\n Date: Fri Oct 23 16:28:25 2026 -0500\n 1 file changed, 7 insertions(+), 1 deletion(-)\n",
+  "cherryErr": "",
+  "status": "## main...origin/main [ahead 3]\n?? .intent/p2-cherry.json\n?? .intent/p2-done.json\n?? .intent/p2-draft.json\n?? .intent/p2-prepare.json\n?? .intent/p2-runid.json\n?? .intent/p2-stack-check.json\n?? .intent/p2-state.json\n?? .intent/release-notes-2125.md\n?? .intent/release-notes-2135.md\n?? .intent/ship-browse-done.json\n?? .intent/ship-browse-draft.json\n?? .intent/ship-browse-prepare.json\n?? .intent/ship-browse-push.json\n?? .intent/ship-browse-runid.json\n?? .intent/ship-browse-state.json\n?? .olimpo/\n",
+  "log": "6c95ba4 Use static icons for stalled running step hints.\n8397ba3 Format App.tsx and stuck-running tests with Prettier.\n4d0479c Align permission-stall banner with Designer Posible atasco copy.\n",
+  "version": "2026.10.23.2144"
+}

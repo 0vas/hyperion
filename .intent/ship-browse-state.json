@@ -1,0 +1,10 @@
+{
+  "fetchExit": 0,
+  "status": "## main...origin/main [ahead 3]\n M src/client/App.tsx\n?? .olimpo/\n?? src/client/stuck-running.ts\n?? tests/stuck-running.test.ts\n",
+  "ahead": "4bb9517 Instruct hosts to open split URLs in Browse and fail steps blocked by OS permission.\na8e0751 chore: register commit intent and ignore Olimpo metadata\n5c8bbdc chore: register Preview 2026.10.23.1732 publish intent\n",
+  "log": "4bb9517 Instruct hosts to open split URLs in Browse and fail steps blocked by OS permission.\na8e0751 chore: register commit intent and ignore Olimpo metadata\n5c8bbdc chore: register Preview 2026.10.23.1732 publish intent\n45683c5 Point public download registry at published Preview 2026.10.23.1732.\ndab241c Prepare Desktop Preview 2026.10.23.1732 for notarized distribution.\n76c58ef Require canvas-only clarifying Q&A once Hyperion MCP is in use.\n",
+  "release": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.1732\"\n}\n",
+  "now": "2026.10.23.2124",
+  "showExit": 0,
+  "show": "commit 4bb951765e7ddb84041181d249558cbba0ef382c\nAuthor: Oscar Lobaton <oscarlobaton@credicorpperu.com>\nDate:   Fri Oct 23 16:22:18 2026 -0500\n\n    Instruct hosts to open split URLs in Browse and fail steps blocked by OS permission.\n    \n    Stop blank Claude Browse panes after hyperion_open split, and require hyperion_step fail before ending a turn when access is denied so steps are not left orphaned running.\n    \n    Agent-Id: agent-b421e6c0-8732-404c-b759-d073fd2ca97a\n\n docs/conexion.md                   |  2 +-\n docs/integration.md                |  4 +++-\n docs/manual-uso.md                 |  4 +++-\n docs/site/en/guia/usar-el-flujo.md |  4 ++--\n docs/site/guia/usar-el-flujo.md    |  4 ++--\n skills/hyperion/SKILL.md           | 21 ++++++++++++++++++++-\n src/adapters/mcp.ts                |  6 +++---\n tests/mcp-instructions.test.ts     |  4 ++++\n 8 files changed, 38 insertions(+), 11 deletions(-)\n"
+}

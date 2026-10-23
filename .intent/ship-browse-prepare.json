@@ -1,0 +1,22 @@
+{
+  "before": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.1732\"\n}\n",
+  "pkgBefore": "2026.10.23-build.1052\n",
+  "version": "2026.10.23.2125",
+  "syncOut": "\n> hyperion-workflows@2026.10.23-build.1052 release:sync\n> node scripts/sync-release.mjs\n\nPackage compatibility version: 2026.10.23-build.1285. Public version is in src/release.json.\n",
+  "after": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.2125\"\n}\n",
+  "pkgAfter": "2026.10.23-build.1285\n",
+  "diff": " package-lock.json | 4 ++--\n package.json      | 2 +-\n src/release.json  | 2 +-\n 3 files changed, 4 insertions(+), 4 deletions(-)\n",
+  "commit": {
+    "ok": true,
+    "hash": "ffde9cb762e378a7ee8d7b4322875f9cc0d52126",
+    "files": [
+      "package-lock.json",
+      "package.json",
+      "src/release.json"
+    ],
+    "fileCount": 3
+  },
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   4bb9517..ffde9cb  main -> main\n",
+  "head": "ffde9cb762e378a7ee8d7b4322875f9cc0d52126"
+}

@@ -1,0 +1,36 @@
+{
+  "target": {
+    "createdAt": "2026-10-23T21:35:34Z",
+    "databaseId": 40027891216,
+    "event": "workflow_dispatch",
+    "headSha": "20677fd34a325542f98a07adf7699e488f07a846",
+    "status": "pending",
+    "url": "https://github.com/0vas/hyperion/actions/runs/40027891216"
+  },
+  "runs": [
+    {
+      "createdAt": "2026-10-23T21:35:34Z",
+      "databaseId": 40027891216,
+      "event": "workflow_dispatch",
+      "headSha": "20677fd34a325542f98a07adf7699e488f07a846",
+      "status": "pending",
+      "url": "https://github.com/0vas/hyperion/actions/runs/40027891216"
+    },
+    {
+      "createdAt": "2026-10-23T21:35:24Z",
+      "databaseId": 40027872258,
+      "event": "push",
+      "headSha": "20677fd34a325542f98a07adf7699e488f07a846",
+      "status": "completed",
+      "url": "https://github.com/0vas/hyperion/actions/runs/40027872258"
+    },
+    {
+      "createdAt": "2026-10-23T21:34:33Z",
+      "databaseId": 40027770260,
+      "event": "push",
+      "headSha": "9ec9db58d8edc55075c60279cae6a6560d2f6980",
+      "status": "in_progress",
+      "url": "https://github.com/0vas/hyperion/actions/runs/40027770260"
+    }
+  ]
+}

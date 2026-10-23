@@ -1,0 +1,10 @@
+{
+  "parents": "ffde9cb762e378a7ee8d7b4322875f9cc0d52126 Show honest stuck-running canvas copy when no agent wait is active.\n",
+  "base": "ffde9cb762e378a7ee8d7b4322875f9cc0d52126\n",
+  "contains": "",
+  "cherryExit": 0,
+  "cherryOut": "[main 67ecea7] Show honest stuck-running canvas copy when no agent wait is active.\n Date: Fri Oct 23 16:25:30 2026 -0500\n 4 files changed, 213 insertions(+), 11 deletions(-)\n create mode 100644 src/client/stuck-running.ts\n create mode 100644 tests/stuck-running.test.ts\n",
+  "cherryErr": "",
+  "status": "## main...origin/main [ahead 1]\n?? .intent/p2-state.json\n?? .intent/release-notes-2125.md\n?? .intent/ship-browse-done.json\n?? .intent/ship-browse-draft.json\n?? .intent/ship-browse-prepare.json\n?? .intent/ship-browse-push.json\n?? .intent/ship-browse-runid.json\n?? .intent/ship-browse-state.json\n?? .olimpo/\n",
+  "log": "67ecea7 Show honest stuck-running canvas copy when no agent wait is active.\n9ec9db5 Point public download registry at published Preview 2026.10.23.2125.\nffde9cb Prepare Desktop Preview 2026.10.23.2125 for notarized distribution.\n"
+}

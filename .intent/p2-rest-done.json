@@ -1,0 +1,26 @@
+{
+  "commit": {
+    "ok": true,
+    "hash": "50c6640bd69b67ffba89e69281e1a763939b6235",
+    "files": [
+      "README.md",
+      "desktop/README.md",
+      "docs/conexion.md",
+      "docs/manual-uso.md",
+      "docs/site/.vitepress/release.json",
+      "docs/site/en/guia/usar-el-flujo.md",
+      "docs/site/en/referencia/limites.md",
+      "docs/site/guia/primeros-pasos.md",
+      "docs/site/guia/usar-el-flujo.md",
+      "docs/site/referencia/limites.md",
+      "docs/site/tests/docs.spec.mjs",
+      "tests/e2e/connection-fixtures.ts",
+      "tests/e2e/connections-polish.spec.ts"
+    ],
+    "fileCount": 13
+  },
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   3b5c05e..50c6640  main -> main\n",
+  "log": "50c6640 Point public download registry at published Preview 2026.10.23.2144.\n3b5c05e Prepare Desktop Preview 2026.10.23.2144 for notarized distribution.\n6c95ba4 Use static icons for stalled running step hints.\n8397ba3 Format App.tsx and stuck-running tests with Prettier.\n4d0479c Align permission-stall banner with Designer Posible atasco copy.\n679b71e Point public download registry at published Preview 2026.10.23.2135.\n20677fd Prepare Desktop Preview 2026.10.23.2135 for notarized distribution.\n67ecea7 Show honest stuck-running canvas copy when no agent wait is active.\n",
+  "sendOk": true
+}

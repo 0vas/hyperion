@@ -1,0 +1,11 @@
+{
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   45683c5..4bb9517  main -> main\n",
+  "verify": "4bb9517 Instruct hosts to open split URLs in Browse and fail steps blocked by OS permission.\na8e0751 chore: register commit intent and ignore Olimpo metadata\n5c8bbdc chore: register Preview 2026.10.23.1732 publish intent\n",
+  "ancestorExit": 0,
+  "version": "2026.10.23.2124",
+  "bump": "",
+  "syncExit": 0,
+  "syncOut": "\n> hyperion-workflows@2026.10.23-build.1052 release:sync\n> node scripts/sync-release.mjs\n\nPackage compatibility version: 2026.10.23-build.1052. Public version is in src/release.json.\n",
+  "syncErr": ""
+}
