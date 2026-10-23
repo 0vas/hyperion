@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   hasOrphanRunning,
+  hasPermissionStall,
   latestStepEvidence,
   looksLikePermissionDenial,
   stuckRunningKind,
@@ -55,4 +56,26 @@ test('latestStepEvidence reads the newest message for the step', () => {
     'Documents access denied',
   );
   assert.equal(latestStepEvidence([], 'scan'), '');
+});
+
+test('permission stall banner fixture: running + denied log + no wait', () => {
+  const steps = [
+    { id: 'scan', kind: 'agent', status: 'running' },
+    { id: 'ask', kind: 'manual', status: 'completed' },
+  ];
+  const denied = [{ stepId: 'scan', message: 'Documents access denied' }];
+  assert.equal(hasPermissionStall(steps, denied, false), true);
+  assert.equal(hasPermissionStall(steps, denied, true), false);
+  assert.equal(
+    hasPermissionStall(steps, [{ stepId: 'scan', message: 'Scanning…' }], false),
+    false,
+  );
+  assert.equal(
+    hasPermissionStall(
+      [{ id: 'scan', kind: 'agent', status: 'ready' }],
+      denied,
+      false,
+    ),
+    false,
+  );
 });

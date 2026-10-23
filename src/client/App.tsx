@@ -10,7 +10,7 @@ import { contextForStep, routeLabel } from '../domain/context';
 import { HarnessIcon } from './HarnessIcon';
 import { useReceiptActivity, mergeRuns } from './receipt-activity';
 import {
-  hasOrphanRunning,
+  hasPermissionStall,
   latestStepEvidence,
   looksLikePermissionDenial,
   stuckRunningKind,
@@ -1463,8 +1463,9 @@ export function App() {
   const waiting = run?.steps.filter((s) => s.status === 'waiting').length || 0;
   const ready = run?.steps.filter((s) => s.status === 'ready').length || 0;
   const live = run?.status === 'active';
-  const orphanRunning =
-    !!run && hasOrphanRunning(run.steps, !!run.agentWaiting);
+  const permissionStall =
+    !!run &&
+    hasPermissionStall(run.steps, run.events, !!run.agentWaiting);
   const blockedReason = step?.dependencies
     .filter((id) => run?.steps.find((s) => s.id === id)?.status !== 'completed')
     .map((id) => run?.steps.find((s) => s.id === id)?.title)
@@ -1858,20 +1859,35 @@ export function App() {
                     <ArrowUpRight size={16} />
                   </button>
                 )}
-                {live && orphanRunning && waiting === 0 && (
+                {live && permissionStall && waiting === 0 && (
                   <button
                     className="canvas-next"
-                    onClick={copyPrompt}
+                    onClick={() => {
+                      const stalled = run.steps.find(
+                        (s) =>
+                          s.kind === 'agent' &&
+                          s.status === 'running' &&
+                          looksLikePermissionDenial(
+                            latestStepEvidence(run.events, s.id) ||
+                              s.result ||
+                              '',
+                          ),
+                      );
+                      if (stalled) {
+                        selectStep(stalled.id);
+                        openPanel('step');
+                      }
+                    }}
                     aria-haspopup="dialog"
                   >
                     <Bot size={17} />
                     <span>
-                      <strong>{t('Chat desconectado')}</strong>
+                      <strong>{t('Posible atasco')}</strong>
                       {t(
-                        'Hay un paso en curso sin espera activa. Copia la continuación o recupera la tarea si el intento quedó atrapado.',
+                        'El agente se detuvo sin fallar este paso (p. ej. acceso denegado). No hay chat esperando. Usa Recuperar tarea o pega Copiar continuación en el chat conectado.',
                       )}
                     </span>
-                    <Copy size={15} />
+                    <ArrowUpRight size={16} />
                   </button>
                 )}
                 {live && !waiting && ready > 0 && run.continuation && (
@@ -2191,7 +2207,7 @@ export function App() {
                                       )
                                     : kind === 'permission'
                                       ? t(
-                                          'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando. Concede el permiso y usa Copiar continuación, o Recuperar tarea si el intento quedó atrapado.',
+                                          'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
                                         )
                                       : t(
                                           'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
@@ -2200,24 +2216,19 @@ export function App() {
                                     <>
                                       <button
                                         className="secondary"
+                                        disabled={busy || !online}
+                                        onClick={() => requestRetry(step.id)}
+                                      >
+                                        {t('Recuperar tarea')}
+                                      </button>
+                                      <button
+                                        className="secondary"
                                         onClick={copyPrompt}
                                       >
                                         {copied
                                           ? t('Pega la petición en tu chat')
                                           : t('Copiar continuación')}
                                       </button>
-                                      <button
-                                        className="secondary"
-                                        disabled={busy || !online}
-                                        onClick={() => requestRetry(step.id)}
-                                      >
-                                        {t('Recuperar tarea')}
-                                      </button>
-                                      <span className="muted">
-                                        {t(
-                                          'Pégala en el mismo chat conectado (o uno nuevo con Hyperion) para retomar este intento.',
-                                        )}
-                                      </span>
                                     </>
                                   )}
                                 </p>

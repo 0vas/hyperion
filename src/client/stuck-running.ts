@@ -36,3 +36,20 @@ export function hasOrphanRunning(
     steps.some((step) => step.kind === 'agent' && step.status === 'running')
   );
 }
+
+/** Canvas banner: orphan running + permission-like evidence on that step. */
+export function hasPermissionStall(
+  steps: { id: string; kind: string; status: string; result?: string }[],
+  events: { stepId?: string; message?: string }[],
+  agentWaiting: boolean,
+): boolean {
+  if (agentWaiting) return false;
+  return steps.some(
+    (step) =>
+      step.kind === 'agent' &&
+      step.status === 'running' &&
+      looksLikePermissionDenial(
+        latestStepEvidence(events, step.id) || step.result || '',
+      ),
+  );
+}
