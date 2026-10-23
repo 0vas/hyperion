@@ -10,6 +10,12 @@ import { contextForStep, routeLabel } from '../domain/context';
 import { HarnessIcon } from './HarnessIcon';
 import { useReceiptActivity, mergeRuns } from './receipt-activity';
 import {
+  hasOrphanRunning,
+  latestStepEvidence,
+  looksLikePermissionDenial,
+  stuckRunningKind,
+} from './stuck-running';
+import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -789,6 +795,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [help, setHelp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [retryTarget, setRetryTarget] = useState<string>();
   const [confirmation, setConfirmation] = useState<
     'cancel' | 'reject' | 'retry' | null
@@ -1440,9 +1447,24 @@ export function App() {
       );
     }
   }
+  async function copyCanvasLink() {
+    if (!run) return;
+    try {
+      const url = `${location.origin}/?run=${run.id}`;
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      setError(
+        t('No se pudo copiar. Puedes seleccionar y copiar el ID del flujo.'),
+      );
+    }
+  }
   const waiting = run?.steps.filter((s) => s.status === 'waiting').length || 0;
   const ready = run?.steps.filter((s) => s.status === 'ready').length || 0;
   const live = run?.status === 'active';
+  const orphanRunning =
+    !!run && hasOrphanRunning(run.steps, !!run.agentWaiting);
   const blockedReason = step?.dependencies
     .filter((id) => run?.steps.find((s) => s.id === id)?.status !== 'completed')
     .map((id) => run?.steps.find((s) => s.id === id)?.title)
@@ -1510,6 +1532,18 @@ export function App() {
           <Copy size={15} />
           {copied ? t('Pega la petición en tu chat') : t('Copiar continuación')}
         </button>
+        {run && (
+          <button
+            className="secondary"
+            onClick={() => void copyCanvasLink()}
+            title={t('Pégalo en Browse de Claude (o ábrelo en el navegador).')}
+          >
+            <Copy size={15} />
+            {copiedLink
+              ? t('Enlace copiado · ábrelo en Browse')
+              : t('Copiar enlace del canvas')}
+          </button>
+        )}
         {(live || run.status === 'paused') && (
           <>
             <button
@@ -1824,6 +1858,22 @@ export function App() {
                     <ArrowUpRight size={16} />
                   </button>
                 )}
+                {live && orphanRunning && waiting === 0 && (
+                  <button
+                    className="canvas-next"
+                    onClick={copyPrompt}
+                    aria-haspopup="dialog"
+                  >
+                    <Bot size={17} />
+                    <span>
+                      <strong>{t('Chat desconectado')}</strong>
+                      {t(
+                        'Hay un paso en curso sin espera activa. Copia la continuación o recupera la tarea si el intento quedó atrapado.',
+                      )}
+                    </span>
+                    <Copy size={15} />
+                  </button>
+                )}
                 {live && !waiting && ready > 0 && run.continuation && (
                   <button
                     className="canvas-next"
@@ -1965,7 +2015,9 @@ export function App() {
                         {String(run.steps.indexOf(step) + 1).padStart(2, '0')}
                         <span className={`status-tag ${step.status}`}>
                           <StatusIcon status={step.status} />
-                          {labels[step.status]}
+                          {step.status === 'running' && !run.agentWaiting
+                            ? `${labels.running} · ${t('chat desconectado')}`
+                            : labels[step.status]}
                         </span>
                       </div>
                       <h2 id="popup-title">{step.title}</h2>
@@ -2118,16 +2170,60 @@ export function App() {
                             </p>
                           </div>
                         )}
-                        {step.status === 'running' && (
-                          <div className="step-hint">
-                            <LoaderCircle className="spin" size={17} />
-                            <p>
-                              {t(
-                                'El agente tiene este paso en curso. Puedes revisar sus avances en Actividad.',
-                              )}
-                            </p>
-                          </div>
-                        )}
+                        {step.status === 'running' &&
+                          (() => {
+                            const permissionLike = looksLikePermissionDenial(
+                              latestStepEvidence(run.events, step.id) ||
+                                step.result ||
+                                '',
+                            );
+                            const kind = stuckRunningKind({
+                              agentWaiting: !!run.agentWaiting,
+                              permissionLike,
+                            });
+                            return (
+                              <div className="step-hint">
+                                <LoaderCircle className="spin" size={17} />
+                                <p>
+                                  {kind === 'active-wait'
+                                    ? t(
+                                        'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
+                                      )
+                                    : kind === 'permission'
+                                      ? t(
+                                          'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando. Concede el permiso y usa Copiar continuación, o Recuperar tarea si el intento quedó atrapado.',
+                                        )
+                                      : t(
+                                          'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
+                                        )}
+                                  {kind !== 'active-wait' && live && (
+                                    <>
+                                      <button
+                                        className="secondary"
+                                        onClick={copyPrompt}
+                                      >
+                                        {copied
+                                          ? t('Pega la petición en tu chat')
+                                          : t('Copiar continuación')}
+                                      </button>
+                                      <button
+                                        className="secondary"
+                                        disabled={busy || !online}
+                                        onClick={() => requestRetry(step.id)}
+                                      >
+                                        {t('Recuperar tarea')}
+                                      </button>
+                                      <span className="muted">
+                                        {t(
+                                          'Pégala en el mismo chat conectado (o uno nuevo con Hyperion) para retomar este intento.',
+                                        )}
+                                      </span>
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            );
+                          })()}
                         {step.status === 'ready' && live && (
                           <div className="step-hint">
                             <Bot size={17} />
