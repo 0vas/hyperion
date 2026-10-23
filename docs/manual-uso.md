@@ -171,7 +171,7 @@ Puedes decir:
 
 > Vuelve a mostrarlo junto al chat.
 
-El agente mantiene el mismo flujo: decisiones y resultados aparecen en ambas vistas. **Split** usa el enlace web: la herramienta `hyperion_open` con presentación split **solo devuelve esa URL**; no abre un panel nativo dentro de Claude Desktop u otros chats. Debes abrir el enlace en el navegador (o en una ventana web) tú mismo. **Escritorio** abre Hyperion Desktop después de instalarlo y abrirlo una vez. El usuario no tiene que copiar comandos ni configurar puertos. La herramienta de IA sí necesita la integración local de Hyperion, como en el uso web.
+El agente mantiene el mismo flujo: decisiones y resultados aparecen en ambas vistas. **Split** usa el enlace web: la herramienta `hyperion_open` con presentación split **solo devuelve esa URL**; Claude Desktop no tiene un panel Hyperion nativo. Abre esa URL en el panel Browse / vista dividida del cliente (o en el navegador externo si Browse no carga el loopback) para que el panel derecho muestre el canvas—no lo dejes en blanco. **Escritorio** abre Hyperion Desktop después de instalarlo y abrirlo una vez. El usuario no tiene que copiar comandos ni configurar puertos. La herramienta de IA sí necesita la integración local de Hyperion, como en el uso web.
 
 Los instaladores son **DMG para macOS** y **EXE para Windows**. Se generaron DMG para Apple Silicon e Intel y EXE x64 para Windows; se probó la aplicación en Apple Silicon. Windows e Intel aún requieren una prueba en su plataforma. El repositorio contiene la compilación reproducible; la distribución pública firmada aún está pendiente. El DMG local es de desarrollo y no está notarizado.
 
@@ -195,6 +195,8 @@ Las ramas booleanas muestran **✓** para Sí y **×** para No, dibujados en SVG
 ## Recuperar una tarea atascada
 
 En una tarea de IA pendiente o fallida, pulsa **Reintentar** (icono de flecha circular). Si sigue marcada en curso, abre **Recuperar tarea** y confirma la recuperación. El historial y tus respuestas se conservan; solo se habilita de nuevo esa tarea.
+
+Si el chat terminó tras un bloqueo de permiso del sistema (por ejemplo acceso denegado a Documentos) y la tarea quedó **En curso** sin espera activa, el agente debió registrar un **fallo** con mensaje público; si solo hay un log, usa **Recuperar tarea** o **Copiar continuación** tras conceder el permiso, y pide reintentar. No apruebes ni completes tú el trabajo del agente.
 
 El botón avisa al agente que esté esperando este flujo. Sin un agente esperando, la solicitud queda en el historial y puedes retomar desde el chat mediante **Copiar continuación**. Recuperar no cancela descargas ni otras herramientas externas: el agente comprueba lo que ya ocurrió antes de repetirlo.
 

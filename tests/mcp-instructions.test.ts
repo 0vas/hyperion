@@ -14,4 +14,8 @@ test('MCP server instructions require Hyperion-first use when tools are loaded',
   assert.match(source, /do NOT collect scope/);
   assert.match(source, /Which folders\?/);
   assert.match(source, /never ask those clarifying questions in chat/);
+  assert.match(source, /Browse\/split side panel/);
+  assert.match(source, /do not leave the pane blank/);
+  assert.match(source, /action=fail/);
+  assert.match(source, /log alone is not enough/);
 });
