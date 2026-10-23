@@ -1,0 +1,9 @@
+{
+  "cancelled": 0,
+  "releaseExit": 1,
+  "releaseOut": "",
+  "releaseErr": "release not found\n",
+  "run": "{\"conclusion\":\"success\",\"headSha\":\"dab241cbd7038abfdc28cb2872797a192dd70843\",\"status\":\"completed\",\"url\":\"https://github.com/0vas/hyperion/actions/runs/39995974220\"}\n",
+  "head": "66ba2f11af6556f9defcf18cace35ca422f4d600\n",
+  "releaseJson": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.1732\"\n}\n"
+}

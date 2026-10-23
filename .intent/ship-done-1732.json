@@ -1,0 +1,56 @@
+{
+  "commit": {
+    "ok": true,
+    "hash": "45683c5870259e23f9ec460d2c85edefc38cea36",
+    "files": [
+      "README.md",
+      "desktop/README.md",
+      "docs/conexion.md",
+      "docs/manual-uso.md",
+      "docs/site/.vitepress/release.json",
+      "docs/site/en/guia/usar-el-flujo.md",
+      "docs/site/en/referencia/limites.md",
+      "docs/site/guia/primeros-pasos.md",
+      "docs/site/guia/usar-el-flujo.md",
+      "docs/site/referencia/limites.md",
+      "docs/site/tests/docs.spec.mjs",
+      "tests/e2e/connection-fixtures.ts",
+      "tests/e2e/connections-polish.spec.ts"
+    ],
+    "fileCount": 13
+  },
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   dab241c..45683c5  main -> main\n",
+  "release": "{\"assets\":[{\"apiUrl\":\"https://api.github.com/repos/0vas/hyperion/releases/assets/670078973\",\"contentType\":\"application/x-apple-diskimage\",\"createdAt\":\"2026-10-23T18:56:37Z\",\"downloadCount\":0,\"id\":\"RA_kwDOVAabw84n8Jf9\",\"label\":\"\",\"name\":\"Hyperion-2026.10.23.1732-mac-arm64.dmg\",\"size\":143003878,\"state\":\"uploaded\",\"updatedAt\":\"2026-10-23T18:56:42Z\",\"url\":\"https://github.com/0vas/hyperion/releases/download/v2026.10.23.1732/Hyperion-2026.10.23.1732-mac-arm64.dmg\"},{\"apiUrl\":\"https://api.github.com/repos/0vas/hyperion/releases/assets/670078970\",\"contentType\":\"application/octet-stream\",\"createdAt\":\"2026-10-23T18:56:37Z\",\"downloadCount\":0,\"id\":\"RA_kwDOVAabw84n8Jf6\",\"label\":\"\",\"name\":\"Hyperion-2026.10.23.1732-win-x64.exe\",\"size\":132913309,\"state\":\"uploaded\",\"updatedAt\":\"2026-10-23T18:56:42Z\",\"url\":\"https://github.com/0vas/hyperion/releases/download/v2026.10.23.1732/Hyperion-2026.10.23.1732-win-x64.exe\"},{\"apiUrl\":\"https://api.github.com/repos/0vas/hyperion/releases/assets/670078972\",\"contentType\":\"text/plain; charset=utf-8\",\"createdAt\":\"2026-10-23T18:56:37Z\",\"downloadCount\":0,\"id\":\"RA_kwDOVAabw84n8Jf8\",\"label\":\"\",\"name\":\"SHA256SUMS.txt\",\"size\":208,\"state\":\"uploaded\",\"updatedAt\":\"2026-10-23T18:56:37Z\",\"url\":\"https://github.com/0vas/hyperion/releases/download/v2026.10.23.1732/SHA256SUMS.txt\"}],\"isDraft\":false,\"publishedAt\":\"2026-10-23T18:56:45Z\",\"tagName\":\"v2026.10.23.1732\",\"url\":\"https://github.com/0vas/hyperion/releases/tag/v2026.10.23.1732\"}\n",
+  "send": {
+    "success": true,
+    "queued": true,
+    "queuedMessage": {
+      "id": "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76",
+      "content": "[MESSAGE FROM AGENT DevOps (agent-ad5c15b7-fd87-4328-9bb0-1da7ee0cd9f7)]\n\nCanvas Q&A Preview ship — DONE\nFrom: agent-ad5c15b7-fd87-4328-9bb0-1da7ee0cd9f7\n\nVersion: 2026.10.23.1732 UTC · Preview\nPublic release: https://github.com/0vas/hyperion/releases/tag/v2026.10.23.1732\nAssets: mac-arm64 DMG + win-x64 EXE + SHA256SUMS.txt\nBuild: https://github.com/0vas/hyperion/actions/runs/39995974220 (dab241c, notarized)\nPublish: https://github.com/0vas/hyperion/actions/runs/40007399942 (success)\nDownload registry updated on main (docs.spec datetime aligned).\n\nDesktop → Buscar actualizaciones should see 2026.10.23.1732.",
+      "queuedAt": "2026-10-23T18:57:32.347067Z",
+      "position": 0,
+      "author": null,
+      "submissionIds": [
+        "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76"
+      ],
+      "turnId": "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76",
+      "messageMetadata": {
+        "type": "agent_message",
+        "fromAgentId": "agent-ad5c15b7-fd87-4328-9bb0-1da7ee0cd9f7",
+        "fromAgentName": "DevOps",
+        "submissionIds": [
+          "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76"
+        ]
+      }
+    },
+    "turnId": "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76",
+    "submissionIds": [
+      "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76"
+    ],
+    "ok": true,
+    "agentId": "agent-deebca14-7169-4af0-8747-906bad8ad7eb",
+    "messageId": "user-msg-b4a65e9b-7813-43e9-860f-ea558b727d76",
+    "delivery": "queued"
+  }
+}

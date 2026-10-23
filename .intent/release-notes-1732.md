@@ -1,0 +1,21 @@
+## Español
+
+**Hyperion 2026.10.23.1732 UTC · Preview**
+
+- **Canvas-only clarifying Q&A:** once Hyperion MCP tools are in use, clarifying/scope questions must go on the canvas (forms), not in chat.
+- Includes `76c58ef` already on main.
+
+**Distribucion y verificacion:** el build [39995974220](https://github.com/0vas/hyperion/actions/runs/39995974220) se ejecuto sobre `dab241cbd7038abfdc28cb2872797a192dd70843` con `notarized=true`. Ambos destinos (Mac Apple Silicon y Windows x64) pasaron `npm run check`, pruebas Desktop y empaquetado. Mac ARM: Developer ID y notorizacion Apple. Windows x64 sin firma Authenticode. La publicacion comprobara digests remotos antes de hacer publica esta release.
+
+**Alcance:** canal preview. Intel Mac no se publica.
+
+## English
+
+**Hyperion 2026.10.23.1732 UTC · Preview**
+
+- **Canvas-only clarifying Q&A:** once Hyperion MCP tools are in use, clarifying/scope questions must go on the canvas (forms), not in chat.
+- Includes `76c58ef` already on main.
+
+**Distribution and verification:** build [39995974220](https://github.com/0vas/hyperion/actions/runs/39995974220) on `dab241cbd7038abfdc28cb2872797a192dd70843` with `notarized=true`. Both Apple Silicon and Windows x64 passed `npm run check`, Desktop tests, and packaging. Mac ARM: Developer ID and Apple notarization. Windows x64 has no Authenticode signature. Publication will verify remote digests before making this release public.
+
+**Scope:** preview channel. Intel Mac is not published.

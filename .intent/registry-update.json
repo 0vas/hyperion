@@ -1,0 +1,10 @@
+{
+  "fetchExit": 0,
+  "resetOut": "HEAD is now at dab241c Prepare Desktop Preview 2026.10.23.1732 for notarized distribution.\n",
+  "replaceExit": 0,
+  "dtExit": 0,
+  "remaining": "",
+  "remainingErr": "",
+  "releaseJson": "{\n  \"version\": \"2026.10.23.1732\",\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"macNotarized\": true\n}\n",
+  "diff": " README.md                            | 10 +++++-----\n desktop/README.md                    |  2 +-\n docs/conexion.md                     |  2 +-\n docs/manual-uso.md                   |  6 +++---\n docs/site/.vitepress/release.json    |  2 +-\n docs/site/en/guia/usar-el-flujo.md   |  2 +-\n docs/site/en/referencia/limites.md   |  2 +-\n docs/site/guia/primeros-pasos.md     |  2 +-\n docs/site/guia/usar-el-flujo.md      |  2 +-\n docs/site/referencia/limites.md      |  2 +-\n docs/site/tests/docs.spec.mjs        |  8 ++++----\n tests/e2e/connection-fixtures.ts     |  2 +-\n tests/e2e/connections-polish.spec.ts |  2 +-\n 13 files changed, 22 insertions(+), 22 deletions(-)\n"
+}
