@@ -2198,7 +2198,13 @@ export function App() {
                             });
                             return (
                               <div className="step-hint">
-                                <LoaderCircle className="spin" size={17} />
+                                {kind === 'active-wait' ? (
+                                  <LoaderCircle className="spin" size={17} />
+                                ) : kind === 'permission' ? (
+                                  <LockKeyhole size={17} />
+                                ) : (
+                                  <Pause size={17} />
+                                )}
                                 <p>
                                   {kind === 'active-wait'
                                     ? t(
