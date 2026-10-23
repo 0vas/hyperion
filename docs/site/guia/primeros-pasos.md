@@ -42,7 +42,7 @@ Por ejemplo, desde un chat nuevo:
 > Usa Hyperion para preparar una guía de bienvenida a mi proyecto.
 
 ::: tip Solo describe el objetivo
-No tienes que diseñar el flujo ni explicar cómo usar Hyperion. El agente organiza los pasos y pregunta únicamente por la información que falta.
+No tienes que diseñar el flujo ni explicar cómo usar Hyperion. El agente organiza los pasos y pide la información que falta **en el canvas**, no como un cuestionario en el chat.
 :::
 
 El agente comparte el enlace a tu flujo. Un chat vacío puede empezar con esa petición; la conexión debe estar instalada.

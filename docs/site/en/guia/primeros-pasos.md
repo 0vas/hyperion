@@ -38,7 +38,7 @@ Restart your AI tool and open a new chat to load the integration. This Desktop s
 > Use Hyperion to prepare a welcome guide for my project.
 
 ::: tip Just describe your goal
-You do not need to design the workflow or explain how to use Hyperion. The agent organizes the steps and asks only for missing information.
+You do not need to design the workflow or explain how to use Hyperion. The agent organizes the steps and asks for missing information **on the canvas**, not as a chat questionnaire.
 :::
 
 The agent shares a link to your workflow. A new chat can start with this request once the connection is installed.

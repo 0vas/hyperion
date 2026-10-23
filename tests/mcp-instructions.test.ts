@@ -10,4 +10,8 @@ test('MCP server instructions require Hyperion-first use when tools are loaded',
   assert.match(source, /filesystem|Cowork/);
   assert.match(source, /hyperion_wait/);
   assert.match(source, /presentation split only returns a browser URL/);
+  assert.match(source, /Hard rule/);
+  assert.match(source, /do NOT collect scope/);
+  assert.match(source, /Which folders\?/);
+  assert.match(source, /never ask those clarifying questions in chat/);
 });

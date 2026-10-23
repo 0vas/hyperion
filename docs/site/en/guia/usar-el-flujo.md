@@ -1,6 +1,6 @@
 # Use the canvas
 
-The chat defines the goal and performs the work with its tools. The canvas lets you follow the process and make decisions.
+The chat carries the goal, short progress and continuation when needed. Scope, paths and decisions live in canvas forms—not in a parallel chat questionnaire.
 
 <GuideLens kind="canvas" />
 

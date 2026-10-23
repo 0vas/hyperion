@@ -10,7 +10,7 @@ La pausa persistente y el alcance por herramienta se explican en [Reanudación a
 4. En Claude Desktop, despliega **Loaded tools** / herramientas cargadas y confirma entradas `hyperion_*` (por ejemplo `hyperion_create_run`) antes de pedir el objetivo.
 5. Escribe tu objetivo: **«Usa Hyperion para preparar una guía breve de bienvenida a mi proyecto»**.
 
-No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Desktop incluye el runtime. La conexión sirve para otros proyectos y chats sin contexto previo. La IA pide solo los datos que falten y genera el proceso; no debes explicarle cómo dibujar el canvas ni cómo registrar los pasos.
+No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Desktop incluye el runtime. La conexión sirve para otros proyectos y chats sin contexto previo. Una vez en uso Hyperion por MCP («Usa Hyperion» o herramientas `hyperion_*`), la IA **no** pide alcance ni decisiones en el chat: las formula como pasos humanos en el canvas, comparte la URL y espera. En el chat solo caben el enlace, el progreso breve y resúmenes de evidencia ya registrada. No debes explicarle cómo dibujar el canvas ni cómo registrar los pasos.
 
 **[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.23.0823)**: elige el `.dmg` de Apple Silicon o el `.exe` de Windows x64. No necesitas una cuenta de GitHub para descargar la versión preliminar. El instalador de Apple Silicon está firmado con Developer ID y notarizado por Apple; Windows no tiene firma de editor. Intel macOS no se publica en esta release. La release estable sigue pendiente.
 
@@ -108,6 +108,8 @@ Recarga las herramientas MCP o abre una sesión nueva del cliente. Al cargar Hyp
 Luego basta con escribir en el chat:
 
 > Usa Hyperion para [mi actividad]. Genera un proceso con inicio y fin, compuertas cuando correspondan, entradas y salidas por tarea, y registra tus acciones y observaciones.
+
+Si faltan datos (carpeta, alcance, opciones), deben aparecer como formularios en el canvas—no como preguntas de aclaración en el chat.
 
 La configuración no añade herramientas retroactivamente a una conversación abierta. Esta conversación puede continuar usando la CLI. Las secciones siguientes conservan la configuración manual, Claude Desktop y otros clientes como alternativas.
 

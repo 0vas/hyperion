@@ -12,7 +12,20 @@ The user describes the activity in their chat. You construct and advance its vis
 
 ## Start from a request
 
-When the user says **Usa Hyperion**, **Use Hyperion**, **quiero usar Hyperion**, or asks to guide an activity through Hyperion, **call Hyperion first**. With MCP: invoke `hyperion_create_run` (or `hyperion_list_runs` / `hyperion_get_run` to resume) before answering in free text. Put missing scope and choices in the Hyperion canvas as human steps with typed forms—not as chat-only questions that replace Hyperion. **Never** claim a missing filesystem, Cowork, Browser or other connector instead of Hyperion when `hyperion_*` tools are loaded in this chat. Do not regenerate an old non-Hyperion thread as a substitute for creating or continuing a run.
+When the user says **Usa Hyperion**, **Use Hyperion**, **quiero usar Hyperion**, or asks to guide an activity through Hyperion, **call Hyperion first**. With MCP: invoke `hyperion_create_run` (or `hyperion_list_runs` / `hyperion_get_run` to resume) before answering in free text. **Never** claim a missing filesystem, Cowork, Browser or other connector instead of Hyperion when `hyperion_*` tools are loaded in this chat. Do not regenerate an old non-Hyperion thread as a substitute for creating or continuing a run.
+
+### Hard rule: canvas owns all questions (MCP Hyperion)
+
+Once any `hyperion_*` tool is used in this chat, or the user says Use Hyperion / Usa Hyperion / quiero usar Hyperion while `hyperion_*` tools are loaded:
+
+- Do **NOT** collect activity scope, paths, choices, approvals, or clarifying Q&A in the chat.
+- Encode every missing material fact as a `kind: manual` (or approval) step with typed outputs (`form.options` for known choices) in `hyperion_create_run` or `hyperion_revise_plan`.
+- Share the canvas URL, open presentation if requested, then `hyperion_wait` (or verified durable suspend). Read answers only from the run after wait/revision.
+- Never treat a chat reply as a substitute for a canvas form, and never ask the same question in chat after a human step is waiting.
+
+**Allowed in chat:** canvas URL / how to open it; short progress (“waiting in Hyperion”, “scanning…”); public summaries of evidence already logged; which existing run to resume when ambiguous; the objective only when the user invoked Hyperion with zero activity (then `create_run` immediately with discovery as human steps if still vague).
+
+**Forbidden in chat:** “Which folders?”, path/root choices, yes/no that belong on forms, typing an option that should be `form.options`, collecting answers to paste into submit/complete, parallel clarifying threads while the canvas waits.
 
 Use loaded `hyperion_*` MCP tools when available. Otherwise run the script next to this skill:
 
@@ -42,7 +55,7 @@ For human steps, declare `interaction: {question, context, next}`: the exact dec
 
 A new chat, empty workspace or external connected application may supply only an activity. Prior conversation, repository files and `plan.context` are optional. Use the request itself as the starting point; never assume “my project” means Hyperion, Olimpo, the current directory or a project from another stored run.
 
-When a material fact is missing, generate the relevant manual discovery step in the canvas and connect its typed answers to the dependent work. Ask only what is needed next; do not require a technical brief, prescribed workflow, logging instructions or an artificial pause in the user's prompt. If the request already provides enough information, proceed without a discovery form. If no activity was provided at all, ask for the objective before inventing task-specific work.
+When a material fact is missing, generate the relevant manual discovery step in the canvas and connect its typed answers to the dependent work—**never** a chat clarifying sequence that replaces the canvas (see hard rule above). Do not require a technical brief, prescribed workflow, logging instructions or an artificial pause in the user's prompt. If the request already provides enough information, proceed without a discovery form. If no activity was provided at all, ask once for the objective in chat only when Hyperion was invoked with zero activity, then create the run immediately with any remaining discovery as human steps.
 
 For a continuation in a fresh chat, recover state from the provided run ID/link. If the intended run is ambiguous, ask which one to resume. Do not import another run's context as a default. Runtime/service access comes from the integration, independently of business context; a missing connection is not a request for project information.
 

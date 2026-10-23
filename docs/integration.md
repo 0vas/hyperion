@@ -8,13 +8,17 @@ For setup in Codex, Claude Code, Claude Desktop, Cursor, Google Antigravity and 
 
 ## Minimal user request
 
-“Use Hyperion to prepare a welcome guide for my project” is sufficient. The user specifies the outcome; the integration owns planning, task contracts, progress logs and handoffs. Read available conversation/project context before asking for missing information. Ask only material unresolved questions and add human approvals only when warranted by the activity or explicitly requested. Do not require users to prescribe steps, repeat I/O/logging instructions, or include an artificial wait in their prompt. Generating a draft does not imply publishing or sending it. The cooperative host-resume limitation must be explained when a handoff occurs, not encoded as part of the user's goal.
+“Use Hyperion to prepare a welcome guide for my project” is sufficient. The user specifies the outcome; the integration owns planning, task contracts, progress logs and handoffs. Read available conversation/project context before creating the plan. **Hard rule (MCP Hyperion):** once any `hyperion_*` tool is used—or those tools are loaded and the user invokes Hyperion—do **not** collect activity scope, paths, choices, approvals or clarifying Q&A in the chat. Encode every missing material fact as a manual/approval step with typed outputs (`form.options` for known choices) in `create_run` / `revise_plan`, share the canvas URL, then `hyperion_wait` (or a verified durable suspend). Read answers only from the run after wait/revision.
+
+Allowed in chat: the canvas URL / how to open it; short progress; public summaries of evidence already logged; which existing run to resume when ambiguous; the objective only when Hyperion was invoked with zero activity (then create immediately with discovery as human steps if still vague). Forbidden in chat: “Which folders?”, path/root choices, yes/no that belong on forms, typing an option that should be `form.options`, collecting answers to paste into submit/complete, or parallel clarifying threads while the canvas waits.
+
+Do not require users to prescribe steps, repeat I/O/logging instructions, or include an artificial wait in their prompt. Generating a draft does not imply publishing or sending it. The cooperative host-resume limitation must be explained when a handoff occurs, not encoded as part of the user's goal.
 
 ## No prior context
 
 Acceptance criteria: a host can start from an activity with no conversation history, repository or general context; missing facts become relevant manual inputs; explicit run identity recovers persisted state; unrelated runs never become implicit context.
 
-Business input is the user's activity plus optional supporting context. Treat absent context as unknown, not as permission to infer the project from Hyperion's own repository or another run. Generate a small discovery phase only when material facts are missing; wire its typed outputs into downstream tasks. Do not ask the user to specify protocol mechanics. If there is no objective, ask for it before constructing task-specific work.
+Business input is the user's activity plus optional supporting context. Treat absent context as unknown, not as permission to infer the project from Hyperion's own repository or another run. Generate a small discovery phase of canvas human steps only when material facts are missing; wire its typed outputs into downstream tasks—never a chat questionnaire that replaces Hyperion. Do not ask the user to specify protocol mechanics. If there is no objective, ask once for it before constructing task-specific work, then create the run with remaining discovery on the canvas.
 
 A fresh chat resumes by run ID/link and reads the stored state. Distinguish this from a new activity; ask when the target run is ambiguous. A local integration can discover its runtime/service without depending on the calling workspace.
 

@@ -1,6 +1,6 @@
 # Usar el canvas
 
-El chat define el objetivo y realiza el trabajo con sus herramientas. El canvas te permite seguir el proceso y aportar decisiones.
+El chat define el objetivo, el progreso breve y la continuación cuando haga falta. El alcance, las rutas y las decisiones viven en formularios del canvas—no en un cuestionario paralelo en el chat.
 
 <GuideLens kind="canvas" />
 

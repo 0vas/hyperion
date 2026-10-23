@@ -167,7 +167,7 @@ Las tareas humanas pueden añadir:
 }
 ```
 
-`question`, `context` y `next` son obligatorios dentro de `interaction`. Se admiten solo en pasos manuales/de aprobación. `description` de cada salida se usa como etiqueta humana; su nombre/tipo se conserva en I/O. Un `submit` con salidas tipadas válidas y al menos un valor no requiere `message` redundante; el motor registra «Decisión guardada en los datos del paso». Las respuestas sin puertos siguen requiriendo texto. La validación de tipos, campos obligatorios y roles no cambia. Usa campos simples para usuarios no técnicos; no conviertas una decisión cotidiana en un formulario JSON.
+`question`, `context` y `next` son obligatorios dentro de `interaction`. Se admiten solo en pasos manuales/de aprobación. Cuando el agente trabaja por MCP Hyperion, las preguntas de descubrimiento (alcance, rutas, opciones) son estos pasos humanos del canvas, no un cuestionario en el chat. `description` de cada salida se usa como etiqueta humana; su nombre/tipo se conserva en I/O. Un `submit` con salidas tipadas válidas y al menos un valor no requiere `message` redundante; el motor registra «Decisión guardada en los datos del paso». Las respuestas sin puertos siguen requiriendo texto. La validación de tipos, campos obligatorios y roles no cambia. Usa campos simples para usuarios no técnicos; no conviertas una decisión cotidiana en un formulario JSON.
 
 Los campos nuevos son opcionales, sin valores predeterminados añadidos a planes anteriores, para preservar los recibos de idempotencia existentes.
 
