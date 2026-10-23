@@ -85,4 +85,4 @@ Drag the dotted grip above a card or symbol. With a keyboard, focus the node, pr
 Positions are saved in this browser per workflow, orientation and steps/jobs view, including when agent activity arrives. They do not change dependencies or history, and do not sync across devices.
 :::
 
-Available in **2026.10.23.2125 UTC · Preview** installers. [Download](primeros-pasos.md).
+Available in **2026.10.23.2135 UTC · Preview** installers. [Download](primeros-pasos.md).
