@@ -1,5 +1,6 @@
 import type { Run } from '../domain/workflow.js';
 import type { HyperionClient } from './client.js';
+import { appendHarnessLog } from './harness-log.js';
 
 /** Advice is recomputed from state, never recorded as completed work. */
 export function handoff(run: Run) {
@@ -55,6 +56,10 @@ export const withHandoff = (run: Run) => ({ ...run, agentNext: handoff(run) });
 export function withGuideResult(run: Run) {
   const result = withHandoff(run);
   if (result.agentNext.action !== 'wait') return result;
+  appendHarnessLog('connector_absent', {
+    runId: run.id,
+    context: 'guide_ended',
+  });
   return {
     ...result,
     agentNext: {
@@ -93,8 +98,24 @@ export async function followHumanInput(
   let announcedRevision: number | undefined;
   while (handoff(run).action === 'wait') {
     const remaining = (deadline - performance.now()) / 1000;
-    if (remaining <= 0) return client.get(run.id);
+    if (remaining <= 0) {
+      appendHarnessLog('wait_expired', {
+        runId: run.id,
+        afterRevision: run.revision,
+        revision: run.revision,
+        context: 'guide_deadline',
+      });
+      return client.get(run.id);
+    }
     if (announcedRevision !== run.revision) {
+      appendHarnessLog('wait_armed', {
+        runId: run.id,
+        afterRevision: run.revision,
+        timeoutSeconds: Math.min(
+          waitSeconds,
+          Math.max(0, (deadline - performance.now()) / 1000),
+        ),
+      });
       await onProgress({
         event: 'waiting',
         runId: run.id,
@@ -103,11 +124,23 @@ export async function followHumanInput(
       });
       announcedRevision = run.revision;
     }
-    run = await client.wait(
-      run.id,
-      run.revision,
-      Math.min(waitSeconds, Math.max(0, (deadline - performance.now()) / 1000)),
+    const armedRevision = run.revision;
+    const timeoutSeconds = Math.min(
+      waitSeconds,
+      Math.max(0, (deadline - performance.now()) / 1000),
     );
+    run = await client.wait(run.id, armedRevision, timeoutSeconds);
+    if (
+      run.revision <= armedRevision &&
+      run.status === 'active' &&
+      run.continuation?.status !== 'waiting' &&
+      handoff(run).action === 'wait'
+    )
+      appendHarnessLog('wait_expired', {
+        runId: run.id,
+        afterRevision: armedRevision,
+        revision: run.revision,
+      });
   }
   return run;
 }

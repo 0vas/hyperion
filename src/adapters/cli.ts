@@ -15,6 +15,7 @@ import { installSkill, defaultDirectory } from './install.js';
 import { setupClient } from './setup.js';
 import { HyperionClient } from './client.js';
 import { followHumanInput, withHandoff, withGuideResult } from './handoff.js';
+import { appendHarnessLog } from './harness-log.js';
 import type { Run } from '../domain/workflow.js';
 import { commandSchema } from '../domain/workflow.js';
 import { generateConnection } from './connections.js';
@@ -178,11 +179,20 @@ try {
       );
     } else if (operation === 'list') result = await client.list();
     else if (['create', 'guide'].includes(operation) && first) {
-      const run = await client.create(
-        JSON.parse(readFileSync(first, 'utf8')),
-        second,
-        parentRunId,
-      );
+      let run: Run;
+      try {
+        run = await client.create(
+          JSON.parse(readFileSync(first, 'utf8')),
+          second,
+          parentRunId,
+        );
+      } catch (error) {
+        appendHarnessLog('create_rejected', {
+          reason: error instanceof Error ? error.message : 'Unknown error',
+          commandId: second,
+        });
+        throw error;
+      }
       const current =
         operation === 'guide'
           ? await followHumanInput(client, run, (event) => {
@@ -216,13 +226,27 @@ try {
         },
       );
     else if (operation === 'get' && first) result = await client.get(first);
-    else if (operation === 'wait' && first)
-      result = await client.wait(
-        first,
-        Number(second || 0),
-        Number(rest[0] || 30),
-      );
-    else if (
+    else if (operation === 'wait' && first) {
+      const afterRevision = Number(second || 0);
+      const timeoutSeconds = Number(rest[0] || 30);
+      appendHarnessLog('wait_armed', {
+        runId: first,
+        afterRevision,
+        timeoutSeconds,
+      });
+      const waited = await client.wait(first, afterRevision, timeoutSeconds);
+      if (
+        waited.revision <= afterRevision &&
+        waited.status === 'active' &&
+        waited.continuation?.status !== 'waiting'
+      )
+        appendHarnessLog('wait_expired', {
+          runId: first,
+          afterRevision,
+          revision: waited.revision,
+        });
+      result = waited;
+    } else if (
       ['start', 'complete', 'fail', 'log', 'retry'].includes(operation) &&
       first &&
       second

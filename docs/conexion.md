@@ -103,7 +103,7 @@ npm run hyperion -- setup cursor
 
 `setup` resuelve las rutas de Node y del adaptador, registra la identidad y configura el cliente. Construye el adaptador si todavía no existe. Codex y Claude Code requieren su CLI instalada; Cursor recibe una entrada en su configuración local de usuario. Los demás servidores se conservan; una entrada distinta de Hyperion en Cursor se señala como conflicto.
 
-Recarga las herramientas MCP o abre una sesión nueva del cliente. Al cargar Hyperion, el adaptador inicia el servidor local si hace falta y reutiliza la instancia autenticada si ya existe. El arranque no escribe mensajes en el canal de herramientas; sus logs quedan en `.hyperion/server.log`. La instancia permanece disponible después de cerrar el adaptador. La actualización sustituye el servicio antiguo autenticado de la misma instalación después de respaldar SQLite; un proceso ajeno se conserva. Tras actualizar el repositorio, ejecuta `npm run build`.
+Recarga las herramientas MCP o abre una sesión nueva del cliente. Al cargar Hyperion, el adaptador inicia el servidor local si hace falta y reutiliza la instancia autenticada si ya existe. El arranque no escribe mensajes en el canal de herramientas; sus logs quedan en `.hyperion/server.log`. Los adaptadores CLI/MCP añaden diagnósticos JSONL en `.hyperion/harness.log` (rechazo de create, wait armado/expirado, conector ausente); no incluye secretos ni el plan completo. La instancia permanece disponible después de cerrar el adaptador. La actualización sustituye el servicio antiguo autenticado de la misma instalación después de respaldar SQLite; un proceso ajeno se conserva. Tras actualizar el repositorio, ejecuta `npm run build`.
 
 Luego basta con escribir en el chat:
 

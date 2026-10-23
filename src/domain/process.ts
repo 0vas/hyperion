@@ -6,6 +6,27 @@ const check = (ok: unknown, message: string): void => {
 };
 export const automatic = (step: Pick<Step, 'kind'>) =>
   ['start', 'end', 'gateway'].includes(step.kind);
+
+/**
+ * Promote producer outputs to required when a required input binds them.
+ * Repairs common agent-authored plans before validateProcess; does not invent ports
+ * or relax branch-skip rules. Idempotent; clones so callers keep their object.
+ */
+export function normalizeRequiredBindings(plan: Plan): Plan {
+  const next = structuredClone(plan);
+  const byId = new Map(next.steps.map((step) => [step.id, step]));
+  for (const step of next.steps) {
+    for (const input of step.inputs || []) {
+      if (!input.required || !input.source) continue;
+      const output = byId
+        .get(input.source.stepId)
+        ?.outputs?.find((port) => port.name === input.source!.output);
+      if (output && output.required !== true) output.required = true;
+    }
+  }
+  return next;
+}
+
 export function validateProcess(plan: Plan) {
   const byId = new Map(plan.steps.map((s) => [s.id, s]));
   const next = (id: string) =>
@@ -167,6 +188,7 @@ export function validateProcess(plan: Plan) {
     const sourcePort = (
       ref: { stepId: string; output: string },
       required: boolean,
+      inputName: string,
     ) => {
       check(
         preceding.has(ref.stepId),
@@ -179,7 +201,7 @@ export function validateProcess(plan: Plan) {
       if (required) {
         check(
           port!.required,
-          `Required input needs a required source output: ${s.id}`,
+          `Required input ${s.id}.${inputName} needs required source output ${ref.stepId}.${ref.output}`,
         );
         for (const [split, branch] of membership.get(ref.stepId) || [])
           check(
@@ -200,7 +222,7 @@ export function validateProcess(plan: Plan) {
       );
       if (p.source)
         check(
-          sourcePort(p.source, p.required).type === p.type,
+          sourcePort(p.source, p.required, p.name).type === p.type,
           `Input type mismatch: ${s.id}.${p.name}`,
         );
       else if (p.contextKey) {
@@ -217,7 +239,7 @@ export function validateProcess(plan: Plan) {
     }
     for (const r of s.gateway?.routes || [])
       if (r.when) {
-        const port = sourcePort(r.when, false);
+        const port = sourcePort(r.when, false, 'when');
         check(
           matchesType(port.type, r.when.equals),
           `Condition type mismatch on ${s.id}`,

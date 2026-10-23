@@ -1,10 +1,103 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createRun, transition, type Run } from '../src/domain/workflow.js';
+import {
+  createRun,
+  planSchema,
+  transition,
+  type Run,
+} from '../src/domain/workflow.js';
+import {
+  normalizeRequiredBindings,
+  validateProcess,
+} from '../src/domain/process.js';
 const agent = { role: 'agent' as const, id: 'codex' };
 const human = { role: 'human' as const, id: 'user' };
 const field = (name: string) => ({ name, type: 'boolean', required: true });
+
+/** Agent-authored shape that used to fail create: required input, optional producer output. */
+function folderSizeStylePlan() {
+  return {
+    title: 'Folder size report (Excel)',
+    profile: 'bpmn-lite' as const,
+    request: 'Use Hyperion for create a excel of my folders and their size',
+    jobs: [{ id: 'report', title: 'Build folder size Excel report' }],
+    steps: [
+      { id: 'start', kind: 'start' as const, title: 'Start' },
+      {
+        id: 'clarify_scope',
+        kind: 'manual' as const,
+        jobId: 'report',
+        title: 'Clarify folder scope',
+        dependencies: ['start'],
+        interaction: {
+          question: 'Which folders should I measure?',
+          context: 'Need target folders and access method.',
+          next: 'Then scan and total sizes.',
+        },
+        outputs: [
+          {
+            name: 'folder_scope',
+            type: 'string' as const,
+            required: true,
+            description: 'Folders and access method',
+          },
+        ],
+      },
+      {
+        id: 'scan_folders',
+        kind: 'agent' as const,
+        jobId: 'report',
+        title: 'Scan folders and measure sizes',
+        dependencies: ['clarify_scope'],
+        inputs: [
+          {
+            name: 'folder_scope',
+            type: 'string' as const,
+            required: true,
+            source: { stepId: 'clarify_scope', output: 'folder_scope' },
+          },
+        ],
+        outputs: [
+          {
+            name: 'folder_sizes',
+            type: 'array' as const,
+            description: 'List of {folder, size_bytes}',
+          },
+        ],
+      },
+      {
+        id: 'build_excel',
+        kind: 'agent' as const,
+        jobId: 'report',
+        title: 'Build Excel file',
+        dependencies: ['scan_folders'],
+        inputs: [
+          {
+            name: 'folder_sizes',
+            type: 'array' as const,
+            required: true,
+            source: { stepId: 'scan_folders', output: 'folder_sizes' },
+          },
+        ],
+        outputs: [
+          {
+            name: 'xlsx_file',
+            type: 'string' as const,
+            required: true,
+            description: 'Path or link to the Excel file',
+          },
+        ],
+      },
+      {
+        id: 'end',
+        kind: 'end' as const,
+        title: 'End',
+        dependencies: ['build_excel'],
+      },
+    ],
+  };
+}
 export function processPlan(type = 'inclusive', reversed = false) {
   const steps = [
     { id: 'start', title: 'Inicio', kind: 'start' },
@@ -408,4 +501,65 @@ test('parallel phases with exclusive and inclusive blocks complete with every re
       run = transition(run, { type: 'approve', stepId: 'approve' }, human);
       assert.equal(run.status, 'completed');
     }
+});
+
+test('create normalizes required input bindings so agent plans with optional producer outputs succeed', () => {
+  const plan = folderSizeStylePlan();
+  const scanOut = plan.steps
+    .find((s) => s.id === 'scan_folders')!
+    .outputs!.find((o) => o.name === 'folder_sizes')!;
+  assert.equal('required' in scanOut ? scanOut.required : undefined, undefined);
+  const run = createRun(plan, 'codex');
+  const promoted = run.steps
+    .find((s) => s.id === 'scan_folders')!
+    .outputs!.find((o) => o.name === 'folder_sizes')!;
+  assert.equal(promoted.required, true);
+  assert.equal(state(run, 'clarify_scope').status, 'waiting');
+});
+
+test('normalizeRequiredBindings is idempotent and does not invent or weaken ports', () => {
+  const raw = planSchema.parse(folderSizeStylePlan());
+  raw.steps
+    .find((s) => s.id === 'scan_folders')!
+    .outputs!.find((o) => o.name === 'folder_sizes')!.required = false;
+  const once = normalizeRequiredBindings(structuredClone(raw));
+  const twice = normalizeRequiredBindings(structuredClone(once));
+  assert.deepEqual(once, twice);
+  assert.equal(
+    once.steps
+      .find((s) => s.id === 'scan_folders')!
+      .outputs!.find((o) => o.name === 'folder_sizes')!.required,
+    true,
+  );
+  assert.equal(
+    once.steps
+      .find((s) => s.id === 'build_excel')!
+      .outputs!.find((o) => o.name === 'xlsx_file')!.required,
+    true,
+  );
+  const optionalConsumer = structuredClone(raw);
+  optionalConsumer.steps.find(
+    (s) => s.id === 'build_excel',
+  )!.inputs![0]!.required = false;
+  optionalConsumer.steps
+    .find((s) => s.id === 'scan_folders')!
+    .outputs!.find((o) => o.name === 'folder_sizes')!.required = false;
+  const left = normalizeRequiredBindings(optionalConsumer);
+  assert.equal(
+    left.steps
+      .find((s) => s.id === 'scan_folders')!
+      .outputs!.find((o) => o.name === 'folder_sizes')!.required,
+    false,
+  );
+});
+
+test('INVALID_PLAN names consumer input and producer output when a required source is still optional', () => {
+  const plan = planSchema.parse(folderSizeStylePlan());
+  plan.steps
+    .find((s) => s.id === 'scan_folders')!
+    .outputs!.find((o) => o.name === 'folder_sizes')!.required = false;
+  assert.throws(
+    () => validateProcess(plan),
+    /Required input build_excel\.folder_sizes needs required source output scan_folders\.folder_sizes/,
+  );
 });

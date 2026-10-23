@@ -103,6 +103,8 @@ Las tareas pueden añadir `phase` como etiqueta de fase. Los objetos y arrays se
 
 Los valores resueltos aparecen en `inputValues`; los resultados estructurados en `outputValues`. El motor rechaza campos de salida no declarados, tipos incorrectos y salidas obligatorias ausentes. No habilita el sucesor hasta que la tarea entregue un resultado válido. Una entrada obligatoria debe tener un origen garantizado: una salida de una rama condicional que podría omitirse debe ser opcional fuera de esa rama.
 
+Al crear (o revisar) un plan, Hyperion normaliza el acoplamiento de datos: si una entrada `required: true` declara `source: { stepId, output }` y esa salida productora existe con `required` ausente o `false`, la promoción a `required: true` ocurre antes de `validateProcess`. No inventa puertos ni relaja la regla de ramas omitibles. Si la validación sigue fallando, el mensaje nombra consumidor y productor: `Required input consumer.input needs required source output producer.output`.
+
 Al completar, el agente envía el resultado público y los datos:
 
 ```json
