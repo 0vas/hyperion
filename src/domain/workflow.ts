@@ -14,6 +14,7 @@ import {
 } from './contracts.js';
 import {
   validateProcess,
+  normalizeRequiredBindings,
   refreshProcess,
   resolveInputs,
   validateOutputs,
@@ -202,7 +203,7 @@ function refresh(run: Run) {
     run.status = 'completed';
 }
 export function createRun(input: unknown, coordinator: string): Run {
-  const plan = planSchema.parse(input);
+  const plan = normalizeRequiredBindings(planSchema.parse(input));
   const byId = new Map(plan.steps.map((step) => [step.id, step]));
   requireCondition(
     byId.size === plan.steps.length,

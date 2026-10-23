@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { openPresentation } from './desktop.js';
 import { HyperionClient } from './client.js';
 import { withHandoff } from './handoff.js';
+import { appendHarnessLog } from './harness-log.js';
 import type { Run } from '../domain/workflow.js';
 import { outputValuesSchema, traceSchema } from '../domain/contracts.js';
 import { planSchema } from '../domain/workflow.js';
@@ -43,7 +44,7 @@ server.registerTool(
   'hyperion_create_run',
   {
     description:
-      'Create a workflow derived from the user request. Include the original text in plan.request; generate the steps yourself and obtain a URL for the human. Use jobs metadata and step.jobId to group executable steps. Human steps should declare interaction.question/context/next and clear output descriptions. Use typed inputs/outputs on tasks. For process notation set profile=bpmn-lite and use one start/end and structured pairs of parallel, exclusive or inclusive gateways; conditional splits need a defaultTarget. Read the plan schema. Reuse commandId on retries. If the user explicitly continues a completed conversation, supply parentRunId and the NEW request in plan.request. This creates a linked new cycle without reopening the completed parent; read the parent and carry relevant context into the new plan.',
+      'Create a workflow derived from the user request. Include the original text in plan.request; generate the steps yourself and obtain a URL for the human. Use jobs metadata and step.jobId to group executable steps. Human steps should declare interaction.question/context/next and clear output descriptions. Use typed inputs/outputs on tasks. When a required input binds source {stepId,output}, that producer output should be required (create promotes it if omitted). For process notation set profile=bpmn-lite and use one start/end and structured pairs of parallel, exclusive or inclusive gateways; conditional splits need a defaultTarget. Read the plan schema. Reuse commandId on retries. If the user explicitly continues a completed conversation, supply parentRunId and the NEW request in plan.request. This creates a linked new cycle without reopening the completed parent; read the parent and carry relevant context into the new plan.',
     inputSchema: {
       plan: planSchema,
       commandId: z.string().min(1).max(128),
@@ -52,8 +53,16 @@ server.registerTool(
   },
   ({ plan, commandId, parentRunId }) =>
     safe(async () => {
-      const run = await client.create(plan, commandId, parentRunId);
-      return { ...run, url: client.link(run) };
+      try {
+        const run = await client.create(plan, commandId, parentRunId);
+        return { ...run, url: client.link(run) };
+      } catch (error) {
+        appendHarnessLog('create_rejected', {
+          reason: error instanceof Error ? error.message : 'Unknown error',
+          commandId,
+        });
+        throw error;
+      }
     }),
 );
 server.registerTool(
@@ -194,7 +203,25 @@ server.registerTool(
     annotations: { readOnlyHint: true },
   },
   ({ runId, afterRevision, timeoutSeconds }) =>
-    safe(() => client.wait(runId, afterRevision, timeoutSeconds)),
+    safe(async () => {
+      appendHarnessLog('wait_armed', {
+        runId,
+        afterRevision,
+        timeoutSeconds,
+      });
+      const run = await client.wait(runId, afterRevision, timeoutSeconds);
+      if (
+        run.revision <= afterRevision &&
+        run.status === 'active' &&
+        run.continuation?.status !== 'waiting'
+      )
+        appendHarnessLog('wait_expired', {
+          runId,
+          afterRevision,
+          revision: run.revision,
+        });
+      return run;
+    }),
 );
 server.registerTool(
   'hyperion_suspend',
