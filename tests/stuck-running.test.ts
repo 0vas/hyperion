@@ -67,7 +67,11 @@ test('permission stall banner fixture: running + denied log + no wait', () => {
   assert.equal(hasPermissionStall(steps, denied, false), true);
   assert.equal(hasPermissionStall(steps, denied, true), false);
   assert.equal(
-    hasPermissionStall(steps, [{ stepId: 'scan', message: 'Scanning…' }], false),
+    hasPermissionStall(
+      steps,
+      [{ stepId: 'scan', message: 'Scanning…' }],
+      false,
+    ),
     false,
   );
   assert.equal(

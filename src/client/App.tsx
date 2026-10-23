@@ -1464,8 +1464,7 @@ export function App() {
   const ready = run?.steps.filter((s) => s.status === 'ready').length || 0;
   const live = run?.status === 'active';
   const permissionStall =
-    !!run &&
-    hasPermissionStall(run.steps, run.events, !!run.agentWaiting);
+    !!run && hasPermissionStall(run.steps, run.events, !!run.agentWaiting);
   const blockedReason = step?.dependencies
     .filter((id) => run?.steps.find((s) => s.id === id)?.status !== 'completed')
     .map((id) => run?.steps.find((s) => s.id === id)?.title)
