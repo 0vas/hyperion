@@ -2,7 +2,7 @@
 
 Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local autenticado. El proceso del chat conserva la ejecución: Desktop presenta decisiones y resultados. El usuario elige split/escritorio en la conversación; el adaptador `open RUN_ID desktop` lanza la instalación registrada en su primer arranque.
 
-La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.10.23.2135) incluye instaladores para macOS Apple Silicon (notarizado) y Windows x64.
+La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.10.23.2144) incluye instaladores para macOS Apple Silicon (notarizado) y Windows x64.
 
 ## Desarrollo y distribución
 
