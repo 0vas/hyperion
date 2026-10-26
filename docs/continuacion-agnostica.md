@@ -21,7 +21,7 @@ El canvas muestra el estado real:
 | No se pudo reanudar           | Se verificó que no empezó un turno. Puedes reintentar desde la tarea.                              |
 | Comprobar la reanudación      | Se perdió la confirmación; el conector debe verificar si comenzó un turno antes de repetirlo.      |
 
-Sin un conector de reanudación, continúa disponible la espera cooperativa de MCP/CLI: el chat debe mantener su llamada abierta. Instalar MCP por sí solo **no activa la reanudación de un chat cerrado**. Empujar texto al chat del host es un canal distinto ([ADR 0036](decisions/0036-outbound-host-prompts.md)): existe la cola HTTP `continuation_prompt` (enqueue / claim / settle) para un conector de envío de confianza, pero la UI Phase 0 sigue con **Copiar** primario y **Enviar** oculto hasta cablear un `ResumeConnector` real; no hay conector nativo certificado ni envío de `linked_cycle_prompt`.
+Sin un conector de reanudación, continúa disponible la espera cooperativa de MCP/CLI: el chat debe mantener su llamada abierta. Instalar MCP por sí solo **no activa la reanudación de un chat cerrado**. Empujar texto al chat del host es un canal distinto ([ADR 0036](decisions/0036-outbound-host-prompts.md)): la cola HTTP `continuation_prompt` y el **Enviar** de continuación del canvas encolan solo si el host aporta un `ResumeConnector` válido (`connectorSchema`, harness coincidente); sin él, **Copiar** sigue siendo el camino primario. No hay conector nativo certificado ni envío de `linked_cycle_prompt`.
 
 ## Cobertura actual por aplicación
 

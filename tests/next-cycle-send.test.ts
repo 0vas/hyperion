@@ -57,9 +57,10 @@ test('Enviar stays off without outboundSendConfigured (Phase 0)', () => {
   );
 });
 
-test('next-cycle UI hides Enviar in Phase 0 and shows Designer helper', () => {
+test('next-cycle UI hides linked-cycle Enviar and shows Designer helper', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
   assert.match(source, /canSendNewBeginningToChat/);
+  assert.match(source, /linked_cycle_prompt Enviar is a later cut/);
   assert.match(source, /outboundSendConfigured: false/);
   assert.match(source, /Copiar petición para el chat/);
   assert.match(

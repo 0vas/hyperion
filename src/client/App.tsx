@@ -19,12 +19,17 @@ import {
   looksLikePermissionDenial,
   stuckRunningKind,
 } from './stuck-running';
-import { canSendNewBeginningToChat } from './next-cycle-send';
+import { readHostResumeConnector } from './host-resume-connector';
+import {
+  canSendNewBeginningToChat,
+  outboundSendConfiguredFromResumeConnector,
+} from './next-cycle-send';
 import { continuationClipboardBody } from './continuation-prompt';
 import {
   showResultadoWakeContinuationCta,
   showWakeContinuationCta,
 } from './wake-continuation-cta';
+import { connectorSchema } from '../domain/continuation';
 
 import {
   useCallback,
@@ -1531,6 +1536,44 @@ export function App() {
       );
     }
   }
+  async function sendWakeContinuation() {
+    if (!run || busy) return;
+    const parsed = connectorSchema.safeParse(readHostResumeConnector());
+    if (!parsed.success || parsed.data.harness !== run.coordinator) {
+      setError(
+        t(
+          'No hay un conector de envío configurado para este harness. Usa Copiar continuación.',
+        ),
+      );
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await api<Run>(`/api/runs/${run.id}/outbound-prompts`, {
+        expectedRevision: run.revision,
+        commandId: crypto.randomUUID(),
+        text: continuationClipboardBody(t, run),
+        connector: parsed.data,
+        kind: 'continuation_prompt',
+      });
+      setNotice(
+        t(
+          'Continuación encolada para el conector. Eso no significa que el agente haya ejecutado el trabajo.',
+        ),
+      );
+      await refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : t('No se pudo encolar el envío al chat.'),
+      );
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
   async function copyCanvasLink() {
     if (!run) return;
     try {
@@ -1559,10 +1602,14 @@ export function App() {
       humanWaitingCount: waiting,
       hasDurableContinuation: !!run.continuation,
     });
+  const hostResumeConnector = readHostResumeConnector();
   const canSendWakeContinuation = canSendNewBeginningToChat({
-    // Phase 0: no certified ResumeConnector → Enviar hidden.
-    // Outbound host-prompt enqueue flips this gate when a real connector exists.
-    outboundSendConfigured: false,
+    resumeConnector: hostResumeConnector,
+    runHarness: run?.coordinator,
+    outboundSendConfigured: outboundSendConfiguredFromResumeConnector(
+      hostResumeConnector,
+      run?.coordinator,
+    ),
   });
   const permissionStall =
     !!run && hasPermissionStall(run.steps, run.events, !!run.agentWaiting);
@@ -2042,15 +2089,14 @@ export function App() {
                   <button
                     type="button"
                     className="canvas-next"
-                    onClick={() => {
-                      // Phase 1 outbound outbox enqueue; never invent a connector.
-                    }}
+                    disabled={busy || !online}
+                    onClick={() => void sendWakeContinuation()}
                   >
                     <Send size={15} />
                     <span>
                       <strong>{t('Enviar')}</strong>
                       {t(
-                        'Requiere un conector de reanudación; MCP solo no despierta el chat.',
+                        'Encola la continuación en el conector configurado. La entrega no ejecuta el trabajo.',
                       )}
                     </span>
                   </button>
@@ -2183,9 +2229,8 @@ export function App() {
                                 <button
                                   type="button"
                                   className="secondary"
-                                  onClick={() => {
-                                    /* Phase 1 Enviar enqueue */
-                                  }}
+                                  disabled={busy || !online}
+                                  onClick={() => void sendWakeContinuation()}
                                 >
                                   <Send size={15} />
                                   {t('Enviar')}
@@ -2451,8 +2496,7 @@ export function App() {
                     {t('Copiar petición para el chat')}
                   </button>
                   {canSendNewBeginningToChat({
-                    // Phase 0: no host ResumeConnector is certified → hide Enviar.
-                    // Phase 1+: pass outboundSendConfiguredFromResumeConnector(hostConnector, harness).
+                    // linked_cycle_prompt Enviar is a later cut — keep hidden.
                     outboundSendConfigured: false,
                   }) ? (
                     <button
@@ -2460,7 +2504,7 @@ export function App() {
                       className="secondary full"
                       disabled={!nextRequest.trim()}
                       onClick={() => {
-                        // Phase 1 outbound outbox will perform delivery; never invent a connector here.
+                        // linked_cycle outbound enqueue is out of this cut.
                       }}
                     >
                       <Send size={16} />

@@ -59,7 +59,8 @@ Do not overload `Store.continuations` human-answer rows with linked-cycle create
 ## Consequences
 
 - Phase 0 CTAs remain valid until a certified connector flips `outboundSendConfigured`.
-- **PR1 landed:** domain schema, `OutboundPromptQueue`, HTTP enqueue/claim/settle, synthetic tests, protocol + send-column honesty. Canvas Enviar wiring is a follow-up PR; production UI keeps `outboundSendConfigured: false`.
+- **PR1 landed:** domain schema, `OutboundPromptQueue`, HTTP enqueue/claim/settle, synthetic tests, protocol + send-column honesty.
+- **PR2:** continuation **Enviar** wires to enqueue when the host supplies a real ResumeConnector; without it Enviar stays hidden and Copiar remains primary. Linked-cycle Enviar and native connectors remain later.
 - Host spikes (Claude Code session, Cursor CLI, Codex App Server, Desktop helper) stay Phase 2; each must prove idempotent delivery before product claims.
 - Docs and capability matrices gain an explicit **send** column distinct from MCP and from human-answer resume.
 - Risk: conflating “Enviar succeeded” with “child run exists” or “step completed” — UI and receipts must separate delivery from execution.
