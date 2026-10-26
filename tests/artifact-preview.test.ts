@@ -12,8 +12,11 @@ test('sandboxed markup covers HTML and SVG only', () => {
   assert.equal(isSandboxedMarkup('application/json'), false);
 });
 
-test('Artifacts preview uses empty sandbox, Preview/Source, and inert disclaimer', () => {
-  const source = readFileSync(resolve('src/client/Artifacts.tsx'), 'utf8');
+test('shared ArtifactSandboxPreview keeps empty sandbox, Preview/Source, and inert disclaimer', () => {
+  const source = readFileSync(
+    resolve('src/client/ArtifactSandboxPreview.tsx'),
+    'utf8',
+  );
   assert.match(source, /srcDoc=\{text\}/);
   assert.match(source, /sandbox=""/);
   assert.match(source, /referrerPolicy="no-referrer"/);
@@ -26,4 +29,17 @@ test('Artifacts preview uses empty sandbox, Preview/Source, and inert disclaimer
   );
   assert.match(source, /mode === 'preview' &&/);
   assert.match(source, /isSandboxedMarkup/);
+});
+
+test('Artifacts reuses the shared sandbox preview helper', () => {
+  const source = readFileSync(resolve('src/client/Artifacts.tsx'), 'utf8');
+  assert.match(source, /ArtifactSandboxPreview/);
+  assert.doesNotMatch(source, /sandbox=""/);
+});
+
+test('canvas PreviewNode uses shared sandbox preview and selects producer', () => {
+  const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
+  assert.match(source, /ArtifactSandboxPreview/);
+  assert.match(source, /onSelectProducer/);
+  assert.match(source, /preview-tile/);
 });

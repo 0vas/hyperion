@@ -1,6 +1,9 @@
 /** Keep camera calculations aligned with the two compact bars and bottom actions. */
 export const canvasInsets = { top: 108, bottom: 64, side: 12 };
 
+/** On-canvas preview tiles hide below this window width (Architect R2.4). */
+export const previewTileBreakpoint = 900;
+
 /** Resultado dock widths (≥960px split). Sheet overlays use bottom inset instead. */
 export const resultadoDock = {
   breakpoint: 960,
