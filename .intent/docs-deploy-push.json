@@ -1,0 +1,48 @@
+{
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   176550c..d30058b  main -> main\n",
+  "head": "d30058b1d34c03b337b172d8ae1136b48dab3462",
+  "target": {
+    "conclusion": "",
+    "createdAt": "2026-10-26T15:15:24Z",
+    "databaseId": 40347520187,
+    "displayTitle": "Document Claude Code as the local files/shell Hyperion setup path.",
+    "event": "push",
+    "headSha": "d30058b1d34c03b337b172d8ae1136b48dab3462",
+    "status": "queued",
+    "url": "https://github.com/0vas/hyperion/actions/runs/40347520187"
+  },
+  "runs": [
+    {
+      "conclusion": "",
+      "createdAt": "2026-10-26T15:15:24Z",
+      "databaseId": 40347520187,
+      "displayTitle": "Document Claude Code as the local files/shell Hyperion setup path.",
+      "event": "push",
+      "headSha": "d30058b1d34c03b337b172d8ae1136b48dab3462",
+      "status": "queued",
+      "url": "https://github.com/0vas/hyperion/actions/runs/40347520187"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-26T07:31:08Z",
+      "databaseId": 40286275576,
+      "displayTitle": "Point public download registry at published Preview 2026.10.26.0721.",
+      "event": "push",
+      "headSha": "176550ce9fcb6185fd1a6cf64fb7cd131e126284",
+      "status": "completed",
+      "url": "https://github.com/0vas/hyperion/actions/runs/40286275576"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-10-26T07:21:30Z",
+      "databaseId": 40285302694,
+      "displayTitle": "Add orphan-running lease that auto-fails abandoned agent attempts.",
+      "event": "push",
+      "headSha": "76417306dc19d778c59716cbfe664d560d4ee77a",
+      "status": "completed",
+      "url": "https://github.com/0vas/hyperion/actions/runs/40285302694"
+    }
+  ],
+  "sendOk": true
+}

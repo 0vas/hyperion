@@ -1,0 +1,10 @@
+{
+  "status": "## main...origin/main [ahead 2]\n?? .olimpo/\n",
+  "ahead": "d30058b Document Claude Code as the local files/shell Hyperion setup path.\na524a29 chore: add Desktop Preview 2026.10.26.0721 release records\n",
+  "showExit": 0,
+  "show": "commit d30058b1d34c03b337b172d8ae1136b48dab3462\nAuthor: Oscar Lobaton <oscarlobaton@credicorpperu.com>\nDate:   Mon Oct 26 10:11:48 2026 -0500\n\n    Document Claude Code as the local files/shell Hyperion setup path.\n    \n    Spell out skill + MCP + /mcp verify, canvas URL (no native pane), and honest Desktop vs Code differences in conexion, integration, skill, and site ES/EN.\n    \n    Agent-Id: agent-b421e6c0-8732-404c-b759-d073fd2ca97a\n\n docs/conexion.md                    | 33 +++++++++++++++++++++++++++------\n docs/integration.md                 | 12 +++++++++++-\n docs/site/en/guia/integraciones.md  | 21 +++++++++++++++++++--\n docs/site/en/guia/primeros-pasos.md |  2 +-\n docs/site/guia/integraciones.md     | 21 +++++++++++++++++++--\n docs/site/guia/primeros-pasos.md    |  2 +-\n docs/site/tests/docs.spec.mjs       | 33 +++++++++++++++++++++++++++++++++\n skills/hyperion/SKILL.md            | 11 +++++++++++\n 8 files changed, 122 insertions(+), 13 deletions(-)\n",
+  "onHead": true,
+  "workflows": "Verify\tactive\t379744334\nDesktop installers\tactive\t379744333\nDocumentation Pages\tactive\t380227294\nPublish verified Desktop artifacts\tactive\t381870419\nWindows owner timing diagnostic\tactive\t389810146\nDependabot Updates\tactive\t379764196\npages-build-deployment\tactive\t380230811\n",
+  "pages": "{\"build_type\":\"workflow\",\"html_url\":\"https://0vas.github.io/hyperion/\",\"source\":{\"branch\":\"gh-pages\",\"path\":\"/\"},\"status\":\"built\"}\n",
+  "pagesErr": ""
+}

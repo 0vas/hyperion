@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "url": "https://0vas.github.io/hyperion/guia/integraciones.html",
+      "exit": 0,
+      "hasClaudeCode": true,
+      "hasMcp": true,
+      "len": 28639,
+      "err": ""
+    },
+    {
+      "url": "https://0vas.github.io/hyperion/en/guia/integraciones.html",
+      "exit": 0,
+      "hasClaudeCode": true,
+      "hasMcp": true,
+      "len": 27598,
+      "err": ""
+    },
+    {
+      "url": "https://0vas.github.io/hyperion/guia/primeros-pasos.html",
+      "exit": 0,
+      "hasClaudeCode": true,
+      "hasMcp": true,
+      "len": 44249,
+      "err": ""
+    },
+    {
+      "url": "https://0vas.github.io/hyperion/en/guia/primeros-pasos.html",
+      "exit": 0,
+      "hasClaudeCode": true,
+      "hasMcp": true,
+      "len": 43432,
+      "err": ""
+    }
+  ],
+  "allOk": true,
+  "sendOk": true
+}
