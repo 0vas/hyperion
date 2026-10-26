@@ -1545,7 +1545,10 @@ export function App() {
     }
   }
   const waiting = run?.steps.filter((s) => s.status === 'waiting').length || 0;
-  const ready = run?.steps.filter((s) => s.status === 'ready').length || 0;
+  // Wake CTA counts ready *agent* steps only (not approval/manual ready).
+  const ready =
+    run?.steps.filter((s) => s.kind === 'agent' && s.status === 'ready')
+      .length || 0;
   const live = run?.status === 'active';
   const wakeContinuationOpen =
     !!run &&

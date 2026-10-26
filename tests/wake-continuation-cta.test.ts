@@ -5,7 +5,7 @@ import {
   showWakeContinuationCta,
 } from '../src/client/wake-continuation-cta.js';
 
-test('wake CTA shows only when disconnected with ready agent work', () => {
+test('wake CTA shows only when agentWaiting is false and readyAgentCount ≥ 1', () => {
   assert.equal(
     showWakeContinuationCta({
       live: true,
@@ -14,6 +14,7 @@ test('wake CTA shows only when disconnected with ready agent work', () => {
     }),
     true,
   );
+  // Live wait open → no nag CTA (case A).
   assert.equal(
     showWakeContinuationCta({
       live: true,
@@ -22,6 +23,7 @@ test('wake CTA shows only when disconnected with ready agent work', () => {
     }),
     false,
   );
+  // Approval/manual ready alone must pass readyAgentCount 0 from the caller.
   assert.equal(
     showWakeContinuationCta({
       live: true,
