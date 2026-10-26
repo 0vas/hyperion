@@ -37,7 +37,7 @@ Check for a paused run, another unanswered question or a reported error before r
 
 ## Retry
 
-Use **Reintentar** (Retry) on a ready or failed AI task. For a stuck running task, use **Recuperar tarea** (Recover task) and confirm. Responses and logs remain intact. An actively waiting agent receives the recovery event. External tools are not cancelled; the agent must check what happened before repeating an action. Results from an older attempt are rejected.
+Use **Reintentar** (Retry) on a ready or failed AI task—including after an automatic abandonment for no progress (~180s with no active wait). For a stuck running task, use **Recuperar tarea** (Recover task) and confirm. Responses and logs remain intact. An actively waiting agent receives the recovery event. External tools are not cancelled; the agent must check what happened before repeating an action. Results from an older attempt are rejected.
 
 ## Change the plan
 

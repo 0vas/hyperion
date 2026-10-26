@@ -139,6 +139,10 @@ Each run includes read-only `steps[].availableContext`, derived from its request
 
 Emit `log` before a material action and after its real observation, including failures, then complete with evidence and typed outputs. While host / computer-use / shell work is expected to run longer than about 30 seconds without a natural checkpoint, emit at least one public heartbeat `log` every about 60 seconds of wall time; chat-only narration is not mirrored progress. On host/OS permission deny, missing entitlement or host/tool timeout, `fail` with a public message—do not leave the step `running` after the turn ends unless an active wait or verified durable suspend is held. The UI streams only submitted events: it cannot intercept arbitrary harness tools, Computer Use panes or private model reasoning. Brief receipt signals mean newly arrived records/data, never an independent agent heartbeat invented by the canvas. Human approval enables a task but does not wake an idle host conversation.
 
+### Orphan running lease (safety net)
+
+When an agent step stays `running`, no coordinator wait is active, no durable continuation owns the turn, and there has been no progress (`start` / `log` / `complete` / `fail` / `artifact`) for that attempt for **180 seconds**, authenticated GET/SSE projections reconcile the attempt to `failed` with a distinct public `abandon` event (`Attempt abandoned: no progress while no agent wait was active.`). Heartbeats within the lease, `agentWaiting`, and in-flight continuation survive. This does not cancel external tools or replace harness `fail`; see [ADR 0035](decisions/0035-orphan-running-lease.md).
+
 ## Exceptional plan revision
 
 The coordinator sends `{type: "revise", plan: FULL_REVISED_PLAN, message: REASON, expectedRevision: CURRENT_REVISION, commandId: UNIQUE_ID}` to the existing commands endpoint or CLI `command`. MCP exposes `hyperion_revise_plan` with `reason` instead of `message`. Read the run first; copy only plan/step definition fields, never runtime state, into the plan.

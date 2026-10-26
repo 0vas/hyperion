@@ -22,6 +22,9 @@ test('MCP server instructions require Hyperion-first use when tools are loaded',
   assert.match(source, /~60s/);
   assert.match(source, /host\/tool timeout/);
   assert.match(source, /chat-only/);
+  assert.match(source, /Safety net/);
+  assert.match(source, /~180s/);
+  assert.match(source, /abandon/);
 });
 
 test('portable skill requires mirrored host progress and fail on timeout', () => {
@@ -33,4 +36,7 @@ test('portable skill requires mirrored host progress and fail on timeout', () =>
   assert.match(skill, /~30s/);
   assert.match(skill, /host\/tool timeout/);
   assert.match(skill, /attempt.*returned by `start`/i);
+  assert.match(skill, /Safety net/);
+  assert.match(skill, /~180s/);
+  assert.match(skill, /abandon/);
 });

@@ -182,7 +182,8 @@ function requireCondition(
 ): asserts ok {
   if (!ok) throw new WorkflowError(code, message, status);
 }
-function refresh(run: Run) {
+/** Recompute readiness after a committed transition (also used by orphan reconcile). */
+export function refreshRun(run: Run) {
   if (run.profile === 'bpmn-lite') {
     refreshProcess(run);
     return;
@@ -269,7 +270,7 @@ export function createRun(input: unknown, coordinator: string): Run {
       },
     ],
   };
-  refresh(run);
+  refreshRun(run);
   return run;
 }
 export function transition(
@@ -502,7 +503,7 @@ export function transition(
     message,
     ...(command.trace ? { trace: command.trace } : {}),
   });
-  if (!['cancelled', 'rejected'].includes(run.status)) refresh(run);
+  if (!['cancelled', 'rejected'].includes(run.status)) refreshRun(run);
   return run;
 }
 

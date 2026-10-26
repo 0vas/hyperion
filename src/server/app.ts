@@ -122,6 +122,17 @@ export function createApp(options: Options) {
     }
     for (const listener of [...(waits.get(run.id) || [])]) listener(run);
   };
+  /** Reconcile orphan leases on read projections (ADR 0035); notify when abandoned. */
+  const readRun = (id: string): Run => {
+    const { run, changed } = options.store.reconcileOrphans(id, {
+      agentWaiting: !!waits.get(id)?.size,
+    });
+    if (changed) {
+      touchPresence();
+      notify(run);
+    }
+    return run;
+  };
   const server = createServer(async (req, res) => {
     res.setHeader('cache-control', 'no-store');
     res.setHeader('x-content-type-options', 'nosniff');
@@ -194,7 +205,11 @@ export function createApp(options: Options) {
             'x-accel-buffering': 'no',
           });
           streams.add(res);
-          send(res, 'snapshot', options.store.list().map(present));
+          send(
+            res,
+            'snapshot',
+            options.store.list().map((run) => present(readRun(run.id))),
+          );
           const heartbeat = setInterval(() => {
             refreshContinuations();
             if (!res.write(': heartbeat\n\n')) res.destroy();
@@ -277,7 +292,11 @@ export function createApp(options: Options) {
           return;
         }
         if (url.pathname === '/api/runs' && req.method === 'GET') {
-          json(res, 200, options.store.list().map(present));
+          json(
+            res,
+            200,
+            options.store.list().map((run) => present(readRun(run.id))),
+          );
           return;
         }
         if (url.pathname === '/api/runs' && req.method === 'POST') {
@@ -402,7 +421,7 @@ export function createApp(options: Options) {
         }
         const waiting = /^\/api\/runs\/([a-f0-9-]+)\/wait$/.exec(url.pathname);
         if (waiting && req.method === 'GET') {
-          const run = options.store.get(waiting[1]!);
+          const run = readRun(waiting[1]!);
           if (actor.role !== 'agent' || actor.id !== run.coordinator)
             throw new WorkflowError(
               'FORBIDDEN',
@@ -467,7 +486,7 @@ export function createApp(options: Options) {
         if (match) {
           const id = match[1]!;
           if (!match[2] && req.method === 'GET') {
-            json(res, 200, present(options.store.get(id)));
+            json(res, 200, present(readRun(id)));
             return;
           }
           if (match[2] && req.method === 'POST') {
