@@ -1,6 +1,6 @@
 # ADR 0036 — Outbound host prompts (send connector / outbox)
 
-Status: **accepted in source** (PR1: `continuation_prompt` domain/store/HTTP + synthetic tests). UI Enviar wiring, `linked_cycle_prompt`, and native provider send connectors remain follow-up.
+Status: **accepted in source** (PR1: `continuation_prompt` domain/store/HTTP + synthetic tests; PR2: continuation Enviar → enqueue when host supplies ResumeConnector). `linked_cycle_prompt`, PR3 worker, and native provider send connectors remain follow-up.
 Date: 2026-10-26.
 
 Parents: Phase 0 notes `1e160c0f`, `42fab25a`, Architect gate `ffcdba70`; product design `027c9591`.
