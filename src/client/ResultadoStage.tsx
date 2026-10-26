@@ -1,27 +1,50 @@
 import { type ReactNode, useEffect, useId, useState } from 'react';
-import { ArrowRightLeft, Layers3, ListTree, Package, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  History,
+  Layers3,
+  ListTree,
+  Package,
+  X,
+} from 'lucide-react';
 import type { Run, Step, StepStatus } from '../domain/workflow';
 import { Artifacts } from './Artifacts';
+import { HarnessIcon } from './HarnessIcon';
 import { t, useLocale } from './i18n';
 import { resolveStepEvidence } from './resultado-evidence';
 
 export type ResultadoSection =
-  'evidence' | 'detalle' | 'io' | 'logs' | 'artifacts';
+  'evidence' | 'detalle' | 'io' | 'logs' | 'artifacts' | 'actividad';
+
+export type JobRollup = {
+  id: string;
+  title: string;
+  completed: number;
+  total: number;
+  skipped: number;
+  status: StepStatus;
+  statusLabel: string;
+  steps: Step[];
+};
 
 type Props = {
   run: Run;
-  step: Step;
+  step?: Step;
+  job?: JobRollup;
   live: boolean;
   statusLabel: string;
   StatusIcon: (props: { status: StepStatus; size?: number }) => ReactNode;
   section: ResultadoSection;
   onSection: (section: ResultadoSection) => void;
   onClose: () => void;
+  onSelectStep?: (id: string) => void;
   waitingForm?: ReactNode;
   guidance?: ReactNode;
   detalle?: ReactNode;
   io?: ReactNode;
   logs?: ReactNode;
+  eventLabels?: Record<string, string>;
   reduceMotion?: boolean;
 };
 
@@ -94,35 +117,68 @@ function EvidenceBody({
   );
 }
 
+function StepActividad({
+  run,
+  step,
+  eventLabels,
+}: {
+  run: Run;
+  step: Step;
+  eventLabels: Record<string, string>;
+}) {
+  const events = run.events.filter((event) => event.stepId === step.id);
+  return (
+    <div className="resultado-actividad step-history">
+      <h3>{t('Actividad de este paso')}</h3>
+      {[...events].reverse().map((event) => (
+        <div key={event.sequence}>
+          <span className="history-dot" />
+          <p>
+            <strong>{eventLabels[event.type] || event.type}</strong>
+            <small>
+              <HarnessIcon name={event.actor} /> ·{' '}
+              {new Date(event.at).toLocaleString()}
+            </small>
+            {event.message && <span>{event.message}</span>}
+          </p>
+        </div>
+      ))}
+      {!events.length && (
+        <p className="muted">{t('Todavía no hay actividad registrada.')}</p>
+      )}
+    </div>
+  );
+}
+
 export function ResultadoStage({
   run,
   step,
+  job,
   live,
   statusLabel,
   StatusIcon,
   section,
   onSection,
   onClose,
+  onSelectStep,
   waitingForm,
   guidance,
   detalle,
   io,
   logs,
+  eventLabels = {},
   reduceMotion = false,
 }: Props) {
   useLocale();
   const titleId = useId();
-  const waiting = step.status === 'waiting' && live;
+  const waiting = !!step && step.status === 'waiting' && live;
   const [sheetExpanded, setSheetExpanded] = useState(false);
   useEffect(() => {
     setSheetExpanded(waiting);
-  }, [step.id, waiting]);
+  }, [step?.id, job?.id, waiting]);
 
-  const secondaryOpen =
-    section === 'detalle' ||
-    section === 'io' ||
-    section === 'logs' ||
-    section === 'artifacts';
+  const title = step?.title || job?.title || t('Resultado');
+  const status = step?.status || job?.status || 'ready';
 
   return (
     <aside
@@ -133,13 +189,21 @@ export function ResultadoStage({
       <header className="resultado-header">
         <div className="resultado-heading">
           <p className="resultado-eyebrow">{t('Resultado')}</p>
-          <h2 id={titleId}>{step.title}</h2>
-          <span className={`status-tag ${step.status}`}>
-            <StatusIcon status={step.status} />
+          <h2 id={titleId}>{title}</h2>
+          <span className={`status-tag ${status}`}>
+            <StatusIcon status={status} />
             {statusLabel}
           </span>
         </div>
         <div className="resultado-header-actions">
+          <button
+            type="button"
+            className="ghost-button resultado-back-canvas"
+            onClick={onClose}
+          >
+            <ArrowLeft size={15} />
+            {t('Volver al canvas')}
+          </button>
           <button
             type="button"
             className="ghost-button resultado-sheet-toggle"
@@ -171,7 +235,37 @@ export function ResultadoStage({
         )}
 
         {guidance}
-        {section === 'evidence' && (
+
+        {job && !step && (
+          <div className="resultado-job-rollup">
+            <p className="muted">
+              {job.completed} {t('de')} {job.total} {t('pasos completados')}
+              {job.skipped > 0 ? t(' · {0} omitidos', { 0: job.skipped }) : ''}
+            </p>
+            <progress
+              aria-label={t('Progreso: {0}', { 0: job.title })}
+              max={job.total}
+              value={job.completed + job.skipped}
+            />
+            <ul className="resultado-job-children">
+              {job.steps.map((child) => (
+                <li key={child.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectStep?.(child.id)}
+                  >
+                    <span>{child.title}</span>
+                    <span className={`status-tag ${child.status}`}>
+                      <StatusIcon status={child.status} size={13} />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {step && section === 'evidence' && (
           <EvidenceBody
             runId={run.id}
             step={step}
@@ -180,60 +274,74 @@ export function ResultadoStage({
             running={step.status === 'running'}
           />
         )}
-        {section === 'artifacts' && <Artifacts runId={run.id} step={step} />}
-        {section === 'io' && io}
-        {section === 'logs' && logs}
-        {section === 'detalle' && detalle}
+        {step && section === 'artifacts' && (
+          <Artifacts runId={run.id} step={step} />
+        )}
+        {step && section === 'io' && io}
+        {step && section === 'logs' && logs}
+        {step && section === 'detalle' && detalle}
+        {step && section === 'actividad' && (
+          <StepActividad run={run} step={step} eventLabels={eventLabels} />
+        )}
       </div>
 
-      <nav
-        className="resultado-secondary"
-        aria-label={t('Detalle del resultado')}
-      >
-        <button
-          type="button"
-          className={section === 'evidence' ? 'active' : ''}
-          onClick={() => onSection('evidence')}
+      {step && (
+        <nav
+          className="resultado-secondary"
+          aria-label={t('Detalle del resultado')}
         >
-          <Package size={15} />
-          {t('Evidencia')}
-        </button>
-        <button
-          type="button"
-          className={section === 'detalle' ? 'active' : ''}
-          aria-expanded={secondaryOpen && section === 'detalle'}
-          onClick={() => onSection('detalle')}
-        >
-          <Layers3 size={15} />
-          {t('Detalle')}
-        </button>
-        <button
-          type="button"
-          className={section === 'io' ? 'active' : ''}
-          onClick={() => onSection('io')}
-        >
-          <ArrowRightLeft size={15} />
-          I/O
-        </button>
-        <button
-          type="button"
-          className={section === 'logs' ? 'active' : ''}
-          onClick={() => onSection('logs')}
-        >
-          <ListTree size={15} />
-          Logs
-        </button>
-        {step.kind === 'agent' && (
           <button
             type="button"
-            className={section === 'artifacts' ? 'active' : ''}
-            onClick={() => onSection('artifacts')}
+            className={section === 'evidence' ? 'active' : ''}
+            onClick={() => onSection('evidence')}
           >
             <Package size={15} />
-            {t('Artefactos')}
+            {t('Evidencia')}
           </button>
-        )}
-      </nav>
+          <button
+            type="button"
+            className={section === 'detalle' ? 'active' : ''}
+            onClick={() => onSection('detalle')}
+          >
+            <Layers3 size={15} />
+            {t('Detalle')}
+          </button>
+          <button
+            type="button"
+            className={section === 'io' ? 'active' : ''}
+            onClick={() => onSection('io')}
+          >
+            <ArrowRightLeft size={15} />
+            I/O
+          </button>
+          <button
+            type="button"
+            className={section === 'logs' ? 'active' : ''}
+            onClick={() => onSection('logs')}
+          >
+            <ListTree size={15} />
+            Logs
+          </button>
+          <button
+            type="button"
+            className={section === 'actividad' ? 'active' : ''}
+            onClick={() => onSection('actividad')}
+          >
+            <History size={15} />
+            {t('Actividad')}
+          </button>
+          {step.kind === 'agent' && (
+            <button
+              type="button"
+              className={section === 'artifacts' ? 'active' : ''}
+              onClick={() => onSection('artifacts')}
+            >
+              <Package size={15} />
+              {t('Artefactos')}
+            </button>
+          )}
+        </nav>
+      )}
     </aside>
   );
 }

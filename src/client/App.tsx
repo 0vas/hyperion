@@ -1,6 +1,10 @@
 import { NodeDragHandle } from './NodeDragHandle';
 import { useNodePositions } from './node-positions';
-import { ResultadoStage, type ResultadoSection } from './ResultadoStage';
+import {
+  ResultadoStage,
+  type JobRollup,
+  type ResultadoSection,
+} from './ResultadoStage';
 import { RunLinkNode } from './RunLinkNode';
 import { t, useLocale, localizedLabels, getLocale } from './i18n';
 import hyperionLogo from './brands/hyperion.png';
@@ -80,7 +84,7 @@ import { CurrentEdge } from './CurrentEdge';
 import { BpmnSymbol } from './BpmnSymbol';
 import { HumanForm } from './HumanForm';
 import { parseField } from './decision-form';
-import { canvasInsets } from './viewport';
+import { canvasInsets, resultadoDock } from './viewport';
 import { FlowLegend } from './FlowLegend';
 import { JobNode } from './JobNode';
 import { Settings } from './Settings';
@@ -756,6 +760,7 @@ export function App() {
     new URLSearchParams(location.search).get('run') || '',
   );
   const [stepId, setStepId] = useState('');
+  const [jobId, setJobId] = useState('');
   const [resultadoOpen, setResultadoOpen] = useState(false);
   const [resultadoSection, setResultadoSection] =
     useState<ResultadoSection>('evidence');
@@ -943,11 +948,28 @@ export function App() {
     setFocusedStepId('');
     setFocusRequest(null);
   }, [run?.id, preferences.follow]);
-  const step =
-    run?.steps.find((s) => s.id === stepId) ||
-    run?.steps.find((s) => s.status === 'waiting') ||
-    run?.steps.find((s) => s.status === 'running' || s.status === 'ready') ||
-    run?.steps[0];
+  // Resultado binds to one primary selection — never invent a step when none is selected.
+  const step = stepId
+    ? run?.steps.find((item) => item.id === stepId)
+    : undefined;
+  const selectedJob: JobRollup | undefined =
+    jobId && run
+      ? (() => {
+          const progress = jobProgress(run, jobId);
+          const job = run.jobs?.find((item) => item.id === jobId);
+          if (!job) return undefined;
+          return {
+            id: jobId,
+            title: job.title,
+            completed: progress.completed,
+            total: progress.total,
+            skipped: progress.skipped,
+            status: progress.status,
+            statusLabel: flowLabels[nodeState(progress, run.status)],
+            steps: progress.steps,
+          };
+        })()
+      : undefined;
   const refresh = useCallback(async () => {
     try {
       const data = await api<Run[]>('/api/runs');
@@ -1035,28 +1057,58 @@ export function App() {
       clearTimeout(timer);
     };
   }, [refresh]);
+  const draftStepRef = useRef('');
   useEffect(() => {
+    draftStepRef.current = '';
     setAnswer('');
     setOutputDraft({});
     setError('');
     setConfirmation(null);
-  }, [step?.id, run?.id]);
+  }, [run?.id]);
+  useEffect(() => {
+    // Keep drafts across Resultado close/reopen of the same step; reset only on a different step.
+    if (!stepId || draftStepRef.current === stepId) return;
+    draftStepRef.current = stepId;
+    setAnswer('');
+    setOutputDraft({});
+    setError('');
+    setConfirmation(null);
+  }, [stepId]);
   const selectRun = (id: string) => {
     setRunId(id);
     setStepId('');
+    setJobId('');
     setResultadoOpen(false);
     setResultadoSection('evidence');
     setPopup(null);
     history.replaceState(null, '', id ? `/?run=${id}` : '/');
   };
   const clearResultado = useCallback(() => {
+    const restoreId = stepId || (jobId ? `job:${jobId}` : '');
     setStepId('');
+    setJobId('');
     setResultadoOpen(false);
     setResultadoSection('evidence');
-  }, []);
+    if (!restoreId) return;
+    queueMicrotask(() => {
+      const node = document.querySelector<HTMLElement>(
+        `.react-flow__node[data-id="${CSS.escape(restoreId)}"]`,
+      );
+      node
+        ?.querySelector<HTMLElement>('button.node-main, button.control-main')
+        ?.focus();
+    });
+  }, [stepId, jobId]);
   const selectStep = useCallback((id: string, view: StepView = 'step') => {
+    setJobId('');
     setStepId(id);
     setResultadoSection(stepViewToResultado(view));
+    setResultadoOpen(true);
+  }, []);
+  const selectJobRollup = useCallback((id: string) => {
+    setStepId('');
+    setJobId(id);
+    setResultadoSection('evidence');
     setResultadoOpen(true);
   }, []);
   // Controlled nodes must retain React Flow's measurements between snapshots.
@@ -1140,14 +1192,24 @@ export function App() {
             flowState: nodeState(progress, run.status),
             statusLabel: flowLabels[nodeState(progress, run.status)],
             onExpand: () => {
-              setPreferences((p) => ({ ...p, view: 'steps' }));
               setFollowing(false);
               const child =
-                progress.steps.find((s) =>
-                  ['waiting', 'running', 'ready', 'failed'].includes(s.status),
-                ) || progress.steps[0];
-              if (child)
-                setFocusRequest({ id: child.id, nonce: ++focusNonce.current });
+                progress.steps.find((s) => s.status === 'waiting') ||
+                progress.steps.find((s) => s.status === 'ready') ||
+                progress.steps.find((s) => s.status === 'running');
+              if (child) {
+                selectStep(child.id);
+                setFocusRequest({
+                  id: child.id,
+                  nonce: ++focusNonce.current,
+                });
+                return;
+              }
+              selectJobRollup(id);
+              setFocusRequest({
+                id: item.id,
+                nonce: ++focusNonce.current,
+              });
             },
           },
         };
@@ -1185,7 +1247,8 @@ export function App() {
           jobTitle: run.jobs?.find((j) => j.id === item.jobId)?.title,
           selected:
             focusedStepId === item.id ||
-            (resultadoOpen && step?.id === item.id),
+            (resultadoOpen && step?.id === item.id) ||
+            (resultadoOpen && !!jobId && item.jobId === jobId),
           onSelect: selectStep,
         },
         draggable: true,
@@ -1364,7 +1427,9 @@ export function App() {
     manualPositions,
     selection,
     step?.id,
+    jobId,
     selectStep,
+    selectJobRollup,
     resultadoOpen,
     focusedStepId,
     preferences.view,
@@ -1764,8 +1829,9 @@ export function App() {
             </div>
           ) : (
             <section
-              className={`canvas-workspace${resultadoOpen && step ? ' has-resultado' : ''}`}
+              className={`canvas-workspace${resultadoOpen && (step || selectedJob) ? ' has-resultado' : ''}`}
               aria-label={t('Canvas del workflow')}
+              data-resultado-breakpoint={resultadoDock.breakpoint}
             >
               {runTools}
               <div className="graph">
@@ -1944,23 +2010,28 @@ export function App() {
                   </button>
                 )}
               </div>
-              {resultadoOpen && step && (
+              {resultadoOpen && (step || selectedJob) && (
                 <ResultadoStage
                   run={run}
                   step={step}
+                  job={step ? undefined : selectedJob}
                   live={!!live}
                   statusLabel={
-                    step.status === 'running' && !run.agentWaiting
-                      ? `${labels.running} · ${t('chat desconectado')}`
-                      : labels[step.status]
+                    step
+                      ? step.status === 'running' && !run.agentWaiting
+                        ? `${labels.running} · ${t('chat desconectado')}`
+                        : labels[step.status]
+                      : selectedJob!.statusLabel
                   }
                   StatusIcon={StatusIcon}
                   section={resultadoSection}
                   onSection={setResultadoSection}
                   onClose={clearResultado}
+                  onSelectStep={selectStep}
+                  eventLabels={eventLabels}
                   reduceMotion={preferences.reduceMotion}
                   waitingForm={
-                    step.status === 'waiting' && live ? (
+                    step && step.status === 'waiting' && live ? (
                       <div className="answering-step">
                         <HumanForm
                           key={step.id}
@@ -1985,190 +2056,199 @@ export function App() {
                     ) : undefined
                   }
                   guidance={
-                    <>
-                      {step.status === 'running' &&
-                        (() => {
-                          const permissionLike = looksLikePermissionDenial(
-                            latestStepEvidence(run.events, step.id) ||
-                              step.result ||
-                              '',
-                          );
-                          const kind = stuckRunningKind({
-                            agentWaiting: !!run.agentWaiting,
-                            permissionLike,
-                          });
-                          return (
-                            <div className="step-hint">
-                              {kind === 'active-wait' ? (
-                                <LoaderCircle className="spin" size={17} />
-                              ) : kind === 'permission' ? (
-                                <LockKeyhole size={17} />
-                              ) : (
-                                <Pause size={17} />
-                              )}
-                              <p>
-                                {kind === 'active-wait'
-                                  ? t(
-                                      'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
-                                    )
-                                  : kind === 'permission'
-                                    ? t(
-                                        'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
-                                      )
-                                    : t(
-                                        'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
-                                      )}
-                                {kind !== 'active-wait' && live && (
-                                  <>
-                                    <button
-                                      className="secondary"
-                                      disabled={busy || !online}
-                                      onClick={() => requestRetry(step.id)}
-                                    >
-                                      {t('Recuperar tarea')}
-                                    </button>
-                                    <button
-                                      className="secondary"
-                                      onClick={copyPrompt}
-                                    >
-                                      {copied
-                                        ? t('Pega la petición en tu chat')
-                                        : t('Copiar continuación')}
-                                    </button>
-                                  </>
+                    step ? (
+                      <>
+                        {step.status === 'running' &&
+                          (() => {
+                            const permissionLike = looksLikePermissionDenial(
+                              latestStepEvidence(run.events, step.id) ||
+                                step.result ||
+                                '',
+                            );
+                            const kind = stuckRunningKind({
+                              agentWaiting: !!run.agentWaiting,
+                              permissionLike,
+                            });
+                            return (
+                              <div className="step-hint">
+                                {kind === 'active-wait' ? (
+                                  <LoaderCircle className="spin" size={17} />
+                                ) : kind === 'permission' ? (
+                                  <LockKeyhole size={17} />
+                                ) : (
+                                  <Pause size={17} />
                                 )}
-                              </p>
-                            </div>
-                          );
-                        })()}
-                      {step.status === 'ready' && live && (
-                        <div className="step-hint">
-                          <Bot size={17} />
-                          <p>
-                            {t(
-                              'Este paso está listo. Si tu chat terminó su turno, envía la continuación para que el agente lo retome.',
-                            )}
-                            <button className="secondary" onClick={copyPrompt}>
-                              {copied
-                                ? t('Pega la petición en tu chat')
-                                : t('Copiar continuación')}
-                            </button>
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  }
-                  detalle={
-                    <div className="step-detail resultado-detalle">
-                      <button
-                        className="text-button focus-detail"
-                        onClick={() => {
-                          setFollowing(false);
-                          setFocusRequest({
-                            id: step.id,
-                            nonce: ++focusNonce.current,
-                          });
-                        }}
-                      >
-                        <Focus size={15} />
-                        {t('Enfocar tarea')}
-                      </button>
-                      <p className="step-description">
-                        {step.description ||
-                          (isControl(step)
-                            ? t(
-                                'El motor aplica este nodo automáticamente al cumplirse sus condiciones y dependencias.',
-                              )
-                            : step.kind === 'manual'
-                              ? t(
-                                  'Comparte la información que necesita el agente para avanzar.',
-                                )
-                              : step.kind === 'approval'
-                                ? t(
-                                    'Revisa los resultados anteriores y decide si el proceso puede continuar.',
-                                  )
-                                : t(
-                                    'El agente ejecutará este paso y registrará su resultado aquí.',
-                                  ))}
-                      </p>
-                      {step.kind === 'agent' &&
-                        ['failed', 'ready', 'running'].includes(step.status) &&
-                        live && (
-                          <button
-                            className="secondary full recovery-button"
-                            disabled={busy || !online}
-                            onClick={() => requestRetry(step.id)}
-                          >
-                            <RotateCcw size={16} />{' '}
-                            {step.status === 'running'
-                              ? t('Recuperar tarea')
-                              : t('Reintentar paso')}
-                          </button>
-                        )}
-                      <dl className="step-meta">
-                        <div>
-                          <dt>{t('Responsable')}</dt>
-                          <dd>
-                            {step.kind === 'agent' ? (
-                              <HarnessIcon name={run.coordinator} />
-                            ) : (
-                              <UserRound size={14} />
-                            )}{' '}
-                            {isControl(step)
-                              ? 'Hyperion'
-                              : step.kind === 'agent'
-                                ? null
-                                : t('Tú')}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>{t('Tipo de paso')}</dt>
-                          <dd>{kindLabels[step.kind]}</dd>
-                        </div>
-                        {step.attempt > 0 && (
-                          <div>
-                            <dt>{t('Intento')}</dt>
-                            <dd>#{step.attempt}</dd>
+                                <p>
+                                  {kind === 'active-wait'
+                                    ? t(
+                                        'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
+                                      )
+                                    : kind === 'permission'
+                                      ? t(
+                                          'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
+                                        )
+                                      : t(
+                                          'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
+                                        )}
+                                  {kind !== 'active-wait' && live && (
+                                    <>
+                                      <button
+                                        className="secondary"
+                                        disabled={busy || !online}
+                                        onClick={() => requestRetry(step.id)}
+                                      >
+                                        {t('Recuperar tarea')}
+                                      </button>
+                                      <button
+                                        className="secondary"
+                                        onClick={copyPrompt}
+                                      >
+                                        {copied
+                                          ? t('Pega la petición en tu chat')
+                                          : t('Copiar continuación')}
+                                      </button>
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            );
+                          })()}
+                        {step.status === 'ready' && live && (
+                          <div className="step-hint">
+                            <Bot size={17} />
+                            <p>
+                              {t(
+                                'Este paso está listo. Si tu chat terminó su turno, envía la continuación para que el agente lo retome.',
+                              )}
+                              <button
+                                className="secondary"
+                                onClick={copyPrompt}
+                              >
+                                {copied
+                                  ? t('Pega la petición en tu chat')
+                                  : t('Copiar continuación')}
+                              </button>
+                            </p>
                           </div>
                         )}
-                      </dl>
-                      {step.dependencies.length > 0 && (
-                        <div className="dependencies">
-                          <h3>{t('Depende de')}</h3>
-                          {step.dependencies.map((id) => {
-                            const dependency = run.steps.find(
-                              (s) => s.id === id,
-                            )!;
-                            return (
-                              <button key={id} onClick={() => selectStep(id)}>
-                                <span
-                                  className={`dependency-icon ${dependency.status}`}
-                                >
-                                  <StatusIcon
-                                    status={dependency.status}
-                                    size={13}
-                                  />
-                                </span>
-                                <span>{dependency.title}</span>
-                                <ChevronRight size={13} />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {step.status === 'blocked' && (
-                        <div className="step-hint">
-                          <LockKeyhole size={16} />
-                          <p>
-                            {t('Este paso se habilitará cuando termine:')}{' '}
-                            {blockedReason}.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                      </>
+                    ) : undefined
                   }
-                  io={<ContractView step={step} run={run} />}
-                  logs={<TraceView step={step} run={run} />}
+                  detalle={
+                    step ? (
+                      <div className="step-detail resultado-detalle">
+                        <button
+                          className="text-button focus-detail"
+                          onClick={() => {
+                            setFollowing(false);
+                            setFocusRequest({
+                              id: step.id,
+                              nonce: ++focusNonce.current,
+                            });
+                          }}
+                        >
+                          <Focus size={15} />
+                          {t('Enfocar tarea')}
+                        </button>
+                        <p className="step-description">
+                          {step.description ||
+                            (isControl(step)
+                              ? t(
+                                  'El motor aplica este nodo automáticamente al cumplirse sus condiciones y dependencias.',
+                                )
+                              : step.kind === 'manual'
+                                ? t(
+                                    'Comparte la información que necesita el agente para avanzar.',
+                                  )
+                                : step.kind === 'approval'
+                                  ? t(
+                                      'Revisa los resultados anteriores y decide si el proceso puede continuar.',
+                                    )
+                                  : t(
+                                      'El agente ejecutará este paso y registrará su resultado aquí.',
+                                    ))}
+                        </p>
+                        {step.kind === 'agent' &&
+                          ['failed', 'ready', 'running'].includes(
+                            step.status,
+                          ) &&
+                          live && (
+                            <button
+                              className="secondary full recovery-button"
+                              disabled={busy || !online}
+                              onClick={() => requestRetry(step.id)}
+                            >
+                              <RotateCcw size={16} />{' '}
+                              {step.status === 'running'
+                                ? t('Recuperar tarea')
+                                : t('Reintentar paso')}
+                            </button>
+                          )}
+                        <dl className="step-meta">
+                          <div>
+                            <dt>{t('Responsable')}</dt>
+                            <dd>
+                              {step.kind === 'agent' ? (
+                                <HarnessIcon name={run.coordinator} />
+                              ) : (
+                                <UserRound size={14} />
+                              )}{' '}
+                              {isControl(step)
+                                ? 'Hyperion'
+                                : step.kind === 'agent'
+                                  ? null
+                                  : t('Tú')}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>{t('Tipo de paso')}</dt>
+                            <dd>{kindLabels[step.kind]}</dd>
+                          </div>
+                          {step.attempt > 0 && (
+                            <div>
+                              <dt>{t('Intento')}</dt>
+                              <dd>#{step.attempt}</dd>
+                            </div>
+                          )}
+                        </dl>
+                        {step.dependencies.length > 0 && (
+                          <div className="dependencies">
+                            <h3>{t('Depende de')}</h3>
+                            {step.dependencies.map((id) => {
+                              const dependency = run.steps.find(
+                                (s) => s.id === id,
+                              )!;
+                              return (
+                                <button key={id} onClick={() => selectStep(id)}>
+                                  <span
+                                    className={`dependency-icon ${dependency.status}`}
+                                  >
+                                    <StatusIcon
+                                      status={dependency.status}
+                                      size={13}
+                                    />
+                                  </span>
+                                  <span>{dependency.title}</span>
+                                  <ChevronRight size={13} />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {step.status === 'blocked' && (
+                          <div className="step-hint">
+                            <LockKeyhole size={16} />
+                            <p>
+                              {t('Este paso se habilitará cuando termine:')}{' '}
+                              {blockedReason}.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : undefined
+                  }
+                  io={step ? <ContractView step={step} run={run} /> : undefined}
+                  logs={step ? <TraceView step={step} run={run} /> : undefined}
                 />
               )}
             </section>

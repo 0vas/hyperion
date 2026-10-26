@@ -25,7 +25,7 @@ Paths reflect recorded progress. Animation does not prove that an agent is conne
 
 Forms should ask a concrete question using dropdowns, Yes/No, numbers or text. No choice is approved by default. Expand help only when needed.
 
-Selecting a step opens **Result** beside the canvas (on narrow screens, a bottom sheet). It prefers registered evidence: artifact, else typed outputs, else a public log summary; if nothing is registered yet, it says so without inventing progress. When the step is waiting for you, the form appears first. **Details**, **I/O** and **Logs** stay secondary in the same pane. Escape or an empty canvas closes Result. Connections and Settings remain modal dialogs.
+Selecting a step opens **Result** beside the canvas (≥960px: canvas ~60% / pane ~38%, 320–480px). Below 960px, a bottom sheet with **Back to canvas**. It prefers registered evidence: artifact, else typed outputs, else a public log summary; if nothing is registered yet, it says so without inventing progress. When the step is waiting for you, the form appears first. **Details**, **I/O**, **Logs** and step **Activity** stay secondary in the same pane (run-level Activity remains in the menu). Escape or an empty canvas closes Result and returns focus to the node. Connections and Settings remain modal dialogs.
 
 **I/O** shows inputs and outputs. **Logs** contains public summaries, actions and observations sent by the agent—including heartbeats during long host work. A host timeout or permission denial should leave the step **Failed**, not endless **In progress**. Logs are not an automatic recording of every tool or private reasoning.
 
