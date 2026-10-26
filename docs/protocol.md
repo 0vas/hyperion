@@ -200,4 +200,19 @@ An agent creates a linked run with `POST /api/runs` using `{commandId, plan, par
 
 The child records immutable `origin: {runId, revision, title}`. The parent's snapshot, revision and events remain unchanged. SQLite records the relationship atomically with the child and receipt. Each parent supports up to 32 direct continuations. Read responses project `links.previous` and `links.next[]`, each with `id`, `title`, `status` and `request`. SSE refreshes these links without inventing a parent revision. These navigation links sit outside the executable DAG: the canvas connects the prior end to the new start, and both runs retain independent states and coordinators.
 
-Included in Desktop **2026.10.26.1533 UTC · Preview**. Older installers require an update to provide these endpoints. Automatic push of a canvas draft into the host chat is not shipped; see proposed [ADR 0036](decisions/0036-outbound-host-prompts.md). Phase 0 UI keeps **Copiar petición para el chat** and hides **Enviar** until a host-configured send/`ResumeConnector` path exists — MCP alone does not wake a closed chat.
+Included in Desktop **2026.10.26.1533 UTC · Preview**. Older installers require an update to provide these endpoints. Phase 0 UI keeps **Copiar petición para el chat** and hides **Enviar** until a host-configured send/`ResumeConnector` path exists — MCP alone does not wake a closed chat. Linked-cycle canvas drafts are not auto-pushed.
+
+## Outbound host prompts (ADR 0036 PR1)
+
+A dedicated outbox delivers human-authored **continuation** text to a trusted local send/resume connector. It is separate from ADR 0022 human-answer continuations: enqueue persists prompt text for a host turn; it does not invent answers or complete steps. Delivery acknowledgement is not task execution.
+
+PR1 ships `kind: continuation_prompt` only (`linked_cycle_prompt` is later). Human or run coordinator enqueues; only the coordinator agent claims and settles. Public projections (`outboundPrompt` on GET/SSE) omit `sessionId`.
+
+| Method | Route                              | Result                                                                                                        |
+| ------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/runs/:id/outbound-prompts`   | Enqueue `{expectedRevision, commandId, text, connector, kind?}`; returns the run with public `outboundPrompt` |
+| POST   | `/api/outbound-prompts/pending`    | `{connectorId}` → uncertain deliveries for reconciliation                                                     |
+| POST   | `/api/outbound-prompts/claim`      | `{connectorId}` → one leased delivery (includes session for trusted connector code) or `null`                 |
+| POST   | `/api/outbound-prompts/:id/settle` | `{leaseToken, outcome, reconciled?, message?}` → public outbox state                                          |
+
+Idempotent `commandId` replays the same receipt; a different payload with the same id fails. Lease expiry becomes `uncertain` and requires `reconciled: true` before settle. Outstanding queued/leased/uncertain jobs block another enqueue. Canvas **Enviar** remains gated off in production UI until a later PR wires it; synthetic connector tests cover the API. See [ADR 0036](decisions/0036-outbound-host-prompts.md).

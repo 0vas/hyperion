@@ -1,5 +1,6 @@
 import type { Artifact } from './artifacts.js';
 import type { ContinuationState } from './continuation.js';
+import type { OutboundPromptState } from './outbound-prompt.js';
 import { z } from 'zod';
 import type { AvailableContext } from './context.js';
 import { validateJobs } from './jobs.js';
@@ -147,6 +148,8 @@ export type Run = {
   links?: { previous?: RunLink; next: RunLink[] };
   /** Live transport presence; never persisted as workflow state. */
   continuation?: ContinuationState;
+  /** ADR 0036 public outbox projection; never includes session secrets. */
+  outboundPrompt?: OutboundPromptState;
   agentWaiting?: boolean;
   agentPresenceAt?: number;
   planChanges?: PlanChange[];

@@ -5,6 +5,7 @@ import {
   type Artifact,
 } from '../domain/artifacts.js';
 import { ContinuationQueue } from './continuations.js';
+import { OutboundPromptQueue } from './outbound-prompts.js';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
@@ -28,6 +29,7 @@ const keySchema = z.string().min(1).max(128);
 export class Store {
   private db: DatabaseSync;
   readonly continuations: ContinuationQueue;
+  readonly outboundPrompts: OutboundPromptQueue;
   constructor(path: string, options: { now?: () => number } = {}) {
     this.db = new DatabaseSync(path);
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
@@ -38,6 +40,11 @@ export class Store {
       CREATE INDEX IF NOT EXISTS run_links_parent ON run_links(parent_id);
       PRAGMA user_version=3;`);
     this.continuations = new ContinuationQueue(
+      this.db,
+      (id) => this.get(id),
+      options.now,
+    );
+    this.outboundPrompts = new OutboundPromptQueue(
       this.db,
       (id) => this.get(id),
       options.now,

@@ -1,4 +1,5 @@
 import { claimSchema } from '../domain/continuation.js';
+import { outboundClaimSchema } from '../domain/outbound-prompt.js';
 import { presentRun } from '../domain/context.js';
 import type { Run } from '../domain/workflow.js';
 import { VERSION, RELEASE_CHANNEL } from '../version.js';
@@ -75,6 +76,7 @@ export function createApp(options: Options) {
   let baseUrl = '';
   const streams = new Set<ServerResponse>();
   const continuationViews = new Map<string, string>();
+  const outboundViews = new Map<string, string>();
   const waits = new Map<string, Set<(run: Run) => void>>();
   let presenceAt = Date.now();
   const touchPresence = () => {
@@ -85,6 +87,7 @@ export function createApp(options: Options) {
     links: options.store.links(run.id),
     agentWaiting: !!waits.get(run.id)?.size,
     continuation: options.store.continuations.state(run.id),
+    outboundPrompt: options.store.outboundPrompts.state(run.id),
     agentPresenceAt: presenceAt,
   });
   const send = (res: ServerResponse, event: string, value: unknown) => {
@@ -99,6 +102,10 @@ export function createApp(options: Options) {
       run.id,
       JSON.stringify(options.store.continuations.state(run.id)) || '',
     );
+    outboundViews.set(
+      run.id,
+      JSON.stringify(options.store.outboundPrompts.state(run.id)) || '',
+    );
     for (const res of streams) send(res, 'run', present(run));
   };
   const refreshContinuations = (owner?: string) => {
@@ -108,6 +115,19 @@ export function createApp(options: Options) {
         (!owner || run.coordinator === owner) &&
         state &&
         continuationViews.get(run.id) !== JSON.stringify(state)
+      ) {
+        touchPresence();
+        publish(run);
+      }
+    }
+  };
+  const refreshOutbound = (owner?: string) => {
+    for (const run of options.store.list()) {
+      const state = options.store.outboundPrompts.state(run.id);
+      if (
+        (!owner || run.coordinator === owner) &&
+        state &&
+        outboundViews.get(run.id) !== JSON.stringify(state)
       ) {
         touchPresence();
         publish(run);
@@ -411,6 +431,58 @@ export function createApp(options: Options) {
         if (settlement && req.method === 'POST') {
           const result = options.store.continuations.settle(
             settlement[1]!,
+            await body(req),
+            actor,
+          );
+          touchPresence();
+          publish(options.store.get(result.runId));
+          json(res, 200, result.state);
+          return;
+        }
+        const outboundEnqueue =
+          /^\/api\/runs\/([a-f0-9-]+)\/outbound-prompts$/.exec(url.pathname);
+        if (outboundEnqueue && req.method === 'POST') {
+          options.store.outboundPrompts.enqueue(
+            outboundEnqueue[1]!,
+            await body(req),
+            actor,
+          );
+          touchPresence();
+          const run = options.store.get(outboundEnqueue[1]!);
+          notify(run);
+          json(res, 200, present(run));
+          return;
+        }
+        if (
+          url.pathname === '/api/outbound-prompts/pending' &&
+          req.method === 'POST'
+        ) {
+          const { connectorId } = outboundClaimSchema.parse(await body(req));
+          json(
+            res,
+            200,
+            options.store.outboundPrompts.pending(connectorId, actor),
+          );
+          return;
+        }
+        if (
+          url.pathname === '/api/outbound-prompts/claim' &&
+          req.method === 'POST'
+        ) {
+          const { connectorId } = outboundClaimSchema.parse(await body(req));
+          const delivery = options.store.outboundPrompts.claim(
+            connectorId,
+            actor,
+          );
+          refreshOutbound(actor.id);
+          json(res, 200, delivery);
+          return;
+        }
+        const outboundSettle =
+          /^\/api\/outbound-prompts\/([a-f0-9-]+)\/settle$/.exec(url.pathname);
+        if (outboundSettle && req.method === 'POST') {
+          const result = options.store.outboundPrompts.settle(
+            outboundSettle[1]!,
             await body(req),
             actor,
           );
