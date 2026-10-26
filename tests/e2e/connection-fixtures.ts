@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { ConnectionInventory } from '../../src/client/Connections';
 
 export const connectionInventory: ConnectionInventory = {
-  version: '2026.10.26.0701',
+  version: '2026.10.26.0721',
   channel: 'preview',
   serviceUrl: 'http://127.0.0.1:4318',
   summary: { configured: 1, conflicts: 1, total: 5 },
