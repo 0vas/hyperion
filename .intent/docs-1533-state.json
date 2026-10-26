@@ -1,0 +1,9 @@
+{
+  "status": "## main...origin/main\n?? .intent/release-notes-1533.md\n?? .intent/ship-artifact-done.json\n?? .intent/ship-artifact-draft.json\n?? .intent/ship-artifact-prepare.json\n?? .intent/ship-artifact-state.json\n?? .intent/ship-artifact-status.json\n?? .olimpo/\n",
+  "ahead": "",
+  "showExit": 0,
+  "show": "commit 9b8834145622bdb38056deea60983e802123bdee\nAuthor: Oscar Lobaton <oscarlobaton@credicorpperu.com>\nDate:   Mon Oct 26 10:57:24 2026 -0500\n\n    Document Preview 2026.10.26.1533 features and Phase 0 honesty.\n    \n    Bump stale 1722 availability callouts, describe sandboxed HTML/SVG preview and Copiar≠notify, and link proposed ADR 0036 without claiming a shipped send connector.\n    \n    Co-authored-by: Cursor <cursoragent@cursor.com>\n\n README.md                                    |  2 +-\n SECURITY.md                                  |  2 +-\n desktop/README.md                            |  4 ++--\n docs/continuacion-agnostica.md               |  2 +-\n docs/decisions/0036-outbound-host-prompts.md | 20 ++++++++++----------\n docs/integration.md                          |  2 +-\n docs/manual-uso.md                           |  4 ++--\n docs/protocol.md                             |  2 +-\n docs/site/en/guia/primeros-pasos.md          |  2 +-\n docs/site/en/guia/usar-el-flujo.md           |  4 ++--\n docs/site/en/referencia/arquitectura.md      |  4 ++--\n docs/site/guia/primeros-pasos.md             |  2 +-\n docs/site/guia/usar-el-flujo.md              |  4 ++--\n docs/site/referencia/arquitectura.md         |  4 ++--\n skills/hyperion/SKILL.md                     |  2 ++\n 15 files changed, 31 insertions(+), 29 deletions(-)\n",
+  "onOrigin": true,
+  "onHead": true,
+  "origin": "9b88341 Document Preview 2026.10.26.1533 features and Phase 0 honesty.\n7cfeb16 docs: propose ADR 0036 outbound prompts and update 0033 preview\n48fdb69 Point public download registry at published Preview 2026.10.26.1533.\n"
+}
