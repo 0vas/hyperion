@@ -25,6 +25,8 @@ Las rutas muestran el avance registrado. La animación no garantiza que el agent
 
 Cada formulario debe tener una pregunta concreta. El agente puede usar desplegables, Sí/No, cantidades o texto según el dato. Ninguna elección debe estar aprobada por defecto. La ayuda y los detalles opcionales se despliegan cuando los necesitas.
 
+Al seleccionar un paso se abre **Resultado** a la derecha del canvas (en pantallas estrechas, una hoja inferior). Prioriza la evidencia: artefacto registrado, si no salidas tipadas, si no un resumen público de log; si aún no hay nada, lo dice sin inventar progreso. Si el paso espera tu respuesta, el formulario aparece primero. **Detalle**, **I/O** y **Logs** se revelan en el mismo panel. Escape o el lienzo vacío cierran Resultado. Conexiones y Ajustes siguen en diálogos.
+
 En **I/O** ves las entradas y salidas; en **Logs**, resúmenes, acciones y observaciones públicas. Se actualizan cuando el agente envía eventos. El trabajo largo en el host debe aparecer aquí (incluye latidos); un timeout o permiso denegado debe dejar el paso **Falló**, no **En curso** sin fin. No son una grabación automática de todas sus herramientas ni de su razonamiento privado.
 
 ## Retomar el trabajo
@@ -61,7 +63,7 @@ Las integraciones MCP reciben la siguiente acción y los argumentos de espera en
 
 ## Abre los artefactos del paso
 
-En **Artefactos** encontrarás los archivos y enlaces que el agente haya registrado. El icono de paquete del nodo abre la lista directamente. Puedes ver textos pequeños e imágenes compatibles, descargar archivos o abrir el enlace de un documento. Los resultados de intentos anteriores permanecen identificados.
+En **Artefactos** (dentro de **Resultado**) encontrarás los archivos y enlaces que el agente haya registrado. El icono de paquete del nodo abre Resultado centrado en esa lista. Puedes ver textos pequeños e imágenes compatibles, descargar archivos o abrir el enlace de un documento. Los resultados de intentos anteriores permanecen identificados.
 
 ::: tip Entregables a mano
 Por ejemplo, el paso «Preparar guía» puede contener `bienvenida.md`, una ilustración y el enlace al documento compartido. **I/O** conserva sus datos y **Logs** explica las acciones; **Artefactos** te permite acceder al resultado.

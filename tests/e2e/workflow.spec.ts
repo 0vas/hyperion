@@ -299,12 +299,12 @@ test('the workflow is a landscape canvas with information and human actions in a
     page.getByRole('dialog', { name: 'Compartir observaciones' }),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Cerrar popup' }),
+    page.getByRole('button', { name: 'Cerrar resultado' }),
   ).toBeFocused();
   await page
     .getByLabel('Tu respuesta')
     .fill('El canvas funciona y mantiene mi contexto.');
-  await page.getByRole('button', { name: 'Cerrar popup' }).focus();
+  await page.getByRole('button', { name: 'Cerrar resultado' }).focus();
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('dialog').locator('button').last()).toBeFocused();
   await page.getByRole('button', { name: 'Enviar respuesta' }).click();

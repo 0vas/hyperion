@@ -79,7 +79,9 @@ test('SSE carries real logs and context without polling; split canvas explains c
       includeHidden: true,
     }),
   ).toHaveAttribute('data-receiving', 'true');
-  await page.getByRole('button', { name: 'Cerrar popup', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Cerrar resultado', exact: true })
+    .click();
   await command({
     type: 'complete',
     stepId: 'a',

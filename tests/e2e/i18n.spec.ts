@@ -53,7 +53,7 @@ test('system language, saved choice and live switching preserve workflow content
   await expect(
     page.getByRole('button', { name: 'Save choice', exact: true }),
   ).toBeEnabled();
-  await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await page.getByRole('button', { name: 'Close result', exact: true }).click();
   await chooseFromAppMenu(page, 'Settings');
   await page
     .getByRole('combobox', { name: 'Language', exact: true })

@@ -25,6 +25,8 @@ Paths reflect recorded progress. Animation does not prove that an agent is conne
 
 Forms should ask a concrete question using dropdowns, Yes/No, numbers or text. No choice is approved by default. Expand help only when needed.
 
+Selecting a step opens **Result** beside the canvas (on narrow screens, a bottom sheet). It prefers registered evidence: artifact, else typed outputs, else a public log summary; if nothing is registered yet, it says so without inventing progress. When the step is waiting for you, the form appears first. **Details**, **I/O** and **Logs** stay secondary in the same pane. Escape or an empty canvas closes Result. Connections and Settings remain modal dialogs.
+
 **I/O** shows inputs and outputs. **Logs** contains public summaries, actions and observations sent by the agent—including heartbeats during long host work. A host timeout or permission denial should leave the step **Failed**, not endless **In progress**. Logs are not an automatic recording of every tool or private reasoning.
 
 ## Resume work
@@ -57,7 +59,7 @@ The 0.4.1 runtime added active-agent presence and event delivery. The 0.4.2 skil
 
 ## Open step artifacts
 
-**Artifacts** lists files and links registered by the agent. The node's package icon opens the list directly. Preview small text files and supported images, download files, or open a document link. Results from earlier attempts remain labeled.
+**Artifacts** (inside **Result**) lists files and links registered by the agent. The node's package icon opens Result focused on that list. Preview small text files and supported images, download files, or open a document link. Results from earlier attempts remain labeled.
 
 ::: tip Deliverables within reach
 For example, “Prepare guide” can contain `welcome.md`, an illustration and a shared document link. **I/O** retains its data, **Logs** explains the actions, and **Artifacts** provides access to the result.

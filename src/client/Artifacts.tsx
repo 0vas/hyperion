@@ -98,13 +98,15 @@ function ArtifactCard({
   runId,
   artifact,
   attempt,
+  autoOpen = false,
 }: {
   runId: string;
   artifact: Artifact;
   attempt: number;
+  autoOpen?: boolean;
 }) {
   const locale = useLocale();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const preview =
     !artifact.url &&
     (/^image\/(png|jpeg|gif|webp)$/.test(artifact.mediaType) ||
@@ -153,7 +155,16 @@ function ArtifactCard({
     </li>
   );
 }
-export function Artifacts({ runId, step }: { runId: string; step: Step }) {
+export function Artifacts({
+  runId,
+  step,
+  autoOpenId,
+}: {
+  runId: string;
+  step: Step;
+  /** When set, open that artifact's preview on mount (Resultado evidence stage). */
+  autoOpenId?: string;
+}) {
   useLocale();
   return (
     <section className="step-artifacts" aria-label={t('Artefactos del paso')}>
@@ -169,6 +180,7 @@ export function Artifacts({ runId, step }: { runId: string; step: Step }) {
               runId={runId}
               artifact={artifact}
               attempt={step.attempt}
+              autoOpen={autoOpenId === artifact.id}
             />
           ))}
         </ul>

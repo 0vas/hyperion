@@ -1,6 +1,6 @@
 import { NodeDragHandle } from './NodeDragHandle';
 import { useNodePositions } from './node-positions';
-import { Artifacts } from './Artifacts';
+import { ResultadoStage, type ResultadoSection } from './ResultadoStage';
 import { RunLinkNode } from './RunLinkNode';
 import { t, useLocale, localizedLabels, getLocale } from './i18n';
 import hyperionLogo from './brands/hyperion.png';
@@ -49,7 +49,6 @@ import {
   ListTree,
   Bot,
   Check,
-  CheckCheck,
   ChevronRight,
   Copy,
   Send,
@@ -176,6 +175,14 @@ function StatusIcon({
   return <Play size={size} />;
 }
 type StepView = 'step' | 'io' | 'trace' | 'artifacts';
+const stepViewToResultado = (view: StepView): ResultadoSection =>
+  view === 'io'
+    ? 'io'
+    : view === 'trace'
+      ? 'logs'
+      : view === 'artifacts'
+        ? 'artifacts'
+        : 'evidence';
 const isControl = (step: Step) =>
   ['start', 'end', 'gateway'].includes(step.kind);
 const gatewayLabels = localizedLabels({
@@ -243,7 +250,6 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
         title={t('Entradas, contexto y salidas')}
         data-receiving={!!data.ioActivity}
         onClick={() => data.onSelect(step.id, 'io')}
-        aria-haspopup="dialog"
       >
         <ArrowRightLeft size={13} />
         <span>
@@ -256,7 +262,6 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
         title={t('Logs y trazas públicas')}
         data-receiving={!!data.logActivity}
         onClick={() => data.onSelect(step.id, 'trace')}
-        aria-haspopup="dialog"
       >
         <ListTree size={14} />
         <span>Logs {data.logCount || ''}</span>
@@ -279,7 +284,6 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
           <button
             className="control-main"
             aria-label={t('Ver paso: {0}', { 0: step.title })}
-            aria-haspopup="dialog"
             onClick={() => data.onSelect(step.id)}
           >
             {step.kind !== 'gateway' && (
@@ -309,7 +313,6 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
           <button
             className="node-main"
             aria-label={t('Ver paso: {0}', { 0: step.title })}
-            aria-haspopup="dialog"
             onClick={() => data.onSelect(step.id)}
           >
             <div className="node-top">
@@ -753,17 +756,18 @@ export function App() {
     new URLSearchParams(location.search).get('run') || '',
   );
   const [stepId, setStepId] = useState('');
+  const [resultadoOpen, setResultadoOpen] = useState(false);
+  const [resultadoSection, setResultadoSection] =
+    useState<ResultadoSection>('evidence');
   const [following, setFollowing] = useState(false);
   const [focusedStepId, setFocusedStepId] = useState('');
   const [focusRequest, setFocusRequest] = useState<FocusRequest>(null);
   const focusNonce = useRef(0);
   const [popup, setPopup] = useState<
-    | StepView
     | 'activity'
     | 'request'
     | 'runs'
     | 'guide'
-    | 'artifacts'
     | 'next-cycle'
     | 'settings'
     | 'connections'
@@ -1040,12 +1044,20 @@ export function App() {
   const selectRun = (id: string) => {
     setRunId(id);
     setStepId('');
+    setResultadoOpen(false);
+    setResultadoSection('evidence');
     setPopup(null);
     history.replaceState(null, '', id ? `/?run=${id}` : '/');
   };
+  const clearResultado = useCallback(() => {
+    setStepId('');
+    setResultadoOpen(false);
+    setResultadoSection('evidence');
+  }, []);
   const selectStep = useCallback((id: string, view: StepView = 'step') => {
     setStepId(id);
-    setPopup(view);
+    setResultadoSection(stepViewToResultado(view));
+    setResultadoOpen(true);
   }, []);
   // Controlled nodes must retain React Flow's measurements between snapshots.
   // Dropping them invalidates handles and unmounts every connected edge.
@@ -1173,8 +1185,7 @@ export function App() {
           jobTitle: run.jobs?.find((j) => j.id === item.jobId)?.title,
           selected:
             focusedStepId === item.id ||
-            (['step', 'io', 'trace', 'artifacts'].includes(popup || '') &&
-              step?.id === item.id),
+            (resultadoOpen && step?.id === item.id),
           onSelect: selectStep,
         },
         draggable: true,
@@ -1354,7 +1365,7 @@ export function App() {
     selection,
     step?.id,
     selectStep,
-    popup,
+    resultadoOpen,
     focusedStepId,
     preferences.view,
     preferences.orientation,
@@ -1572,6 +1583,16 @@ export function App() {
     </div>
   );
   const dialogOpen = Boolean(popup || help || confirmation);
+  useEffect(() => {
+    if (!resultadoOpen || dialogOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      clearResultado();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [resultadoOpen, dialogOpen, clearResultado]);
   // Only native Menu update outcomes use descriptors here. Workflow notices and
   // recorded content remain literal; this is not a general notice translation.
   const noticeView =
@@ -1743,7 +1764,7 @@ export function App() {
             </div>
           ) : (
             <section
-              className="canvas-workspace"
+              className={`canvas-workspace${resultadoOpen && step ? ' has-resultado' : ''}`}
               aria-label={t('Canvas del workflow')}
             >
               {runTools}
@@ -1777,12 +1798,13 @@ export function App() {
                   onNodeDragStart={() => setFollowing(false)}
                   elementsSelectable
                   zoomOnDoubleClick={false}
+                  onPaneClick={() => clearResultado()}
                   onMoveStart={(event) => {
                     if (event) setFollowing(false);
                   }}
                 >
                   <FitCanvas
-                    view={`${preferences.view}:${preferences.orientation}:${layoutReset}`}
+                    view={`${preferences.view}:${preferences.orientation}:${layoutReset}:${resultadoOpen ? 'resultado' : 'full'}`}
                   />
                   <Background color="#c6c0b2" gap={28} size={0.8} />
                   <TaskNavigation
@@ -1847,7 +1869,6 @@ export function App() {
                         run.steps.find((s) => s.status === 'waiting')!.id,
                       )
                     }
-                    aria-haspopup="dialog"
                   >
                     <UserRound size={17} />
                     <span>
@@ -1874,12 +1895,8 @@ export function App() {
                               '',
                           ),
                       );
-                      if (stalled) {
-                        selectStep(stalled.id);
-                        openPanel('step');
-                      }
+                      if (stalled) selectStep(stalled.id);
                     }}
-                    aria-haspopup="dialog"
                   >
                     <Bot size={17} />
                     <span>
@@ -1927,6 +1944,233 @@ export function App() {
                   </button>
                 )}
               </div>
+              {resultadoOpen && step && (
+                <ResultadoStage
+                  run={run}
+                  step={step}
+                  live={!!live}
+                  statusLabel={
+                    step.status === 'running' && !run.agentWaiting
+                      ? `${labels.running} · ${t('chat desconectado')}`
+                      : labels[step.status]
+                  }
+                  StatusIcon={StatusIcon}
+                  section={resultadoSection}
+                  onSection={setResultadoSection}
+                  onClose={clearResultado}
+                  reduceMotion={preferences.reduceMotion}
+                  waitingForm={
+                    step.status === 'waiting' && live ? (
+                      <div className="answering-step">
+                        <HumanForm
+                          key={step.id}
+                          step={step}
+                          answer={answer}
+                          onAnswer={setAnswer}
+                          values={outputDraft}
+                          onValues={setOutputDraft}
+                          busy={busy}
+                          online={online}
+                          agentWaiting={!!run.agentWaiting}
+                          continuation={run.continuation}
+                          onSubmit={() =>
+                            void act(
+                              step.kind === 'manual' ? 'submit' : 'approve',
+                              step.id,
+                            )
+                          }
+                          onReject={() => setConfirmation('reject')}
+                        />
+                      </div>
+                    ) : undefined
+                  }
+                  guidance={
+                    <>
+                      {step.status === 'running' &&
+                        (() => {
+                          const permissionLike = looksLikePermissionDenial(
+                            latestStepEvidence(run.events, step.id) ||
+                              step.result ||
+                              '',
+                          );
+                          const kind = stuckRunningKind({
+                            agentWaiting: !!run.agentWaiting,
+                            permissionLike,
+                          });
+                          return (
+                            <div className="step-hint">
+                              {kind === 'active-wait' ? (
+                                <LoaderCircle className="spin" size={17} />
+                              ) : kind === 'permission' ? (
+                                <LockKeyhole size={17} />
+                              ) : (
+                                <Pause size={17} />
+                              )}
+                              <p>
+                                {kind === 'active-wait'
+                                  ? t(
+                                      'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
+                                    )
+                                  : kind === 'permission'
+                                    ? t(
+                                        'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
+                                      )
+                                    : t(
+                                        'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
+                                      )}
+                                {kind !== 'active-wait' && live && (
+                                  <>
+                                    <button
+                                      className="secondary"
+                                      disabled={busy || !online}
+                                      onClick={() => requestRetry(step.id)}
+                                    >
+                                      {t('Recuperar tarea')}
+                                    </button>
+                                    <button
+                                      className="secondary"
+                                      onClick={copyPrompt}
+                                    >
+                                      {copied
+                                        ? t('Pega la petición en tu chat')
+                                        : t('Copiar continuación')}
+                                    </button>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      {step.status === 'ready' && live && (
+                        <div className="step-hint">
+                          <Bot size={17} />
+                          <p>
+                            {t(
+                              'Este paso está listo. Si tu chat terminó su turno, envía la continuación para que el agente lo retome.',
+                            )}
+                            <button className="secondary" onClick={copyPrompt}>
+                              {copied
+                                ? t('Pega la petición en tu chat')
+                                : t('Copiar continuación')}
+                            </button>
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  }
+                  detalle={
+                    <div className="step-detail resultado-detalle">
+                      <button
+                        className="text-button focus-detail"
+                        onClick={() => {
+                          setFollowing(false);
+                          setFocusRequest({
+                            id: step.id,
+                            nonce: ++focusNonce.current,
+                          });
+                        }}
+                      >
+                        <Focus size={15} />
+                        {t('Enfocar tarea')}
+                      </button>
+                      <p className="step-description">
+                        {step.description ||
+                          (isControl(step)
+                            ? t(
+                                'El motor aplica este nodo automáticamente al cumplirse sus condiciones y dependencias.',
+                              )
+                            : step.kind === 'manual'
+                              ? t(
+                                  'Comparte la información que necesita el agente para avanzar.',
+                                )
+                              : step.kind === 'approval'
+                                ? t(
+                                    'Revisa los resultados anteriores y decide si el proceso puede continuar.',
+                                  )
+                                : t(
+                                    'El agente ejecutará este paso y registrará su resultado aquí.',
+                                  ))}
+                      </p>
+                      {step.kind === 'agent' &&
+                        ['failed', 'ready', 'running'].includes(step.status) &&
+                        live && (
+                          <button
+                            className="secondary full recovery-button"
+                            disabled={busy || !online}
+                            onClick={() => requestRetry(step.id)}
+                          >
+                            <RotateCcw size={16} />{' '}
+                            {step.status === 'running'
+                              ? t('Recuperar tarea')
+                              : t('Reintentar paso')}
+                          </button>
+                        )}
+                      <dl className="step-meta">
+                        <div>
+                          <dt>{t('Responsable')}</dt>
+                          <dd>
+                            {step.kind === 'agent' ? (
+                              <HarnessIcon name={run.coordinator} />
+                            ) : (
+                              <UserRound size={14} />
+                            )}{' '}
+                            {isControl(step)
+                              ? 'Hyperion'
+                              : step.kind === 'agent'
+                                ? null
+                                : t('Tú')}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>{t('Tipo de paso')}</dt>
+                          <dd>{kindLabels[step.kind]}</dd>
+                        </div>
+                        {step.attempt > 0 && (
+                          <div>
+                            <dt>{t('Intento')}</dt>
+                            <dd>#{step.attempt}</dd>
+                          </div>
+                        )}
+                      </dl>
+                      {step.dependencies.length > 0 && (
+                        <div className="dependencies">
+                          <h3>{t('Depende de')}</h3>
+                          {step.dependencies.map((id) => {
+                            const dependency = run.steps.find(
+                              (s) => s.id === id,
+                            )!;
+                            return (
+                              <button key={id} onClick={() => selectStep(id)}>
+                                <span
+                                  className={`dependency-icon ${dependency.status}`}
+                                >
+                                  <StatusIcon
+                                    status={dependency.status}
+                                    size={13}
+                                  />
+                                </span>
+                                <span>{dependency.title}</span>
+                                <ChevronRight size={13} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {step.status === 'blocked' && (
+                        <div className="step-hint">
+                          <LockKeyhole size={16} />
+                          <p>
+                            {t('Este paso se habilitará cuando termine:')}{' '}
+                            {blockedReason}.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  }
+                  io={<ContractView step={step} run={run} />}
+                  logs={<TraceView step={step} run={run} />}
+                />
+              )}
             </section>
           )}
         </main>
@@ -1938,7 +2182,7 @@ export function App() {
           onClose={() => setPopup(null)}
         >
           <section
-            className={`modal canvas-popup ${['step', 'activity', 'io', 'trace', 'artifacts'].includes(popup || '') ? 'step-popup' : ''}${popup === 'connections' ? ' connections-popup' : ''}`}
+            className={`modal canvas-popup${popup === 'activity' ? ' step-popup' : ''}${popup === 'connections' ? ' connections-popup' : ''}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="popup-title"
@@ -1967,376 +2211,52 @@ export function App() {
                 {error}
               </p>
             )}
-            {['step', 'activity', 'io', 'trace', 'artifacts'].includes(
-              popup || '',
-            ) &&
-              run && (
-                <>
-                  <div className="inspector-tabs">
-                    <button
-                      className={popup === 'step' ? 'active' : ''}
-                      onClick={() => setPopup('step')}
+            {popup === 'activity' && run && (
+              <div className="activity-list">
+                <h2 id="popup-title">{t('Historial del flujo')}</h2>
+                <p className="muted">
+                  {streaming
+                    ? t('En directo · acciones y decisiones registradas')
+                    : t('Actualización periódica · reconectando eventos')}
+                </p>
+                {!!run.planChanges?.length && (
+                  <PlanChanges
+                    changes={run.planChanges}
+                    revision={run.revision}
+                  />
+                )}
+                {[...run.events].reverse().map((e) => (
+                  <article key={e.sequence}>
+                    <span
+                      className={`activity-symbol ${e.type === 'submit' || e.type === 'approve' ? 'human' : ''}`}
                     >
-                      <Layers3 size={15} />
-                      {t('Detalle')}
-                    </button>
-                    <button
-                      className={popup === 'activity' ? 'active' : ''}
-                      onClick={() => setPopup('activity')}
-                    >
-                      <History size={15} />
-                      {t('Actividad')}
-                    </button>
-                    <button
-                      className={popup === 'io' ? 'active' : ''}
-                      onClick={() => setPopup('io')}
-                    >
-                      <ArrowRightLeft size={15} />
-                      I/O
-                    </button>
-                    <button
-                      className={popup === 'trace' ? 'active' : ''}
-                      onClick={() => setPopup('trace')}
-                    >
-                      <ListTree size={15} />
-                      Logs
-                    </button>
-                    {step?.kind === 'agent' && (
-                      <button
-                        className={popup === 'artifacts' ? 'active' : ''}
-                        onClick={() => setPopup('artifacts')}
-                      >
-                        <Package size={15} />
-                        {t('Artefactos')}
-                      </button>
-                    )}
-                  </div>
-                  {popup === 'artifacts' && step ? (
-                    <div className="step-detail">
-                      <h2 id="popup-title">{step.title}</h2>
-                      <Artifacts runId={run.id} step={step} />
-                    </div>
-                  ) : popup === 'io' && step ? (
-                    <ContractView step={step} run={run} />
-                  ) : popup === 'trace' && step ? (
-                    <TraceView step={step} run={run} />
-                  ) : popup === 'step' && step ? (
-                    <div
-                      className={`step-detail ${step.status === 'waiting' && live ? 'answering-step' : ''}`}
-                    >
-                      <div className="detail-eyebrow">
-                        {step.jobId
-                          ? `${run.jobs?.find((j) => j.id === step.jobId)?.title} · `
-                          : ''}
-                        {t('PASO')}{' '}
-                        {String(run.steps.indexOf(step) + 1).padStart(2, '0')}
-                        <span className={`status-tag ${step.status}`}>
-                          <StatusIcon status={step.status} />
-                          {step.status === 'running' && !run.agentWaiting
-                            ? `${labels.running} · ${t('chat desconectado')}`
-                            : labels[step.status]}
-                        </span>
-                      </div>
-                      <h2 id="popup-title">{step.title}</h2>
-                      <button
-                        className="text-button focus-detail"
-                        onClick={() => {
-                          setFollowing(false);
-                          setFocusRequest({
-                            id: step.id,
-                            nonce: ++focusNonce.current,
-                          });
-                          setPopup(null);
-                        }}
-                      >
-                        <Focus size={15} />
-                        {t('Enfocar tarea')}
-                      </button>
-                      {!step.interaction &&
-                        !(step.status === 'waiting' && live) && (
-                          <p className="step-description">
-                            {step.description ||
-                              (isControl(step)
-                                ? t(
-                                    'El motor aplica este nodo automáticamente al cumplirse sus condiciones y dependencias.',
-                                  )
-                                : step.kind === 'manual'
-                                  ? t(
-                                      'Comparte la información que necesita el agente para avanzar.',
-                                    )
-                                  : step.kind === 'approval'
-                                    ? t(
-                                        'Revisa los resultados anteriores y decide si el proceso puede continuar.',
-                                      )
-                                    : t(
-                                        'El agente ejecutará este paso y registrará su resultado aquí.',
-                                      ))}
-                          </p>
-                        )}
-                      {step.kind === 'agent' &&
-                        ['failed', 'ready', 'running'].includes(step.status) &&
-                        live && (
-                          <button
-                            className="secondary full recovery-button"
-                            disabled={busy || !online}
-                            onClick={() => requestRetry(step.id)}
-                          >
-                            <RotateCcw size={16} />{' '}
-                            {step.status === 'running'
-                              ? t('Recuperar tarea')
-                              : t('Reintentar paso')}
-                          </button>
-                        )}
-                      {step.status === 'waiting' && live && (
-                        <HumanForm
-                          key={step.id}
-                          step={step}
-                          answer={answer}
-                          onAnswer={setAnswer}
-                          values={outputDraft}
-                          onValues={setOutputDraft}
-                          busy={busy}
-                          online={online}
-                          agentWaiting={!!run.agentWaiting}
-                          continuation={run.continuation}
-                          onSubmit={() =>
-                            void act(
-                              step.kind === 'manual' ? 'submit' : 'approve',
-                              step.id,
-                            )
-                          }
-                          onReject={() => setConfirmation('reject')}
-                        />
+                      {['submit', 'approve', 'reject'].includes(e.type) ? (
+                        <UserRound size={14} />
+                      ) : (
+                        <Bot size={14} />
                       )}
-                      {step.kind === 'agent' && (
-                        <Artifacts runId={run.id} step={step} />
+                    </span>
+                    <div>
+                      <strong>{eventLabels[e.type] || e.type}</strong>
+                      <small>
+                        <HarnessIcon name={e.actor} /> · {time(e.at)}
+                      </small>
+                      {e.stepId && (
+                        <button
+                          onClick={() => {
+                            setPopup(null);
+                            selectStep(e.stepId!);
+                          }}
+                        >
+                          {run.steps.find((s) => s.id === e.stepId)?.title}
+                        </button>
                       )}
-                      <details
-                        className="step-secondary"
-                        open={!(step.status === 'waiting' && live)}
-                      >
-                        <summary>{t('Detalles del paso')}</summary>
-                        <dl className="step-meta">
-                          <div>
-                            <dt>{t('Responsable')}</dt>
-                            <dd>
-                              {step.kind === 'agent' ? (
-                                <HarnessIcon name={run.coordinator} />
-                              ) : (
-                                <UserRound size={14} />
-                              )}{' '}
-                              {isControl(step)
-                                ? 'Hyperion'
-                                : step.kind === 'agent'
-                                  ? null
-                                  : t('Tú')}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt>{t('Tipo de paso')}</dt>
-                            <dd>{kindLabels[step.kind]}</dd>
-                          </div>
-                          {step.attempt > 0 && (
-                            <div>
-                              <dt>{t('Intento')}</dt>
-                              <dd>#{step.attempt}</dd>
-                            </div>
-                          )}
-                        </dl>
-                        {step.dependencies.length > 0 && (
-                          <div className="dependencies">
-                            <h3>{t('Depende de')}</h3>
-                            {step.dependencies.map((id) => {
-                              const dependency = run.steps.find(
-                                (s) => s.id === id,
-                              )!;
-                              return (
-                                <button key={id} onClick={() => selectStep(id)}>
-                                  <span
-                                    className={`dependency-icon ${dependency.status}`}
-                                  >
-                                    <StatusIcon
-                                      status={dependency.status}
-                                      size={13}
-                                    />
-                                  </span>
-                                  <span>{dependency.title}</span>
-                                  <ChevronRight size={13} />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {step.result && (
-                          <div className="result">
-                            <h3>
-                              <CheckCheck size={15} />
-                              {step.status === 'failed'
-                                ? t('Error registrado')
-                                : t('Resultado registrado')}
-                            </h3>
-                            <p>{step.result}</p>
-                          </div>
-                        )}
-                        {step.status === 'blocked' && (
-                          <div className="step-hint">
-                            <LockKeyhole size={16} />
-                            <p>
-                              {t('Este paso se habilitará cuando termine:')}{' '}
-                              {blockedReason}.
-                            </p>
-                          </div>
-                        )}
-                        {step.status === 'running' &&
-                          (() => {
-                            const permissionLike = looksLikePermissionDenial(
-                              latestStepEvidence(run.events, step.id) ||
-                                step.result ||
-                                '',
-                            );
-                            const kind = stuckRunningKind({
-                              agentWaiting: !!run.agentWaiting,
-                              permissionLike,
-                            });
-                            return (
-                              <div className="step-hint">
-                                {kind === 'active-wait' ? (
-                                  <LoaderCircle className="spin" size={17} />
-                                ) : kind === 'permission' ? (
-                                  <LockKeyhole size={17} />
-                                ) : (
-                                  <Pause size={17} />
-                                )}
-                                <p>
-                                  {kind === 'active-wait'
-                                    ? t(
-                                        'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
-                                      )
-                                    : kind === 'permission'
-                                      ? t(
-                                          'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
-                                        )
-                                      : t(
-                                          'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
-                                        )}
-                                  {kind !== 'active-wait' && live && (
-                                    <>
-                                      <button
-                                        className="secondary"
-                                        disabled={busy || !online}
-                                        onClick={() => requestRetry(step.id)}
-                                      >
-                                        {t('Recuperar tarea')}
-                                      </button>
-                                      <button
-                                        className="secondary"
-                                        onClick={copyPrompt}
-                                      >
-                                        {copied
-                                          ? t('Pega la petición en tu chat')
-                                          : t('Copiar continuación')}
-                                      </button>
-                                    </>
-                                  )}
-                                </p>
-                              </div>
-                            );
-                          })()}
-                        {step.status === 'ready' && live && (
-                          <div className="step-hint">
-                            <Bot size={17} />
-                            <p>
-                              {t(
-                                'Este paso está listo. Si tu chat terminó su turno, envía la continuación para que el agente lo retome.',
-                              )}
-                              <button
-                                className="secondary"
-                                onClick={copyPrompt}
-                              >
-                                {copied
-                                  ? t('Pega la petición en tu chat')
-                                  : t('Copiar continuación')}
-                              </button>
-                            </p>
-                          </div>
-                        )}
-                        <div className="step-history">
-                          <h3>{t('Actividad de este paso')}</h3>
-                          {run.events
-                            .filter((e) => e.stepId === step.id)
-                            .slice(-4)
-                            .reverse()
-                            .map((e) => (
-                              <div key={e.sequence}>
-                                <span className="history-dot" />
-                                <p>
-                                  <strong>
-                                    {eventLabels[e.type] || e.type}
-                                  </strong>
-                                  <small>
-                                    <HarnessIcon name={e.actor} /> ·{' '}
-                                    {time(e.at)}
-                                  </small>
-                                  {e.message && <span>{e.message}</span>}
-                                </p>
-                              </div>
-                            ))}
-                          {!run.events.some((e) => e.stepId === step.id) && (
-                            <p className="muted">
-                              {t('Todavía no hay actividad registrada.')}
-                            </p>
-                          )}
-                        </div>
-                      </details>
+                      {e.message && <p>{e.message}</p>}
                     </div>
-                  ) : (
-                    <div className="activity-list">
-                      <h2 id="popup-title">{t('Historial del flujo')}</h2>
-                      <p className="muted">
-                        {streaming
-                          ? t('En directo · acciones y decisiones registradas')
-                          : t('Actualización periódica · reconectando eventos')}
-                      </p>
-                      {!!run.planChanges?.length && (
-                        <PlanChanges
-                          changes={run.planChanges}
-                          revision={run.revision}
-                        />
-                      )}
-                      {[...run.events].reverse().map((e) => (
-                        <article key={e.sequence}>
-                          <span
-                            className={`activity-symbol ${e.type === 'submit' || e.type === 'approve' ? 'human' : ''}`}
-                          >
-                            {['submit', 'approve', 'reject'].includes(
-                              e.type,
-                            ) ? (
-                              <UserRound size={14} />
-                            ) : (
-                              <Bot size={14} />
-                            )}
-                          </span>
-                          <div>
-                            <strong>{eventLabels[e.type] || e.type}</strong>
-                            <small>
-                              <HarnessIcon name={e.actor} /> · {time(e.at)}
-                            </small>
-                            {e.stepId && (
-                              <button onClick={() => selectStep(e.stepId!)}>
-                                {
-                                  run.steps.find((s) => s.id === e.stepId)
-                                    ?.title
-                                }
-                              </button>
-                            )}
-                            {e.message && <p>{e.message}</p>}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+                  </article>
+                ))}
+              </div>
+            )}
             {popup === 'next-cycle' && run && (
               <div className="next-cycle-form">
                 <h2 id="popup-title">{t('Un nuevo inicio')}</h2>

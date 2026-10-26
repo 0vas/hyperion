@@ -61,6 +61,10 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   await page
     .getByRole('button', { name: 'Ver artefactos: Preparar guía', exact: true })
     .click();
+  await expect(page.getByTestId('resultado-stage')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Preparar guía', exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Artefactos 1' }),
   ).toBeVisible();
@@ -104,7 +108,9 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Descargar', exact: true }).click();
   expect((await download).suggestedFilename()).toBe('guia.html');
-  await page.getByRole('button', { name: 'Cerrar popup', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Cerrar resultado', exact: true })
+    .click();
   await command('complete');
   await expect(page.getByTestId('run-status')).toHaveText('Completado');
   // Aligned SVG paths have zero bounding-box width; assert drawn geometry instead.
@@ -287,7 +293,7 @@ test('English artifacts and continuation are usable on narrow light and dark lay
         .violations,
     ).toEqual([]);
     await page
-      .getByRole('button', { name: 'Close dialog', exact: true })
+      .getByRole('button', { name: 'Close result', exact: true })
       .click();
     await page
       .getByRole('button', { name: 'Continue from here', exact: true })

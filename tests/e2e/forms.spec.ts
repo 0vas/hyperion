@@ -88,7 +88,11 @@ test('checklist numbers and completion icons stay centered beside the first labe
       const completed = (await geometry())[0]!;
       expect(Math.abs(completed.x)).toBeLessThan(1);
       expect(Math.abs(completed.y)).toBeLessThan(1);
-      expect(await badges.first().boundingBox()).toEqual(before);
+      // Resultado may scroll the focused field into view; keep horizontal lock and size.
+      const after = await badges.first().boundingBox();
+      expect(after?.width).toBe(before?.width);
+      expect(Math.abs((after?.x || 0) - (before?.x || 0))).toBeLessThan(1);
+      expect(Math.abs((after?.y || 0) - (before?.y || 0))).toBeLessThan(16);
       await page.screenshot({
         path: `test-results/checklist-${theme}-${width}.png`,
       });

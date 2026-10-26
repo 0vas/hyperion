@@ -1,0 +1,230 @@
+/* Keep the floating topbar over the canvas only while Resultado is docked. */
+.canvas-app:has(.has-resultado) .canvas-topbar {
+  right: calc(clamp(320px, 40%, 480px) + 28px);
+}
+
+.canvas-workspace.has-resultado {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.canvas-workspace.has-resultado .graph {
+  position: relative;
+  inset: auto;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.resultado-stage {
+  flex: 0 0 clamp(320px, 40%, 480px);
+  width: clamp(320px, 40%, 480px);
+  max-width: 480px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border-left: 1px solid var(--line, #e4dfd4);
+  background: var(--paper, #fffcf7);
+  box-shadow: -8px 0 24px #2a241808;
+  /* Above canvas topbar so Cerrar resultado is clickable */
+  z-index: 8;
+  animation: resultado-slide-in 220ms ease-out;
+}
+
+.resultado-stage.reduce-motion {
+  animation: none;
+}
+
+@keyframes resultado-slide-in {
+  from {
+    transform: translateX(12px);
+    opacity: 0.72;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.resultado-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--line, #e4dfd4);
+}
+
+.resultado-eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #6f675a);
+}
+
+.resultado-heading h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.resultado-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.resultado-sheet-toggle {
+  display: none;
+}
+
+.resultado-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resultado-waiting {
+  padding: 12px;
+  border: 1px solid var(--line, #e4dfd4);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper, #fffcf7) 88%, #d9e8d4);
+}
+
+.resultado-lead-in {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.resultado-empty,
+.resultado-extra {
+  margin: 0;
+}
+
+.resultado-outputs {
+  margin: 0;
+  max-height: 40vh;
+  overflow: auto;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.resultado-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--line, #e4dfd4);
+  background: color-mix(in srgb, var(--paper, #fffcf7) 92%, #ece7db);
+}
+
+.resultado-secondary button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink, #2a2418);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.resultado-secondary button.active {
+  background: #2a2418;
+  color: #fffcf7;
+}
+
+.resultado-detalle .step-description {
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .canvas-app:has(.has-resultado) .canvas-topbar {
+    right: 28px;
+  }
+
+  .canvas-workspace.has-resultado {
+    display: block;
+  }
+
+  .canvas-workspace.has-resultado .graph {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .resultado-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    flex: none;
+    height: 55vh;
+    border-left: 0;
+    border-top: 1px solid var(--line, #e4dfd4);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 32px #2a241814;
+    animation: resultado-sheet-in 220ms ease-out;
+  }
+
+  .resultado-stage.sheet-expanded {
+    height: 90vh;
+  }
+
+  .resultado-stage.reduce-motion {
+    animation: none;
+  }
+
+  @keyframes resultado-sheet-in {
+    from {
+      transform: translateY(18px);
+      opacity: 0.75;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .resultado-sheet-toggle {
+    display: inline-flex;
+  }
+}
+
+[data-theme='dark'] .resultado-stage {
+  background: #1c1a16;
+  border-color: #3a342a;
+  box-shadow: -8px 0 24px #00000040;
+}
+
+[data-theme='dark'] .resultado-secondary {
+  background: #16140f;
+  border-color: #3a342a;
+}
+
+[data-theme='dark'] .resultado-secondary button.active {
+  background: #f3ebe0;
+  color: #1c1a16;
+}
+
+[data-theme='dark'] .resultado-waiting {
+  background: #243022;
+  border-color: #3a4a38;
+}

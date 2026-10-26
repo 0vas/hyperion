@@ -110,6 +110,6 @@ test('a long flow stays readable; dragging persists without changing execution a
     .getByRole('button', { name: 'Ver paso: Entregable 1', exact: true })
     .click();
   await expect(
-    page.getByRole('button', { name: 'Cerrar popup', exact: true }),
+    page.getByRole('button', { name: 'Cerrar resultado', exact: true }),
   ).toBeVisible();
 });

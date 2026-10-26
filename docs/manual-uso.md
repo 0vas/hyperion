@@ -89,7 +89,7 @@ Si respondiste preguntas anteriores, comprueba que esas respuestas siguen en I/O
 1. **Abre el enlace.** «Petición original» conserva lo que pediste.
 2. **Revisa el plan.** «Ver trabajos» resume las fases. Pulsa un trabajo para desplegar los pasos en el canvas. Cada paso conserva su responsable, estado, datos y logs.
 3. **Enfoca el trabajo.** Selecciona un paso en «Ir a tarea» y activa «Seguir actividad». La vista acompaña el avance; al arrastrar o cambiar el zoom puedes explorar libremente.
-4. **Decide cuando diga «Tu turno».** Abre el paso: verás qué se te pregunta, por qué hace falta y qué sucederá después. Elige los valores y pulsa «Guardar elección», o revisa el resultado y aprueba/rechaza.
+4. **Decide cuando diga «Tu turno».** Al seleccionar el paso se abre **Resultado** junto al canvas: verás qué se te pregunta, por qué hace falta y qué sucederá después. Elige los valores y pulsa «Guardar elección», o revisa el resultado y aprueba/rechaza.
 5. **Confirma y sigue el avance.** Si ves «Agente conectado», tu respuesta se entrega al agente que está esperando y puede continuar en ese turno. Si el chat terminó, usa «Copiar continuación» para conectarlo de nuevo. No repitas la respuesta.
 
 Si tienes varios flujos, pulsa «Copiar continuación» dentro del que quieres retomar y pega aquí el texto copiado. Ese botón copia la petición; no envía mensajes por ti.
@@ -124,7 +124,7 @@ Los títulos y decisiones se generan para tu actividad; este ejemplo no es una p
 | Cabecera · Menú            | Un solo control: CalVer al pie, Conexiones, Ajustes, Guía, Ayuda y Acerca de (sin iconos sueltos)                   |
 | Pausar                     | Evitar que se inicien nuevas tareas hasta reanudar                                                                  |
 
-Los ajustes se guardan en este navegador. No alteran tus decisiones ni conceden permisos al agente. Escape cierra un popup sin responder.
+Los ajustes se guardan en este navegador. No alteran tus decisiones ni conceden permisos al agente. Escape cierra un popup o el panel **Resultado** sin responder.
 
 ## Qué significa el estado
 
@@ -210,7 +210,9 @@ Esta espera adjunta corresponde al runtime **0.4.2** y a su skill actualizada. L
 
 ## Artefactos dentro del paso
 
-Abre el paso y su sección **Artefactos**, o pulsa el icono de paquete del nodo cuando tenga resultados. Allí puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar archivos. Los textos pequeños e imágenes compatibles tienen vista previa. **HTML** (y SVG) se muestran en un `iframe` con `sandbox=""` vacío; puedes alternar **Vista previa** y **Código fuente**. En Vista previa verás el aviso: vista previa inerte, sin JavaScript ni red (el aspecto puede diferir del navegador completo). No es un navegador completo ni un escudo antimalware. Los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
+Al seleccionar un paso, **Resultado** se acopla a la derecha del canvas (en pantallas estrechas, una hoja inferior). Muestra primero la evidencia registrada: artefacto (reutiliza la vista previa aislada), si no hay salidas tipadas, si no un resumen público de log; si aún no hay nada, lo dice con claridad. Si el paso espera tu respuesta, el formulario aparece primero. **Detalle**, **I/O** y **Logs** quedan como revelación progresiva en el mismo panel. El icono de paquete del nodo abre **Resultado** centrado en artefactos. Conexiones, Ajustes y el resto del menú siguen en diálogos modales.
+
+En **Artefactos** puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar. Los textos pequeños e imágenes compatibles tienen vista previa. **HTML** (y SVG) se muestran en un `iframe` con `sandbox=""` vacío; puedes alternar **Vista previa** y **Código fuente**. En Vista previa verás el aviso: vista previa inerte, sin JavaScript ni red (el aspecto puede diferir del navegador completo). No es un navegador completo ni un escudo antimalware. Los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
 
 Si se reintenta una tarea, los artefactos anteriores permanecen identificados por intento. I/O sigue mostrando los datos del contrato y Logs la actividad: un artefacto es el entregable que puedes abrir.
 

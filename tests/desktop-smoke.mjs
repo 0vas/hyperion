@@ -146,7 +146,7 @@ test('desktop and split share one real service, decisions and agent progress', a
       page.evaluate(() => window.hyperionDesktop.setLanguage('xx')),
     );
     await page
-      .getByRole('button', { name: 'Cerrar popup', exact: true })
+      .getByRole('button', { name: 'Cerrar resultado', exact: true })
       .click();
     await app.evaluate(async ({ Menu, dialog }) => {
       const original = dialog.showMessageBox;
@@ -257,7 +257,7 @@ test('desktop and split share one real service, decisions and agent progress', a
       '# Guía preparada',
     );
     await page
-      .getByRole('button', { name: 'Cerrar popup', exact: true })
+      .getByRole('button', { name: 'Cerrar resultado', exact: true })
       .click();
     // Keep the relaunch inside this test's isolated Electron profile.
     const installationFile = join(home, '.hyperion/desktop.json');
