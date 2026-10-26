@@ -14,6 +14,6 @@ Create a separate run only in response to a new user request. Store its immutabl
 
 ## Consequences
 
-Local deliverables remain downloadable after the original source file changes. Database size grows with uploads; limits are 10 MiB/file, 100 files/step, 32 direct continuations/parent. Remote links remain external and may expire. HTML/SVG previews are escaped text, not executable documents. The desktop uses the same authenticated endpoints.
+Local deliverables remain downloadable after the original source file changes. Database size grows with uploads; limits are 10 MiB/file, 100 files/step, 32 direct continuations/parent. Remote links remain external and may expire. HTML/SVG may use an inert sandboxed iframe preview (`sandbox=""`, no scripts or network) with a source toggle; this is not a full browser and must not be described as executable app hosting. The desktop uses the same authenticated endpoints.
 
 A linked cycle is neither retry nor durable harness resumption. A UI request draft must be passed to a connected agent to plan the next run. No native connector is implied. Unit/HTTP/MCP/browser tests cover persistence, authorization, attempts, idempotency, inert previews and reciprocal navigation.
