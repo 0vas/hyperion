@@ -1198,6 +1198,7 @@ export function App() {
                 progress.steps.find((s) => s.status === 'ready') ||
                 progress.steps.find((s) => s.status === 'running');
               if (child) {
+                setPreferences((p) => ({ ...p, view: 'steps' }));
                 selectStep(child.id);
                 setFocusRequest({
                   id: child.id,
@@ -1495,8 +1496,10 @@ export function App() {
           ),
         );
       setConfirmation(null);
-      if (['submit', 'approve', 'reject', 'cancel', 'retry'].includes(type))
+      if (['submit', 'approve', 'reject', 'cancel', 'retry'].includes(type)) {
         setPopup(null);
+        clearResultado();
+      }
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : t('No se pudo guardar.'));

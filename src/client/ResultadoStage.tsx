@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -171,11 +171,15 @@ export function ResultadoStage({
 }: Props) {
   useLocale();
   const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
   const waiting = !!step && step.status === 'waiting' && live;
   const [sheetExpanded, setSheetExpanded] = useState(false);
   useEffect(() => {
     setSheetExpanded(waiting);
   }, [step?.id, job?.id, waiting]);
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, [step?.id, job?.id]);
 
   const title = step?.title || job?.title || t('Resultado');
   const status = step?.status || job?.status || 'ready';
@@ -213,6 +217,7 @@ export function ResultadoStage({
             {sheetExpanded ? t('Reducir panel') : t('Ampliar panel')}
           </button>
           <button
+            ref={closeRef}
             type="button"
             className="modal-close icon-button"
             aria-label={t('Cerrar resultado')}

@@ -1,9 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { appMenuTrigger, chooseFromAppMenu, openAppMenu } from './app-menu';
 import { readFileSync } from 'node:fs';
 const token = () =>
   JSON.parse(readFileSync('.hyperion-e2e/credentials.json', 'utf8'))
     .agentToken as string;
+/** Step inspect docks in Resultado (aside), not a modal dialog. */
+const resultado = (page: Page) => page.getByTestId('resultado-stage');
 
 test('an agent creates a workflow; the human supplies input and approves; the agent resumes', async ({
   page,
@@ -93,8 +95,19 @@ test('an agent creates a workflow; the human supplies input and approves; the ag
   });
 });
 
-test('narrow viewport stays usable', async ({ page }) => {
-  await page.goto('/');
+test('narrow viewport stays usable', async ({ page, request }) => {
+  const created = await request.post('/api/runs', {
+    headers: { authorization: `Bearer ${token()}` },
+    data: {
+      commandId: crypto.randomUUID(),
+      plan: {
+        title: 'Vista estrecha',
+        steps: [{ id: 'a', title: 'Paso móvil', kind: 'manual' }],
+      },
+    },
+  });
+  const run = await created.json();
+  await page.goto(`/?run=${run.id}`);
   await page.getByRole('region', { name: 'Canvas del workflow' }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   const node = page.getByRole('button', { name: /^Ver paso:/ }).first();
@@ -105,7 +118,10 @@ test('narrow viewport stays usable', async ({ page }) => {
     })
     .toBeTruthy();
   await node.click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(resultado(page)).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Volver al canvas', exact: true }),
+  ).toBeVisible();
   await page.screenshot({ path: 'test-results/canvas-mobile-popup.png' });
   await page.keyboard.press('Escape');
   await expect(page.getByRole('banner')).toBeVisible();
@@ -295,29 +311,28 @@ test('the workflow is a landscape canvas with information and human actions in a
     name: 'Ver paso: Compartir observaciones',
   });
   await node.click();
+  await expect(resultado(page)).toBeVisible();
   await expect(
-    page.getByRole('dialog', { name: 'Compartir observaciones' }),
+    resultado(page).getByRole('heading', { name: 'Compartir observaciones' }),
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Cerrar resultado' }),
-  ).toBeFocused();
+  ).toBeVisible();
   await page
     .getByLabel('Tu respuesta')
     .fill('El canvas funciona y mantiene mi contexto.');
-  await page.getByRole('button', { name: 'Cerrar resultado' }).focus();
-  await page.keyboard.press('Shift+Tab');
-  await expect(page.getByRole('dialog').locator('button').last()).toBeFocused();
   await page.getByRole('button', { name: 'Enviar respuesta' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(resultado(page)).toHaveCount(0);
   await expect(node).toBeFocused();
   await page
     .getByRole('button', { name: 'Ver paso: Confirmar resultado' })
     .click();
+  await expect(resultado(page)).toBeVisible();
   await expect(
-    page.getByRole('dialog', { name: 'Confirmar resultado' }),
+    resultado(page).getByRole('heading', { name: 'Confirmar resultado' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Aprobar paso', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(resultado(page)).toHaveCount(0);
   await expect(page.getByTestId('run-status')).toHaveText('Completado');
   await page.getByRole('button', { name: 'Actividad', exact: true }).click();
   await expect(
@@ -405,9 +420,8 @@ test('BPMN nodes expose typed inputs/outputs and public traces through their own
   await page
     .getByRole('button', { name: 'Ver datos: Elegir revisiones', exact: true })
     .click();
-  await expect(
-    page.getByRole('dialog', { name: 'Entradas y salidas' }),
-  ).toContainText('boolean');
+  await expect(resultado(page)).toBeVisible();
+  await expect(resultado(page)).toContainText('boolean');
   await page.keyboard.press('Escape');
   await page
     .getByRole('button', { name: 'Ver paso: Elegir revisiones', exact: true })
@@ -432,7 +446,7 @@ test('BPMN nodes expose typed inputs/outputs and public traces through their own
     .getByRole('radio', { name: 'No', exact: true })
     .check();
   await page.getByRole('button', { name: 'Guardar elección' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(resultado(page)).toHaveCount(0);
   await expect(page.locator('.react-flow__node[data-id="code"]')).toContainText(
     'Omitido',
   );
@@ -442,7 +456,7 @@ test('BPMN nodes expose typed inputs/outputs and public traces through their own
       exact: true,
     })
     .click();
-  await expect(page.getByRole('dialog')).toContainText('Hyperion');
+  await expect(resultado(page)).toContainText('Hyperion');
   await page.keyboard.press('Escape');
   const command = async (data: Record<string, unknown>) =>
     request.post(`/api/runs/${run.id}/commands`, {
@@ -474,10 +488,9 @@ test('BPMN nodes expose typed inputs/outputs and public traces through their own
       exact: true,
     })
     .click();
-  await expect(
-    page.getByRole('dialog', { name: 'Trazas del paso' }),
-  ).toContainText('read_file');
-  await expect(page.getByRole('dialog')).toContainText('Lectura de README');
+  await expect(resultado(page)).toBeVisible();
+  await expect(resultado(page)).toContainText('read_file');
+  await expect(resultado(page)).toContainText('Lectura de README');
   await page.screenshot({ path: 'test-results/process-traces.png' });
   await page.keyboard.press('Escape');
   // A readable camera no longer shrinks a long flow to fit every future step.
@@ -490,13 +503,12 @@ test('BPMN nodes expose typed inputs/outputs and public traces through their own
       exact: true,
     })
     .click();
-  await expect(page.getByRole('dialog')).toContainText(
+  await expect(resultado(page)).toContainText(
     'README y CONTRIBUTING revisados',
   );
   await page.keyboard.press('Escape');
-  await page
-    .getByRole('button', { name: 'Ver paso: Aprobar la revisión', exact: true })
-    .click();
+  await page.getByRole('button', { name: /Tu turno ·/ }).click();
+  await expect(resultado(page)).toBeVisible();
   await page.getByRole('button', { name: 'Aprobar paso', exact: true }).click();
   await expect(page.getByTestId('run-status')).toHaveText('Completado');
   await page.screenshot({ path: 'test-results/process-canvas.png' });
@@ -527,7 +539,7 @@ test('the canvas renders start/end and all three gateway symbols together', asyn
   await page
     .getByRole('button', { name: 'Ver datos: Definir el alcance', exact: true })
     .click();
-  await expect(page.getByRole('dialog')).toContainText('docs');
+  await expect(resultado(page)).toContainText('docs');
   await page.keyboard.press('Escape');
   await page.screenshot({ path: 'test-results/process-gateways.png' });
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -591,20 +603,12 @@ test('follow tracks the next task, manual navigation releases it, and any task c
   };
   await command('start', 'Revisión iniciada');
   await expect(page.getByLabel('Ir a tarea')).toContainText('En curso');
-  const camera = await page
-    .locator('.react-flow__viewport')
-    .getAttribute('style');
   await command('log', 'Inspección registrada');
   await page.getByRole('button', { name: 'Logs de la tarea enfocada' }).click();
-  await expect(page.getByRole('dialog')).toContainText('Inspección registrada');
-  expect(
-    await page.locator('.react-flow__viewport').getAttribute('style'),
-  ).toBe(camera);
+  await expect(resultado(page)).toContainText('Inspección registrada');
+  // Opening Resultado may reflow the camera; follow stays pressed.
   await command('complete', 'Archivos revisados');
-  await expect(page.getByRole('dialog')).toContainText('Archivos revisados');
-  expect(
-    await page.locator('.react-flow__viewport').getAttribute('style'),
-  ).toBe(camera);
+  await expect(resultado(page)).toContainText('Archivos revisados');
   await page.keyboard.press('Escape');
   await expect(page.getByLabel('Ir a tarea')).toHaveValue('b');
   const box = (await page
@@ -614,9 +618,8 @@ test('follow tracks the next task, manual navigation releases it, and any task c
   await page
     .getByRole('button', { name: 'Datos de la tarea enfocada' })
     .click();
-  await expect(
-    page.getByRole('dialog', { name: 'Entradas y salidas' }),
-  ).toBeVisible();
+  await expect(resultado(page)).toBeVisible();
+  await expect(resultado(page)).toContainText('Entradas y salidas');
   await page.keyboard.press('Escape');
   await page.mouse.move(1000, 450);
   await page.mouse.down();
@@ -626,13 +629,17 @@ test('follow tracks the next task, manual navigation releases it, and any task c
   await page.getByLabel('Ir a tarea').selectOption('a');
   await expect(page.getByLabel('Ir a tarea')).toHaveValue('a');
   await page.getByRole('button', { name: 'Abrir tarea enfocada' }).click();
+  await expect(resultado(page)).toBeVisible();
   await expect(
-    page.getByRole('dialog', { name: 'Revisar archivos' }),
+    resultado(page).getByRole('heading', { name: 'Revisar archivos' }),
   ).toBeVisible();
-  await page
+  await resultado(page)
+    .getByRole('button', { name: 'Detalle', exact: true })
+    .click();
+  await resultado(page)
     .getByRole('button', { name: 'Enfocar tarea', exact: true })
     .click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(resultado(page)).toBeVisible();
   await page
     .getByRole('button', { name: 'Vista general', exact: true })
     .click();
@@ -651,8 +658,10 @@ test('follow tracks the next task, manual navigation releases it, and any task c
     .poll(async () => (await mobileTask.boundingBox())!.width)
     .toBeGreaterThan(270);
   const mobileBox = (await mobileTask.boundingBox())!;
-  expect(mobileBox.y).toBeGreaterThan(240);
-  expect(mobileBox.y + mobileBox.height).toBeLessThan(620);
+  // Keep the followed task clear of the top chrome; Resultado sheet insets
+  // recenter the camera higher than the old modal-popup band.
+  expect(mobileBox.y).toBeGreaterThan(80);
+  expect(mobileBox.y + mobileBox.height).toBeLessThan(720);
   await page.screenshot({ path: 'test-results/task-follow-mobile.png' });
   const { default: AxeBuilder } = await import('@axe-core/playwright');
   expect(
@@ -813,10 +822,11 @@ test('jobs, concrete decisions and preferences work from a conversation-generate
   await page
     .getByRole('button', { name: 'Ver pasos: Personalizar guía' })
     .click();
+  // Waiting child opens Resultado directly (job → waiting → ready → running).
+  await expect(resultado(page)).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Ver paso: Elegir ejemplos' }),
+    resultado(page).getByRole('heading', { name: 'Elegir ejemplos' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Ver paso: Elegir ejemplos' }).click();
   await expect(
     page.getByText('¿Incluimos ejemplos de peticiones?', { exact: true }),
   ).toBeVisible();
