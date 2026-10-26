@@ -16,8 +16,10 @@ export function outboundSendConfiguredFromResumeConnector(
 }
 
 /**
- * Phase 0: Enviar only when outboundSendConfigured is true (from a real
- * ResumeConnector). Today no certified native resume connectors ship → false.
+ * Enviar only when a real host ResumeConnector is configured
+ * (`outboundSendConfigured` or a `resumeConnector` that parses as connectorSchema
+ * and matches the run harness). Connections inventory alone is not enough.
+ * Linked-cycle / new-beginning may keep the flag false until that path ships.
  */
 export function canSendNewBeginningToChat(
   options: {

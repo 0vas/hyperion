@@ -107,6 +107,8 @@ declare global {
       setLanguage(value: LanguagePreference): Promise<void>;
       onLanguageChanged(callback: (value: LanguageSnapshot) => void): void;
       checkForUpdates?(): Promise<void>;
+      /** Host-configured connectorSchema object for outbound Enviar; never invent in UI. */
+      resumeConnector?: unknown;
     };
   }
 }
