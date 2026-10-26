@@ -70,6 +70,12 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   const iframe = page.locator('iframe.artifact-html-frame');
   await expect(iframe).toBeVisible();
   await expect(iframe).toHaveAttribute('sandbox', '');
+  await expect(
+    page.getByText(
+      'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
+      { exact: true },
+    ),
+  ).toBeVisible();
   const preview = page.frameLocator('iframe.artifact-html-frame');
   await expect(
     preview.getByRole('heading', { name: 'Guía real' }),
@@ -81,8 +87,20 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   await expect(page.locator('.artifact-text')).toContainText(
     '<h1>Guía real</h1>',
   );
+  await expect(
+    page.getByText(
+      'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
+      { exact: true },
+    ),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Vista previa', exact: true }).click();
   await expect(iframe).toBeVisible();
+  await expect(
+    page.getByText(
+      'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
+      { exact: true },
+    ),
+  ).toBeVisible();
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Descargar', exact: true }).click();
   expect((await download).suggestedFilename()).toBe('guia.html');
@@ -105,20 +123,26 @@ test('step artifacts preview safely and a finished graph links to a requested ne
     name: 'Copiar petición para el chat',
     exact: true,
   });
-  const send = page.getByRole('button', {
-    name: 'Enviar al chat',
-    exact: true,
-  });
   await expect(copy).toBeDisabled();
-  await expect(send).toBeDisabled();
   await expect(
-    page.getByText(/Copiar no equivale a entregar|conector de reanudación/i),
+    page.getByRole('button', { name: 'Enviar', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Enviar al chat', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(
+      'Pega la petición en el chat conectado. El envío automático al chat requiere un conector de envío; MCP solo no despierta el chat.',
+      { exact: true },
+    ),
   ).toBeVisible();
   await page
     .getByLabel('¿Qué quieres hacer ahora?')
     .fill('Ahora quiero traducirla');
   await expect(copy).toBeEnabled();
-  await expect(send).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Enviar', exact: true }),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Cerrar popup', exact: true }).click();
   const next = await create({
     commandId: 'new-cycle',

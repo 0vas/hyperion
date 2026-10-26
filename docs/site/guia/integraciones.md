@@ -73,7 +73,7 @@ No compartas archivos de credenciales ni tokens al reportar un error.
 
 Consulta [Pausa y reanudación](./reanudacion.md) para distinguir conexión MCP de reactivación de sesiones.
 
-Sin un conector de reanudación instalado, tu respuesta se guarda localmente. El agente puede recibirla mientras espera con la integración; un chat que terminó necesita un nuevo mensaje. Usa **Copiar continuación** en el canvas y envíalo en el chat. Tras un flujo completado, **Copiar petición para el chat** en «Un nuevo inicio» tampoco notifica al agente; **Enviar al chat** solo se habilita con un conector de envío/reanudación real. [Más sobre la continuidad](./usar-el-flujo.md#retomar-el-trabajo).
+Sin un conector de reanudación instalado, tu respuesta se guarda localmente. El agente puede recibirla mientras espera con la integración; un chat que terminó necesita un nuevo mensaje. Usa **Copiar continuación** en el canvas y envíalo en el chat. Tras un flujo completado, **Copiar petición para el chat** en «Un nuevo inicio» tampoco notifica al agente; el envío automático exige un conector de envío (MCP solo no despierta el chat). [Más sobre la continuidad](./usar-el-flujo.md#retomar-el-trabajo).
 
 ## Antigravity
 

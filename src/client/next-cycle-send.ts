@@ -1,19 +1,38 @@
-import type { ContinuationState } from '../domain/continuation';
+import { connectorSchema, type Connector } from '../domain/continuation';
 
 /**
- * Phase 0 honesty: a linked-cycle “Enviar al chat” action is allowed only when an
- * explicit outbound host-send path is configured. A durable resume binding on the
- * completed parent (human-wait continuation) is not that path — it must not invent
- * Claude/Desktop chat delivery. Phase 1 outbox (ADR 0036) will flip the flag.
+ * Host-configured ResumeConnector that satisfies durable resume
+ * (id + resume + idempotentDelivery). Never invent a connector in the UI.
+ * Connections «Configurada», run.continuation alone, or provider name are not enough.
+ */
+export function outboundSendConfiguredFromResumeConnector(
+  connector: unknown,
+  runHarness?: string,
+): boolean {
+  const parsed = connectorSchema.safeParse(connector);
+  if (!parsed.success) return false;
+  if (runHarness && parsed.data.harness !== runHarness) return false;
+  return true;
+}
+
+/**
+ * Phase 0: Enviar only when outboundSendConfigured is true (from a real
+ * ResumeConnector). Today no certified native resume connectors ship → false.
  */
 export function canSendNewBeginningToChat(
   options: {
-    continuation?: ContinuationState | null;
     outboundSendConfigured?: boolean;
+    resumeConnector?: unknown;
+    runHarness?: string;
   } = {},
 ): boolean {
-  if (!options.outboundSendConfigured) return false;
-  // Future: require a real connector id from outbound config; never invent one.
-  void options.continuation;
-  return true;
+  if (options.outboundSendConfigured === true) return true;
+  if (options.resumeConnector !== undefined)
+    return outboundSendConfiguredFromResumeConnector(
+      options.resumeConnector,
+      options.runHarness,
+    );
+  return false;
 }
+
+export type { Connector };

@@ -12,12 +12,18 @@ test('sandboxed markup covers HTML and SVG only', () => {
   assert.equal(isSandboxedMarkup('application/json'), false);
 });
 
-test('Artifacts preview uses an empty sandbox iframe and Preview/Source labels', () => {
+test('Artifacts preview uses empty sandbox, Preview/Source, and inert disclaimer', () => {
   const source = readFileSync(resolve('src/client/Artifacts.tsx'), 'utf8');
   assert.match(source, /srcDoc=\{text\}/);
   assert.match(source, /sandbox=""/);
   assert.match(source, /referrerPolicy="no-referrer"/);
   assert.match(source, /Vista previa/);
   assert.match(source, /Código fuente/);
+  assert.match(source, /Modo de visualización/);
+  assert.match(
+    source,
+    /Vista previa inerte: sin JavaScript ni red\. El aspecto puede diferir del navegador completo\./,
+  );
+  assert.match(source, /mode === 'preview' &&/);
   assert.match(source, /isSandboxedMarkup/);
 });

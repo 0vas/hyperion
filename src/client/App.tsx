@@ -2367,55 +2367,36 @@ export function App() {
                             { 0: run.id, 1: nextRequest.trim() },
                           ),
                         )
-                        .then(() =>
-                          setNotice(
-                            t(
-                              'Petición copiada al portapapeles. Pégala en tu chat; Hyperion no avisó al agente.',
-                            ),
-                          ),
-                        )
+                        .then(() => setNotice(t('Pega la petición en tu chat')))
                         .catch(() => setError(t('No se pudo copiar.')));
                     }}
                   >
                     <Copy size={16} />
                     {t('Copiar petición para el chat')}
                   </button>
-                  {(() => {
-                    const canSend = canSendNewBeginningToChat({
-                      continuation: run.continuation,
-                    });
-                    return (
-                      <>
-                        <button
-                          type="button"
-                          className="secondary full"
-                          disabled={!canSend || !nextRequest.trim()}
-                          title={
-                            canSend
-                              ? undefined
-                              : t(
-                                  'Requiere un conector de reanudación o envío configurado. Las herramientas MCP solas no abren tu chat.',
-                                )
-                          }
-                          aria-disabled={!canSend || !nextRequest.trim()}
-                          onClick={() => {
-                            if (!canSend) return;
-                            // Phase 1 outbound outbox will perform delivery; never invent a connector here.
-                          }}
-                        >
-                          <Send size={16} />
-                          {t('Enviar al chat')}
-                        </button>
-                        {!canSend && (
-                          <p className="muted next-cycle-send-hint">
-                            {t(
-                              'Enviar al chat estará disponible cuando haya un conector de reanudación o envío configurado. Mientras tanto, copia y pega la petición. Copiar no equivale a entregar.',
-                            )}
-                          </p>
-                        )}
-                      </>
-                    );
-                  })()}
+                  {canSendNewBeginningToChat({
+                    // Phase 0: no host ResumeConnector is certified → hide Enviar.
+                    // Phase 1+: pass outboundSendConfiguredFromResumeConnector(hostConnector, harness).
+                    outboundSendConfigured: false,
+                  }) ? (
+                    <button
+                      type="button"
+                      className="secondary full"
+                      disabled={!nextRequest.trim()}
+                      onClick={() => {
+                        // Phase 1 outbound outbox will perform delivery; never invent a connector here.
+                      }}
+                    >
+                      <Send size={16} />
+                      {t('Enviar')}
+                    </button>
+                  ) : (
+                    <p className="muted next-cycle-send-hint">
+                      {t(
+                        'Pega la petición en el chat conectado. El envío automático al chat requiere un conector de envío; MCP solo no despierta el chat.',
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

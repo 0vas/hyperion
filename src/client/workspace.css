@@ -401,6 +401,11 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.artifact-preview-disclaimer {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
 .artifact-view-toggle .secondary.active {
   border-color: var(--gold);
   color: var(--ink);

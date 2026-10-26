@@ -53,7 +53,7 @@ function Preview({ runId, artifact }: { runId: string; artifact: Artifact }) {
         <div
           className="artifact-view-toggle"
           role="group"
-          aria-label={t('Vista del artefacto')}
+          aria-label={t('Modo de visualización')}
         >
           <button
             type="button"
@@ -72,6 +72,13 @@ function Preview({ runId, artifact }: { runId: string; artifact: Artifact }) {
             {t('Código fuente')}
           </button>
         </div>
+        {mode === 'preview' && (
+          <p className="muted artifact-preview-disclaimer">
+            {t(
+              'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
+            )}
+          </p>
+        )}
         {mode === 'preview' ? (
           <iframe
             className="artifact-html-frame"
