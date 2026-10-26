@@ -1,0 +1,10 @@
+{
+  "status": "## main...origin/main [ahead 3]\n?? .olimpo/\n",
+  "ahead": "7641730 Add orphan-running lease that auto-fails abandoned agent attempts.\nfae59d3 chore: add orphan-running ADR draft and Olimpo ignore rules\n1c6cc4a chore: add host release planning records\n",
+  "showExit": 0,
+  "show": "commit 76417306dc19d778c59716cbfe664d560d4ee77a\nAuthor: Oscar Lobaton <oscarlobaton@credicorpperu.com>\nDate:   Mon Oct 26 02:19:05 2026 -0500\n\n    Add orphan-running lease that auto-fails abandoned agent attempts.\n    \n    When a running agent step has no wait, no in-flight continuation, and no progress for 180s, GET/SSE reconcile marks it failed with a distinct abandon event (ADR 0035).\n    \n    Agent-Id: agent-b421e6c0-8732-404c-b759-d073fd2ca97a\n\n docs/decisions/0035-orphan-running-lease.md |  37 +++++\n docs/integration.md                         |   2 +-\n docs/manual-uso.md                          |   2 +-\n docs/process-contract.md                    |   2 +-\n docs/protocol.md                            |   4 +\n docs/site/en/guia/usar-el-flujo.md          |   2 +-\n docs/site/guia/usar-el-flujo.md             |   2 +-\n skills/hyperion/SKILL.md                    |   2 +\n src/adapters/mcp.ts                         |   2 +-\n src/domain/orphan-running.ts                | 109 ++++++++++++++\n src/domain/workflow.ts                      |   7 +-\n src/server/app.ts                           |  27 +++-\n src/server/store.ts                         |  37 +++++\n tests/mcp-instructions.test.ts              |   6 +\n tests/orphan-running.test.ts                | 214 ++++++++++++++++++++++++++++\n 15 files changed, 442 insertions(+), 13 deletions(-)\n",
+  "onHead": true,
+  "release": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.26.0701\"\n}\n",
+  "now": "2026.10.26.0721",
+  "origin": "1e29c0e Point public download registry at published Preview 2026.10.26.0701.\n3b97f70 Prepare Desktop Preview 2026.10.26.0701 for notarized distribution.\n5894444 Require harnesses to mirror host progress into Hyperion logs.\n"
+}
