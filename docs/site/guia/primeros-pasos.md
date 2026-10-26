@@ -12,7 +12,7 @@ Necesitas una herramienta de IA compatible y Hyperion conectado a ella. La conex
 
 <Downloads />
 
-[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.26.2007).
+[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.26.2039).
 
 Elige el instalador para tu equipo: `.dmg` para Mac Apple Silicon y `.exe` para Windows x64. Ábrelo e instala la aplicación. En Mac, mueve Hyperion a **Aplicaciones** antes de conectar tu IA. El instalador de Apple Silicon está firmado con **Developer ID** y **notarizado por Apple**. Windows no tiene firma de editor.
 
@@ -109,7 +109,7 @@ La versión CalVer aparece en la vista **Conexiones** y en **Acerca de** (macOS)
 Cambiar la interfaz no traduce nombres de tareas, preguntas del agente, respuestas, resultados ni logs. Tampoco reinicia el flujo ni descarta un formulario sin enviar. Los diagnósticos originales de herramientas y del servicio mantienen su texto para poder investigarlos.
 :::
 
-Incluido en el instalador **2026.10.26.2007 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
+Incluido en el instalador **2026.10.26.2039 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
 
 ## Actualizar Desktop
 
