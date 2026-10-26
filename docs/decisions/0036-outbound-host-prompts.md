@@ -1,6 +1,6 @@
 # ADR 0036 — Outbound host prompts (send connector / outbox)
 
-Status: **proposed** (Zeus accepted as design 2026-10-26; remains proposed until the first implementation PR). Not implemented in runtime.
+Status: **accepted in source** (PR1: `continuation_prompt` domain/store/HTTP + synthetic tests). UI Enviar wiring, `linked_cycle_prompt`, and native provider send connectors remain follow-up.
 Date: 2026-10-26.
 
 Parents: Phase 0 notes `1e160c0f`, `42fab25a`, Architect gate `ffcdba70`; product design `027c9591`.
@@ -59,7 +59,7 @@ Do not overload `Store.continuations` human-answer rows with linked-cycle create
 ## Consequences
 
 - Phase 0 CTAs remain valid until a certified connector flips `outboundSendConfigured`.
-- Implementation needs domain schema, store/API, synthetic connector tests, protocol + ES/EN docs, and UI wiring of Enviar to enqueue (not a no-op).
+- **PR1 landed:** domain schema, `OutboundPromptQueue`, HTTP enqueue/claim/settle, synthetic tests, protocol + send-column honesty. Canvas Enviar wiring is a follow-up PR; production UI keeps `outboundSendConfigured: false`.
 - Host spikes (Claude Code session, Cursor CLI, Codex App Server, Desktop helper) stay Phase 2; each must prove idempotent delivery before product claims.
 - Docs and capability matrices gain an explicit **send** column distinct from MCP and from human-answer resume.
 - Risk: conflating “Enviar succeeded” with “child run exists” or “step completed” — UI and receipts must separate delivery from execution.

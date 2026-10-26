@@ -7,6 +7,11 @@ import type {
   Delivery,
   ContinuationState,
 } from '../domain/continuation.js';
+import type {
+  EnqueueOutboundPrompt,
+  OutboundPromptDelivery,
+  OutboundPromptState,
+} from '../domain/outbound-prompt.js';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Run, Command } from '../domain/workflow.js';
@@ -190,6 +195,47 @@ export class HyperionClient {
   settleContinuation(id: string, settlement: Settlement) {
     return this.request<ContinuationState>(
       `/api/continuations/${encodeURIComponent(id)}/settle`,
+      settlement,
+    );
+  }
+  enqueueOutboundPrompt(
+    id: string,
+    prompt: Omit<EnqueueOutboundPrompt, 'kind' | 'commandId'> & {
+      commandId?: string;
+      kind?: EnqueueOutboundPrompt['kind'];
+    },
+  ) {
+    return this.request<Run>(
+      `/api/runs/${encodeURIComponent(id)}/outbound-prompts`,
+      {
+        ...prompt,
+        commandId: prompt.commandId || crypto.randomUUID(),
+      },
+    );
+  }
+  pendingOutboundPrompts(connectorId: string) {
+    return this.request<OutboundPromptDelivery[]>(
+      '/api/outbound-prompts/pending',
+      { connectorId },
+    );
+  }
+  claimOutboundPrompt(connectorId: string) {
+    return this.request<OutboundPromptDelivery | null>(
+      '/api/outbound-prompts/claim',
+      { connectorId },
+    );
+  }
+  settleOutboundPrompt(
+    id: string,
+    settlement: {
+      leaseToken: string;
+      outcome: 'accepted' | 'failed';
+      reconciled?: boolean;
+      message?: string;
+    },
+  ) {
+    return this.request<OutboundPromptState>(
+      `/api/outbound-prompts/${encodeURIComponent(id)}/settle`,
       settlement,
     );
   }
