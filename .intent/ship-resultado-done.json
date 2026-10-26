@@ -1,0 +1,25 @@
+{
+  "commit": {
+    "ok": true,
+    "hash": "3b511217ca50ea69a7c4a270a1eba7aef5c266dc",
+    "files": [
+      "README.md",
+      "desktop/README.md",
+      "docs/conexion.md",
+      "docs/manual-uso.md",
+      "docs/site/.vitepress/release.json",
+      "docs/site/en/guia/usar-el-flujo.md",
+      "docs/site/en/referencia/limites.md",
+      "docs/site/guia/primeros-pasos.md",
+      "docs/site/guia/usar-el-flujo.md",
+      "docs/site/referencia/limites.md",
+      "docs/site/tests/docs.spec.mjs",
+      "tests/e2e/connection-fixtures.ts",
+      "tests/e2e/connections-polish.spec.ts"
+    ],
+    "fileCount": 13
+  },
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   d63a899..3b51121  main -> main\n",
+  "sendOk": true
+}
