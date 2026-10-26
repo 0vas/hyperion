@@ -210,7 +210,7 @@ Esta espera adjunta corresponde al runtime **0.4.2** y a su skill actualizada. L
 
 ## Artefactos dentro del paso
 
-Abre el paso y su sección **Artefactos**, o pulsa el icono de paquete del nodo cuando tenga resultados. Allí puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar archivos. Los textos pequeños e imágenes compatibles tienen vista previa. HTML y SVG se muestran como texto, y los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
+Abre el paso y su sección **Artefactos**, o pulsa el icono de paquete del nodo cuando tenga resultados. Allí puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar archivos. Los textos pequeños e imágenes compatibles tienen vista previa. **HTML** (y SVG) se muestran en una vista previa aislada (scripts inactivos); puedes alternar **Vista previa** y **Código fuente**. Los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
 
 Si se reintenta una tarea, los artefactos anteriores permanecen identificados por intento. I/O sigue mostrando los datos del contrato y Logs la actividad: un artefacto es el entregable que puedes abrir.
 

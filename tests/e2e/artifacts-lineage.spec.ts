@@ -67,10 +67,22 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   await page
     .getByRole('button', { name: 'Ver artefacto', exact: true })
     .click();
+  const iframe = page.locator('iframe.artifact-html-frame');
+  await expect(iframe).toBeVisible();
+  await expect(iframe).toHaveAttribute('sandbox', '');
+  const preview = page.frameLocator('iframe.artifact-html-frame');
+  await expect(
+    preview.getByRole('heading', { name: 'Guía real' }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
+  await page
+    .getByRole('button', { name: 'Código fuente', exact: true })
+    .click();
   await expect(page.locator('.artifact-text')).toContainText(
     '<h1>Guía real</h1>',
   );
-  expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
+  await page.getByRole('button', { name: 'Vista previa', exact: true }).click();
+  await expect(iframe).toBeVisible();
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Descargar', exact: true }).click();
   expect((await download).suggestedFilename()).toBe('guia.html');

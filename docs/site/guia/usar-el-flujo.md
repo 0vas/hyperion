@@ -67,7 +67,7 @@ En **Artefactos** encontrarás los archivos y enlaces que el agente haya registr
 Por ejemplo, el paso «Preparar guía» puede contener `bienvenida.md`, una ilustración y el enlace al documento compartido. **I/O** conserva sus datos y **Logs** explica las acciones; **Artefactos** te permite acceder al resultado.
 :::
 
-El agente debe registrar el archivo; Hyperion no recorre tu disco ni publica documentos automáticamente. HTML y SVG se previsualizan como texto. Los archivos subidos tienen un límite de 10 MiB.
+El agente debe registrar el archivo; Hyperion no recorre tu disco ni publica documentos automáticamente. HTML y SVG se previsualizan en un marco aislado (sin ejecutar scripts); puedes ver también el código fuente. Los archivos subidos tienen un límite de 10 MiB.
 
 ## Continúa después del final
 

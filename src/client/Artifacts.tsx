@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Download, ExternalLink, FileText, Package } from 'lucide-react';
 import type { Artifact } from '../domain/artifacts';
 import type { Step } from '../domain/workflow';
+import { isSandboxedMarkup, type ArtifactViewMode } from './artifact-preview';
 import { t, useLocale } from './i18n';
 const fileUrl = (runId: string, artifact: Artifact) =>
   `/api/runs/${encodeURIComponent(runId)}/artifacts/${artifact.id}`;
@@ -9,9 +10,11 @@ function Preview({ runId, artifact }: { runId: string; artifact: Artifact }) {
   useLocale();
   const [text, setText] = useState<string>();
   const [error, setError] = useState(false);
+  const [mode, setMode] = useState<ArtifactViewMode>('preview');
   const image = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(
     artifact.mediaType,
   );
+  const markup = isSandboxedMarkup(artifact.mediaType);
   const url = fileUrl(runId, artifact);
   useEffect(() => {
     if (image) return;
@@ -42,9 +45,47 @@ function Preview({ runId, artifact }: { runId: string; artifact: Artifact }) {
         onError={() => setError(true)}
       />
     );
-  return (
-    <pre className="artifact-text">{text ?? t('Cargando artefacto…')}</pre>
-  );
+  if (text === undefined)
+    return <p className="muted">{t('Cargando artefacto…')}</p>;
+  if (markup)
+    return (
+      <div className="artifact-markup">
+        <div
+          className="artifact-view-toggle"
+          role="group"
+          aria-label={t('Vista del artefacto')}
+        >
+          <button
+            type="button"
+            className={mode === 'preview' ? 'secondary active' : 'secondary'}
+            aria-pressed={mode === 'preview'}
+            onClick={() => setMode('preview')}
+          >
+            {t('Vista previa')}
+          </button>
+          <button
+            type="button"
+            className={mode === 'source' ? 'secondary active' : 'secondary'}
+            aria-pressed={mode === 'source'}
+            onClick={() => setMode('source')}
+          >
+            {t('Código fuente')}
+          </button>
+        </div>
+        {mode === 'preview' ? (
+          <iframe
+            className="artifact-html-frame"
+            title={t('Vista previa de {0}', { 0: artifact.name })}
+            srcDoc={text}
+            sandbox=""
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <pre className="artifact-text">{text}</pre>
+        )}
+      </div>
+    );
+  return <pre className="artifact-text">{text}</pre>;
 }
 function ArtifactCard({
   runId,

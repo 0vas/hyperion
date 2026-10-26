@@ -63,7 +63,7 @@ The 0.4.1 runtime added active-agent presence and event delivery. The 0.4.2 skil
 For example, “Prepare guide” can contain `welcome.md`, an illustration and a shared document link. **I/O** retains its data, **Logs** explains the actions, and **Artifacts** provides access to the result.
 :::
 
-The agent must register the file; Hyperion does not scan your disk or publish documents automatically. HTML and SVG previews display escaped text. Uploaded files are limited to 10 MiB.
+The agent must register the file; Hyperion does not scan your disk or publish documents automatically. HTML and SVG open in a sandboxed frame (scripts stay inert); you can switch to source. Uploaded files are limited to 10 MiB.
 
 ## Continue after the end
 

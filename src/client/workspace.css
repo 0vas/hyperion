@@ -390,6 +390,31 @@
   max-height: 360px;
   overflow: auto;
 }
+.artifact-markup {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  min-width: 0;
+}
+.artifact-view-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.artifact-view-toggle .secondary.active {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+.artifact-html-frame {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  max-height: 360px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color-scheme: light;
+}
 .artifact-image {
   display: block;
   max-width: 100%;
