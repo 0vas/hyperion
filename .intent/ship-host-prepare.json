@@ -1,0 +1,27 @@
+{
+  "pushExit": 0,
+  "pushErr": "To https://github.com/0vas/hyperion\n   50c6640..5894444  main -> main\n",
+  "syncOut": "\n> hyperion-workflows@2026.10.23-build.1304 release:sync\n> node scripts/sync-release.mjs\n\nPackage compatibility version: 2026.10.26-build.421. Public version is in src/release.json.\n",
+  "commit": {
+    "ok": true,
+    "hash": "3b97f705bdfd363eb4d42108106336bb75286e48",
+    "files": [
+      "package-lock.json",
+      "package.json",
+      "src/release.json"
+    ],
+    "fileCount": 3
+  },
+  "pushPrepExit": 0,
+  "pushPrepErr": "To https://github.com/0vas/hyperion\n   5894444..3b97f70  main -> main\n",
+  "head": "3b97f705bdfd363eb4d42108106336bb75286e48",
+  "target": {
+    "createdAt": "2026-10-26T07:01:22Z",
+    "databaseId": 40283249697,
+    "event": "workflow_dispatch",
+    "headSha": "3b97f705bdfd363eb4d42108106336bb75286e48",
+    "status": "in_progress",
+    "url": "https://github.com/0vas/hyperion/actions/runs/40283249697"
+  },
+  "sendOk": true
+}

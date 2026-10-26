@@ -1,0 +1,10 @@
+{
+  "status": "## main...origin/main [ahead 2]\n?? .olimpo/\n",
+  "ahead": "5894444 Require harnesses to mirror host progress into Hyperion logs.\nab02683 chore: add Olimpo intent and release planning records\n",
+  "showExit": 0,
+  "show": "commit 58944448751c5d40ec525f43a8c6da00a4e747f2\nAuthor: Oscar Lobaton <oscarlobaton@credicorpperu.com>\nDate:   Mon Oct 26 01:57:27 2026 -0500\n\n    Require harnesses to mirror host progress into Hyperion logs.\n    \n    Agents must log before/after material host work and heartbeat on long runs, and fail on host timeout or permission deny instead of leaving steps orphaned running.\n    \n    Agent-Id: agent-b421e6c0-8732-404c-b759-d073fd2ca97a\n\n docs/integration.md                |  4 ++-\n docs/manual-uso.md                 |  2 +-\n docs/process-contract.md           |  6 ++--\n docs/protocol.md                   |  2 +-\n docs/site/en/guia/usar-el-flujo.md |  2 +-\n docs/site/guia/usar-el-flujo.md    |  2 +-\n skills/hyperion/SKILL.md           | 20 +++++++++---\n src/adapters/mcp.ts                |  4 +--\n tests/host-progress-logs.test.ts   | 67 ++++++++++++++++++++++++++++++++++++++\n tests/mcp-instructions.test.ts     | 15 +++++++++\n 10 files changed, 111 insertions(+), 13 deletions(-)\n",
+  "onHead": true,
+  "release": "{\n  \"channel\": \"preview\",\n  \"timezone\": \"UTC\",\n  \"version\": \"2026.10.23.2144\"\n}\n",
+  "now": "2026.10.26.0701",
+  "origin": "50c6640 Point public download registry at published Preview 2026.10.23.2144.\n3b5c05e Prepare Desktop Preview 2026.10.23.2144 for notarized distribution.\n6c95ba4 Use static icons for stalled running step hints.\n"
+}
