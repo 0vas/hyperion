@@ -218,7 +218,7 @@ Si se reintenta una tarea, los artefactos anteriores permanecen identificados po
 
 Después de completar el flujo puedes continuar la conversación, por ejemplo: «Ahora traduce esta guía al inglés». El agente crea un nuevo recorrido enlazado al anterior, con tu nueva petición y el contexto relevante. El canvas dibuja **Fin anterior → nuevo inicio** y permite navegar entre ambos. El trabajo completado conserva su historial.
 
-También puedes usar **Continuar desde aquí** al final del gráfico para preparar la nueva petición y copiarla al chat conectado. Ese botón no inicia un agente por sí mismo. Una continuación nueva no sirve para saltar una aprobación pendiente ni para recuperar una tarea atascada; esas situaciones usan los controles existentes.
+También puedes usar **Continuar desde aquí** al final del gráfico para preparar la nueva petición. **Copiar petición para el chat** siempre está disponible: pégala en el chat conectado. Copiar no notifica al agente ni crea el recorrido enlazado. **Enviar al chat** solo se habilita si hay un conector de reanudación o envío realmente configurado; las herramientas MCP solas no abren tu chat. Una continuación nueva no sirve para saltar una aprobación pendiente ni para recuperar una tarea atascada; esas situaciones usan los controles existentes.
 
 Estas funciones están incluidas en el instalador **2026.10.26.0721 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
 

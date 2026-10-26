@@ -73,7 +73,7 @@ El agente debe registrar el archivo; Hyperion no recorre tu disco ni publica doc
 
 Puedes decir en el mismo chat: «Ahora traduce esta guía al inglés». El agente crea otro recorrido enlazado, y el gráfico muestra **Fin anterior → nuevo inicio**. Pulsa la tarjeta del recorrido para navegar entre ambos. El flujo terminado conserva sus decisiones, archivos e historial.
 
-**Continuar desde aquí**, al final del gráfico, te ayuda a preparar esa petición y copiarla al chat conectado. No ejecuta por sí mismo un agente. Si el proceso sigue abierto y necesitas cambiarlo, usa la revisión del plan; si falló una tarea, usa reintentar.
+**Continuar desde aquí**, al final del gráfico, te ayuda a preparar esa petición. **Copiar petición para el chat** es el camino habitual (copiar ≠ entregar). **Enviar al chat** solo se habilita con un conector de reanudación o envío configurado; MCP solo no abre el chat. El agente debe crear el recorrido enlazado. Si el proceso sigue abierto y necesitas cambiarlo, usa la revisión del plan; si falló una tarea, usa reintentar.
 
 ::: info Disponibilidad
 Los instaladores **2026.10.12.1722 UTC · Preview** incluyen artefactos y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.

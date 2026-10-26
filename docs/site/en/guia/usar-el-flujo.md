@@ -69,7 +69,7 @@ The agent must register the file; Hyperion does not scan your disk or publish do
 
 Say in the same chat: “Now translate this guide into English.” The agent creates another linked run, and the graph shows **Previous end → new beginning**. Select a run card to navigate between them. The completed run keeps its decisions, files and history.
 
-**Continue from here**, at the end of the graph, helps you draft that request and copy it to the connected chat. It does not execute an agent by itself. Use plan revision for changes to unfinished work, or retry for a failed task.
+**Continue from here**, at the end of the graph, helps you draft that request. **Copy request for chat** is the usual path (copy ≠ delivery). **Send to chat** is enabled only when a resume or send connector is configured; MCP alone cannot open your chat. The agent must create the linked run. Use plan revision for changes to unfinished work, or retry for a failed task.
 
 ::: info Availability
 The **2026.10.12.1722 UTC · Preview** installers include artifacts and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.

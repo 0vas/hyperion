@@ -69,7 +69,7 @@ Do not share credentials or tokens when reporting an issue.
 
 ## If saving an answer does not resume work
 
-See [pause and resume](./reanudacion.md). Without an installed resume connector, your answer is saved locally. An agent can receive it during an active integration wait; a finished chat needs another message. Use **Copiar continuación** in the canvas and send it in the chat.
+See [pause and resume](./reanudacion.md). Without an installed resume connector, your answer is saved locally. An agent can receive it during an active integration wait; a finished chat needs another message. Use **Copiar continuación** in the canvas and send it in the chat. After a completed run, **Copy request for chat** in “A new beginning” also does not notify the agent; **Send to chat** is enabled only with a real send/resume connector.
 
 ## Antigravity
 

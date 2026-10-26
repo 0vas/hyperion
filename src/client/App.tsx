@@ -15,6 +15,7 @@ import {
   looksLikePermissionDenial,
   stuckRunningKind,
 } from './stuck-running';
+import { canSendNewBeginningToChat } from './next-cycle-send';
 import {
   useCallback,
   useEffect,
@@ -51,6 +52,7 @@ import {
   CheckCheck,
   ChevronRight,
   Copy,
+  Send,
   History,
   Info,
   Layers3,
@@ -2340,7 +2342,7 @@ export function App() {
                 <h2 id="popup-title">{t('Un nuevo inicio')}</h2>
                 <p>
                   {t(
-                    'El recorrido completado se conserva. Describe lo siguiente y comparte la petición en tu chat para crear un recorrido enlazado.',
+                    'El recorrido completado se conserva. Describe lo siguiente y copia la petición para pegarla en tu chat. El agente debe crear el recorrido enlazado; copiar no notifica al chat.',
                   )}
                 </p>
                 <label htmlFor="next-request">
@@ -2353,30 +2355,68 @@ export function App() {
                   maxLength={8000}
                   rows={4}
                 />
-                <button
-                  className="primary full"
-                  disabled={!nextRequest.trim()}
-                  onClick={() => {
-                    void navigator.clipboard
-                      .writeText(
-                        t(
-                          'Usa Hyperion para continuar desde el flujo completado {0}. Crea un nuevo recorrido enlazado a ese flujo y conserva su historial. Mi nueva petición: {1}',
-                          { 0: run.id, 1: nextRequest.trim() },
-                        ),
-                      )
-                      .then(() =>
-                        setNotice(
+                <div className="next-cycle-actions">
+                  <button
+                    className="primary full"
+                    disabled={!nextRequest.trim()}
+                    onClick={() => {
+                      void navigator.clipboard
+                        .writeText(
                           t(
-                            'Petición copiada. Envíala en tu chat para continuar.',
+                            'Usa Hyperion para continuar desde el flujo completado {0}. Crea un nuevo recorrido enlazado a ese flujo y conserva su historial. Mi nueva petición: {1}',
+                            { 0: run.id, 1: nextRequest.trim() },
                           ),
-                        ),
-                      )
-                      .catch(() => setError(t('No se pudo copiar.')));
-                  }}
-                >
-                  <Copy size={16} />
-                  {t('Copiar petición para el chat')}
-                </button>
+                        )
+                        .then(() =>
+                          setNotice(
+                            t(
+                              'Petición copiada al portapapeles. Pégala en tu chat; Hyperion no avisó al agente.',
+                            ),
+                          ),
+                        )
+                        .catch(() => setError(t('No se pudo copiar.')));
+                    }}
+                  >
+                    <Copy size={16} />
+                    {t('Copiar petición para el chat')}
+                  </button>
+                  {(() => {
+                    const canSend = canSendNewBeginningToChat({
+                      continuation: run.continuation,
+                    });
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          className="secondary full"
+                          disabled={!canSend || !nextRequest.trim()}
+                          title={
+                            canSend
+                              ? undefined
+                              : t(
+                                  'Requiere un conector de reanudación o envío configurado. Las herramientas MCP solas no abren tu chat.',
+                                )
+                          }
+                          aria-disabled={!canSend || !nextRequest.trim()}
+                          onClick={() => {
+                            if (!canSend) return;
+                            // Phase 1 outbound outbox will perform delivery; never invent a connector here.
+                          }}
+                        >
+                          <Send size={16} />
+                          {t('Enviar al chat')}
+                        </button>
+                        {!canSend && (
+                          <p className="muted next-cycle-send-hint">
+                            {t(
+                              'Enviar al chat estará disponible cuando haya un conector de reanudación o envío configurado. Mientras tanto, copia y pega la petición. Copiar no equivale a entregar.',
+                            )}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
             )}
             {popup === 'legend' && <FlowLegend />}

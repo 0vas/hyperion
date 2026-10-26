@@ -99,14 +99,26 @@ test('step artifacts preview safely and a finished graph links to a requested ne
     .getByRole('button', { name: 'Continuar desde aquí', exact: true })
     .click();
   await expect(
-    page.getByRole('button', { name: 'Copiar petición para el chat' }),
-  ).toBeDisabled();
+    page.getByRole('heading', { name: 'Un nuevo inicio', exact: true }),
+  ).toBeVisible();
+  const copy = page.getByRole('button', {
+    name: 'Copiar petición para el chat',
+    exact: true,
+  });
+  const send = page.getByRole('button', {
+    name: 'Enviar al chat',
+    exact: true,
+  });
+  await expect(copy).toBeDisabled();
+  await expect(send).toBeDisabled();
+  await expect(
+    page.getByText(/Copiar no equivale a entregar|conector de reanudación/i),
+  ).toBeVisible();
   await page
     .getByLabel('¿Qué quieres hacer ahora?')
     .fill('Ahora quiero traducirla');
-  await expect(
-    page.getByRole('button', { name: 'Copiar petición para el chat' }),
-  ).toBeEnabled();
+  await expect(copy).toBeEnabled();
+  await expect(send).toBeDisabled();
   await page.getByRole('button', { name: 'Cerrar popup', exact: true }).click();
   const next = await create({
     commandId: 'new-cycle',

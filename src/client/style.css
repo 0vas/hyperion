@@ -548,6 +548,15 @@ textarea {
 textarea::placeholder {
   color: #635f6c;
 }
+.next-cycle-actions {
+  display: grid;
+  gap: 10px;
+}
+.next-cycle-send-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
 .full {
   width: 100%;
 }
