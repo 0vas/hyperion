@@ -7,10 +7,23 @@ La pausa persistente y el alcance por herramienta se explican en [Reanudación a
 1. Instala **Hyperion Desktop**: `.dmg` en macOS o `.exe` en Windows. En macOS, arrastra Hyperion a Aplicaciones antes de abrirlo.
 2. Al abrirlo, elige **Codex**, **Cursor**, **Claude Desktop**, **Claude Code** o **Antigravity** (desde 0.5.1-preview.1). Si ya lo usabas, entra en **Hyperion → Conectar con mi IA**.
 3. Reinicia la aplicación elegida y abre un **chat nuevo** (no regenerues un hilo antiguo de Excel u otra tarea sin Hyperion). Si solicita habilitar Hyperion, acepta para usar sus herramientas.
-4. En Claude Desktop, despliega **Loaded tools** / herramientas cargadas y confirma entradas `hyperion_*` (por ejemplo `hyperion_create_run`) antes de pedir el objetivo.
+4. En Claude Desktop, despliega **Loaded tools** / herramientas cargadas y confirma entradas `hyperion_*` (por ejemplo `hyperion_create_run`) antes de pedir el objetivo. En **Claude Code**, ejecuta `/mcp` y confirma que el servidor `hyperion` está conectado (o que la skill Hyperion responde) antes de pedir el objetivo.
 5. Escribe tu objetivo: **«Usa Hyperion para preparar una guía breve de bienvenida a mi proyecto»**.
 
-No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Desktop incluye el runtime. La conexión sirve para otros proyectos y chats sin contexto previo. Una vez en uso Hyperion por MCP («Usa Hyperion» o herramientas `hyperion_*`), la IA **no** pide alcance ni decisiones en el chat: las formula como pasos humanos en el canvas, comparte la URL y espera. En el chat solo caben el enlace, el progreso breve y resúmenes de evidencia ya registrada. No debes explicarle cómo dibujar el canvas ni cómo registrar los pasos.
+No necesitas instalar Node, escribir comandos ni editar archivos para el recorrido con Desktop. Hyperion Desktop incluye el runtime. La conexión sirve para otros proyectos y chats sin contexto previo. Una vez en uso Hyperion por MCP («Usa Hyperion» o herramientas `hyperion_*`), la IA **no** pide alcance ni decisiones en el chat: las formula como pasos humanos en el canvas, comparte la URL y espera. En el chat solo caben el enlace, el progreso breve y resúmenes de evidencia ya registrada. No debes explicarle cómo dibujar el canvas ni cómo registrar los pasos.
+
+### Claude Code: camino feliz (archivos y shell locales)
+
+Cuando el trabajo toca **archivos, carpetas o la terminal del proyecto**, **Claude Code** es el camino documentado más claro con Hyperion. El canvas sigue siendo el lugar de las decisiones humanas; Code no tiene un panel nativo de Hyperion.
+
+1. Instala **Hyperion Desktop** y elige **Claude Code** en el asistente (o **Hyperion → Conectar con mi IA → Claude Code**). Eso instala la skill en `~/.claude/skills/hyperion` apuntando al runtime de Desktop.
+2. Registra también el servidor MCP para cargar herramientas `hyperion_*` en Code (Desktop solo prepara la skill para esta opción). Desde fuentes: `npm run hyperion -- setup claude`. En una instalación solo Desktop, usa `claude mcp add` con el ejecutable y el lanzador MCP de **Conexiones → Diagnóstico → Archivos del adaptador** (rutas absolutas de _esta_ instalación; sin tokens). Guía oficial: [MCP en Claude Code](https://code.claude.com/docs/en/mcp).
+3. Abre un **chat nuevo** de Claude Code en el proyecto de trabajo (no regenerues un hilo antiguo sin Hyperion).
+4. Ejecuta **`/mcp`**: el servidor `hyperion` debe figurar como conectado. Comprueba una lectura (`hyperion_list_runs`) antes de afirmar que las herramientas funcionan en ese chat.
+5. Pide el objetivo: **«Usa Hyperion para…»**. El agente crea el flujo, comparte la **URL del canvas** y espera. Ábrela en el **navegador** o en la ventana de Hyperion Desktop—Code no abre un panel Hyperion dentro del terminal.
+6. Responde formularios y aprobaciones **solo en el canvas**. Tras guardar, el agente debe mantener `hyperion_wait` (o suspensión durable verificada) en el mismo turno. Si el chat ya terminó, usa **Copiar continuación** y pégalo en Code.
+
+Durante pasos agente, Code puede usar shell y archivos locales; debe reflejar progreso en Logs de Hyperion (latidos en trabajo largo) y `fail` ante permiso denegado o timeout—no dejar el paso «En curso» huérfano.
 
 **[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.26.0721)**: elige el `.dmg` de Apple Silicon o el `.exe` de Windows x64. No necesitas una cuenta de GitHub para descargar la versión preliminar. El instalador de Apple Silicon está firmado con Developer ID y notarizado por Apple; Windows no tiene firma de editor. Intel macOS no se publica en esta release. La release estable sigue pendiente.
 
@@ -19,8 +32,16 @@ No necesitas instalar Node, escribir comandos ni editar archivos. Hyperion Deskt
 | Codex          | Conexión MCP de usuario; también respeta `CODEX_HOME` cuando está definido.          |
 | Cursor         | Conexión MCP de usuario para los proyectos locales.                                  |
 | Claude Desktop | Conexión MCP y skill portable en `~/.claude/skills/hyperion` (macOS o Windows).      |
-| Claude Code    | Skill Hyperion en su carpeta de skills de usuario.                                   |
+| Claude Code    | Skill en `~/.claude/skills/hyperion`; registra MCP aparte y verifica con `/mcp`.     |
 | Antigravity    | Conexión MCP global con respaldo; disponible en Desktop 0.5.1-preview.1 o posterior. |
+
+Comparación breve (honestidad de capacidades):
+
+| Herramienta    | Archivos / shell locales                                          | UI de Hyperion                                      | Decisiones humanas | Retoma tras handoff                            |
+| -------------- | ----------------------------------------------------------------- | --------------------------------------------------- | ------------------ | ---------------------------------------------- |
+| Claude Code    | Fuerte (proyecto + terminal)                                      | Solo URL (navegador o Desktop)                      | Solo en el canvas  | `hyperion_wait` o **Copiar continuación**      |
+| Claude Desktop | Depende de permisos del host; no es el camino de archivos locales | Solo URL en Browse / navegador; **no** panel nativo | Solo en el canvas  | Misma regla; sin espera el chat no retoma solo |
+| Codex / Cursor | Shell vía MCP o skill                                             | Solo URL                                            | Solo en el canvas  | Espera activa o continuación pegada            |
 
 La conexión usa rutas absolutas al runtime incluido y al almacenamiento local; no escribe tokens en la configuración del cliente. Guarda copia del archivo anterior, conserva otros servidores y rechaza una entrada Hyperion diferente. «Conexión configurada» confirma que se preparó la entrada local; no demuestra que el cliente haya cargado las herramientas. Puedes repetir el asistente para conectar otra aplicación.
 
@@ -179,9 +200,9 @@ La [documentación oficial de MCP de Antigravity](https://antigravity.google/doc
 
 ### Claude Code
 
-Desde el proyecto en el que usarás Claude Code, registra el adaptador. `HYPERION_REPO` debe seguir apuntando al repositorio de Hyperion, aunque estés trabajando en otro proyecto.
+Preferido para trabajo con **archivos y shell** del proyecto. El camino feliz con Desktop (skill + MCP + `/mcp` + URL del canvas) está al inicio de esta guía. Desde fuentes, el atajo es `npm run hyperion -- setup claude` (requiere la CLI `claude`).
 
-Primero, desde Hyperion:
+Registro manual del adaptador. `HYPERION_REPO` debe seguir apuntando al repositorio de Hyperion, aunque estés trabajando en otro proyecto:
 
 ```sh
 npm run hyperion -- connect claude
@@ -198,7 +219,7 @@ claude mcp add hyperion --transport stdio --scope local \
 claude mcp get hyperion
 ```
 
-Abre Claude Code y revisa `/mcp`. La conexión local se aplica al proyecto donde ejecutaste el registro. Véase la [configuración MCP oficial de Claude Code](https://code.claude.com/docs/en/mcp).
+Abre Claude Code, ejecuta **`/mcp`** y confirma `hyperion`. La conexión local se aplica al alcance (`local`/`user`) donde registraste el servidor. Abre la URL del canvas en el navegador o Desktop; Code no incrusta Hyperion. Véase la [configuración MCP oficial de Claude Code](https://code.claude.com/docs/en/mcp).
 
 ### Claude Desktop
 

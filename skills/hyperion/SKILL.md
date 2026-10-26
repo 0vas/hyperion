@@ -10,6 +10,17 @@ Requires local shell access with Node.js 22.13+ or the bundled Desktop runtime, 
 
 The user describes the activity in their chat. You construct and advance its visual workflow. Preserve their scope and original request. Hyperion is independent of the model or agent vendor.
 
+## Claude Code setup (happy path for local files/shell)
+
+When the user works in **Claude Code** (especially with local folders, scripts or shell):
+
+1. Prefer Hyperion Desktop → **Conectar con mi IA → Claude Code** so the skill lands in `~/.claude/skills/hyperion` on the Desktop runtime. Desktop Conexiones for Code installs the **skill only**—MCP `hyperion_*` tools still need a separate `claude mcp add` / `setup claude` using this installation’s absolute MCP launcher paths.
+2. In a **new** Claude Code session for the work project, run **`/mcp`** and confirm `hyperion` is connected (or invoke this skill). Verify with a read-only `hyperion_list_runs` before claiming tools work in this chat.
+3. On “Usa Hyperion” / “Use Hyperion”, call `hyperion_create_run` (or resume) first. Share the **canvas URL**; open it in a browser or Hyperion Desktop. **Do not** claim Claude Code opened a native Hyperion pane.
+4. Keep all human Q&A on the canvas. After handoff, hold `hyperion_wait` (or verified durable suspend) in the same turn; if the turn already ended, tell the user to paste **Copiar continuación**.
+
+Claude Desktop is a different host: MCP+skill there still has no native Hyperion pane, and it is not the preferred path for project file/shell work. Canvas owns decisions on every host.
+
 ## Start from a request
 
 When the user says **Usa Hyperion**, **Use Hyperion**, **quiero usar Hyperion**, or asks to guide an activity through Hyperion, **call Hyperion first**. With MCP: invoke `hyperion_create_run` (or `hyperion_list_runs` / `hyperion_get_run` to resume) before answering in free text. **Never** claim a missing filesystem, Cowork, Browser or other connector instead of Hyperion when `hyperion_*` tools are loaded in this chat. Do not regenerate an old non-Hyperion thread as a substitute for creating or continuing a run.

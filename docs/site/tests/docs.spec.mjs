@@ -1176,6 +1176,39 @@ test('Antigravity has an SVG identity and an honest MCP setup path in both langu
   }
 });
 
+test('Claude Code happy path is documented honestly in both languages', async ({
+  page,
+}) => {
+  for (const locale of ['', 'en/']) {
+    await page.goto(`/hyperion/${locale}guia/integraciones.html`);
+    const doc = page.locator('.vp-doc');
+    await expect(
+      page.getByRole('heading', {
+        name: locale
+          ? /Claude Code \(happy path for local files\)/
+          : /Claude Code \(camino feliz para archivos locales\)/,
+      }),
+    ).toBeVisible();
+    await expect(doc).toContainText('/mcp');
+    await expect(doc).toContainText(
+      locale ? 'no native Hyperion pane' : 'no tiene un panel Hyperion nativo',
+    );
+    await expect(doc).toContainText(
+      locale
+        ? 'Desktop does not auto-register MCP for Code'
+        : 'Desktop no registra MCP automáticamente para Code',
+    );
+    await expect(
+      page.getByRole('row').filter({ hasText: 'Claude Code' }),
+    ).toContainText('/mcp');
+    await page.goto(`/hyperion/${locale}guia/primeros-pasos.html`);
+    await expect(page.locator('.vp-doc')).toContainText(
+      locale ? 'Claude Code' : 'Claude Code',
+    );
+    await expect(page.locator('.vp-doc')).toContainText('/mcp');
+  }
+});
+
 test('CalVer minute and macOS opening instructions remain visible in both themes, languages and narrow layouts', async ({
   page,
 }) => {

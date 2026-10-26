@@ -31,7 +31,7 @@ This exception applies to Hyperion. Do not disable Gatekeeper system-wide. If th
 
 Choose **Codex**, **Cursor**, **Claude Desktop**, **Claude Code** or **Antigravity** in the first-launch assistant. You can reopen it from **Hyperion → Conectar con mi IA** (Connect my AI).
 
-Restart your AI tool and open a new chat to load the integration. This Desktop setup requires no Node.js installation or manual configuration edits.
+Restart your AI tool and open a new chat to load the integration. The basic Desktop path needs no Node.js or manual config edits. When the work uses **project files or a terminal**, the documented path is **Claude Code** (skill + MCP + `/mcp`); the canvas still opens in a browser or Desktop—Code does not embed a Hyperion pane. [Details](./integraciones.md#claude-code-happy-path-for-local-files).
 
 ## 3. Ask for what you need
 

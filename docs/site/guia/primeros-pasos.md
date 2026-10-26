@@ -33,7 +33,7 @@ Esta excepción corresponde a Hyperion. No desactives Gatekeeper para todo el eq
 
 Al abrir Hyperion, elige **Codex**, **Cursor**, **Claude Desktop**, **Claude Code** o **Antigravity** en el asistente. También puedes acceder desde **Hyperion → Conectar con mi IA**.
 
-El asistente prepara la conexión local. Reinicia tu herramienta de IA y abre un chat nuevo para que cargue la integración. No necesitas Node.js ni editar archivos de configuración para este recorrido con Desktop.
+El asistente prepara la conexión local. Reinicia tu herramienta de IA y abre un chat nuevo para que cargue la integración. No necesitas Node.js ni editar archivos de configuración para el recorrido básico con Desktop. Si el trabajo usa **archivos o la terminal del proyecto**, el camino documentado es **Claude Code** (skill + MCP + `/mcp`); el canvas sigue en el navegador o Desktop—Code no incrusta un panel Hyperion. [Detalle](./integraciones.md#claude-code-camino-feliz-para-archivos-locales).
 
 ## 3. Pide lo que necesitas
 

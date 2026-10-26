@@ -11,12 +11,29 @@ Instala Desktop y abre **Hyperion → Conectar con mi IA**. El asistente configu
 | Codex          | Servidor MCP local                                       |
 | Cursor         | Servidor MCP local                                       |
 | Claude Desktop | Servidor MCP local                                       |
-| Claude Code    | Skill administrada con acceso al runtime de Desktop      |
+| Claude Code    | Skill administrada (+ MCP aparte; verifica con `/mcp`)   |
 | Antigravity    | Servidor MCP local · Desktop 0.5.1-preview.1 o posterior |
 
 Después reinicia la herramienta y abre un chat nuevo. Las integraciones existentes no se sobreescriben a ciegas: el asistente informa conflictos y respalda los archivos que modifica.
 
 Una conexión instalada no garantiza que un chat ya abierto haya cargado las herramientas. Tampoco basta mencionar «Hyperion» en una aplicación sin integración.
+
+## Claude Code (camino feliz para archivos locales)
+
+Para actividades que leen o escriben en el disco o usan la terminal del proyecto, usa **Claude Code** con Hyperion:
+
+1. En Desktop: **Hyperion → Conectar con mi IA → Claude Code** (instala la skill en `~/.claude/skills/hyperion`).
+2. Registra el servidor MCP de Hyperion en Code (`setup claude` desde fuentes, o `claude mcp add` con las rutas de **Conexiones → Diagnóstico → Archivos del adaptador**). Desktop no registra MCP automáticamente para Code.
+3. Chat nuevo en el proyecto → ejecuta **`/mcp`** y confirma `hyperion`.
+4. Pide «Usa Hyperion para…». Abre la URL del canvas en el **navegador** o en Desktop: Code **no** tiene un panel Hyperion nativo.
+5. Decisiones y formularios solo en el canvas. Si el chat terminó sin espera, **Copiar continuación**.
+
+| Frente a…      | Diferencia honesta                                                                 |
+| -------------- | ---------------------------------------------------------------------------------- |
+| Claude Desktop | Mejor para chat MCP; peor camino para carpetas/shell; tampoco abre panel nativo.   |
+| Codex / Cursor | También locales vía MCP o skill; Code destaca en el contexto de proyecto/terminal. |
+
+[Detalle técnico](https://github.com/0vas/hyperion/blob/main/docs/conexion.md#claude-code-camino-feliz-archivos-y-shell-locales).
 
 ## Revisar la configuración local
 
@@ -44,7 +61,7 @@ En las fuentes de desarrollo, si otro Hyperion rechaza las credenciales de esta 
 
 1. Comprueba que elegiste la herramienta correcta en el asistente.
 2. Si acabas de configurar, reinicia esa herramienta y abre un **chat nuevo** (no regenerues un hilo antiguo sin Hyperion). Si ya lo hiciste y siguen faltando herramientas, revisa el estado real del servidor Hyperion y su configuración en el cliente.
-3. En Claude Desktop, confirma en herramientas cargadas que aparecen `hyperion_*` (p. ej. `hyperion_create_run`).
+3. En Claude Desktop, confirma en herramientas cargadas que aparecen `hyperion_*` (p. ej. `hyperion_create_run`). En Claude Code, ejecuta `/mcp` y confirma `hyperion`.
 4. Pide «Usa Hyperion para…» con un objetivo concreto.
 5. Si sigue fallando, revisa el error del asistente o del servidor MCP de tu herramienta.
 

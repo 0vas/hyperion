@@ -4,7 +4,17 @@ La pausa persistente y el alcance por herramienta se explican en [Reanudación a
 
 Hyperion runs separately from the agent and owns workflow state. The agent proposes a plan, claims ready work, performs it with its own tools, and reports evidence. The human participates through the web interface.
 
-For setup in Codex, Claude Code, Claude Desktop, Cursor, Google Antigravity and other local clients, follow the [connection guide](conexion.md). The user starts with a natural-language request; the host agent generates the plan and includes its original text in `plan.request`. Do not ask the user to author JSON.
+For setup in Codex, Claude Code, Claude Desktop, Cursor, Google Antigravity and other local clients, follow the [connection guide](conexion.md). **Claude Code** is the documented happy path when agent work needs local files or a project shell: Desktop Conexiones installs the skill, register MCP, verify with `/mcp`, share the canvas URL (no native Hyperion pane), and keep human Q&A on the canvas. Claude Desktop remains valid for chat-side MCP but does not open a native Hyperion pane and is not the preferred path for folder/shell work. The user starts with a natural-language request; the host agent generates the plan and includes its original text in `plan.request`. Do not ask the user to author JSON.
+
+### Host comparison (local)
+
+| Host           | Strength for Hyperion work                         | Hyperion UI                                 | Human decisions   | After a handoff                                                     |
+| -------------- | -------------------------------------------------- | ------------------------------------------- | ----------------- | ------------------------------------------------------------------- |
+| Claude Code    | Local files and shell in the project               | Canvas URL in browser or Desktop only       | Canvas forms only | `hyperion_wait` / durable suspend, or paste **Copiar continuación** |
+| Claude Desktop | Chat MCP + skill; OS permissions may block folders | Browse/URL only—**no** native Hyperion pane | Canvas forms only | Same; ending the turn without wait leaves ready work idle           |
+| Codex / Cursor | MCP or portable skill with local shell             | Canvas URL only                             | Canvas forms only | Active wait or continuation paste                                   |
+
+Never claim the host embedded Hyperion automatically. Listing tools or `/mcp` connected does not prove a prior chat already loaded them—use a new session and a read-only `hyperion_list_runs` when unsure.
 
 ## Minimal user request
 
