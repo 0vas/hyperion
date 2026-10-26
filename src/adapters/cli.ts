@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import {
   runContinuationWorker,
-  type ResumeConnector,
+  type BridgeConnector,
 } from './continuation-worker.js';
 import { suspendSchema } from '../domain/continuation.js';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -135,14 +135,15 @@ try {
     let result: unknown;
     if (operation === 'bridge' && first) {
       const connector = (await import(pathToFileURL(resolve(first)).href))
-        .default as ResumeConnector;
+        .default as BridgeConnector;
       if (
         !connector ||
         typeof connector.id !== 'string' ||
-        typeof connector.resume !== 'function'
+        (typeof connector.resume !== 'function' &&
+          typeof connector.send !== 'function')
       )
         throw new Error(
-          'Connector must export default {id, resume, reconcile?}',
+          'Connector must export default {id, resume and/or send, reconcile?}',
         );
       const abort = new AbortController();
       const stop = () => abort.abort();
