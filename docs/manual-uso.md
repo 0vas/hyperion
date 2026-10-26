@@ -12,7 +12,7 @@ Instala Hyperion Desktop y elige **Codex**, **Cursor**, **Claude Desktop** o **C
 
 Hyperion incluye **español e inglés** en el canvas y en los menús y diálogos de Desktop. Abre **Ajustes → Idioma** para elegir **Automático (sistema)**, **Español** o **English**. En Desktop también puedes cambiarlo desde **Hyperion → Idioma**.
 
-La versión CalVer (p. ej. `2026.10.26.1533 UTC · preview`) aparece al abrir **Menú** (al pie), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
+La versión CalVer (p. ej. `2026.10.26.2007 UTC · preview`) aparece al abrir **Menú** (al pie), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
 
 ## Conexiones e integraciones
 
@@ -37,7 +37,7 @@ El modo automático toma el idioma del sistema o del navegador; si no está sopo
 **Tu contenido conserva su idioma.**
 Cambiar la interfaz no traduce nombres de tareas, preguntas del agente, respuestas, resultados ni logs. Tampoco reinicia el flujo ni descarta un formulario sin enviar. En las fuentes de desarrollo, las explicaciones conocidas de Hyperion sobre conflictos, lectura y configuración de conexiones, y sus avisos de éxito, siguen el idioma elegido incluso si ya están abiertos. Las rutas y los diagnósticos no reconocidos de herramientas o del servicio mantienen su texto original para poder investigarlos; no se traducen mensajes arbitrarios ni se deducen causas nuevas.
 
-Incluido en el instalador **2026.10.26.1533 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
+Incluido en el instalador **2026.10.26.2007 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
 
 ## Invocarlo desde una conversación
 
@@ -222,7 +222,7 @@ Después de completar el flujo puedes continuar la conversación, por ejemplo: �
 
 También puedes usar **Continuar desde aquí** al final del gráfico para preparar la nueva petición. **Copiar petición para el chat** siempre está disponible: pégala en el chat conectado. Copiar no notifica al agente ni crea el recorrido enlazado. El envío automático al chat requiere un conector de envío; MCP solo no despierta el chat (en esta fase **Enviar** no se muestra). Una continuación nueva no sirve para saltar una aprobación pendiente ni para recuperar una tarea atascada; esas situaciones usan los controles existentes.
 
-Estas funciones están incluidas en el instalador **2026.10.26.1533 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
+Estas funciones están incluidas en el instalador **2026.10.26.2007 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
 
 ## Organizar el canvas
 
@@ -232,4 +232,4 @@ Arrastra el asa de puntos de cualquier tarea, evento, compuerta, trabajo o enlac
 
 Las posiciones se guardan localmente por flujo, orientación y vista de pasos/trabajos. Las actualizaciones del agente no las borran. Mover un nodo no cambia dependencias, ejecución, decisiones ni historial; tampoco mueve el mismo flujo en otro navegador o dispositivo.
 
-Disponible en los instaladores **2026.10.26.1533 UTC · Preview**.
+Disponible en los instaladores **2026.10.26.2007 UTC · Preview**.
