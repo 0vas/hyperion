@@ -65,14 +65,26 @@ If a trusted installed connector supplies a real session reference and declares 
 
 Use `get RUN_ID` to read current state and decisions. For an existing run use its coordinator identity; do not create a replacement run on every continuation. Start only ready agent tasks, execute their actual work with your own tools, and send evidence. Use `command RUN_ID /absolute/path/command.json` for typed outputs and structured logs. Reuse an action's commandId only on transport retries with identical content. Keep the `attempt` returned by `start` and include it in every `complete`, `fail` and `log` command (CLI shorthand: `--attempt NUMBER`). It is required after a retry. Never look up a newer attempt to attach old work to it; a stale-attempt error means stop reporting that execution.
 
-### Hard rule: permission blocks must fail the step
+### Hard rule: mirror host progress into Hyperion logs
+
+While an agent step you `start`ed is `running` and you perform host / computer-use / shell work, emit public `hyperion_step` `log` events into Hyperion—do **not** keep progress only in chat. Chat narration without a submitted log does **not** count. Hyperion does not scrape Computer Use UIs or inject logs automatically.
+
+Minimum cadence:
+
+1. **Before** the first material host action (grant folder, run script, open path): one `log` (`trace.kind` `action` or `summary`) naming the intent.
+2. **After** each material observation (access granted/denied, script started, batch progress, partial count): at least one `log` (`observation` or `action`).
+3. For work expected to last **>~30s** without a natural checkpoint: a heartbeat `log` at least every **~60s** of wall time while still working (public one-liner, e.g. “still scanning… N folders”).
+
+Always send the `attempt` returned by `start` on every `log`, `fail` and `complete`.
+
+### Hard rule: permission blocks and host timeouts must fail the step
 
 Before ending a turn that started an agent step:
 
-- If work is blocked by host/OS permission, missing entitlement, or any condition you cannot clear without the human changing system settings: you **MUST** `hyperion_step` with `action: fail` (or `complete` only if declared outputs are fully satisfied—rare) with a public message naming the block (e.g. Documents access denied). A **log alone is not enough**.
+- If work is blocked by host/OS permission, missing entitlement, **host/tool timeout**, or any condition you cannot clear without the human changing system settings: you **MUST** `hyperion_step` with `action: fail` (or `complete` only if declared outputs are fully satisfied—rare) with a public message naming the block (e.g. Documents access denied, host tool timed out). A **log alone is not enough**.
 - Do **NOT** end the chat while any agent step you started remains `running` unless you still hold an active `hyperion_wait` / durable `suspend` for this run.
-- After fail, share the canvas URL and **Copiar continuación** guidance; the human uses **Reintentar** after fixing permission, or **Recuperar tarea** if a step is somehow still running.
-- Never invent a successful scan/`complete` when access was denied.
+- After fail, share the canvas URL and **Copiar continuación** guidance; the human uses **Reintentar** after fixing permission or retrying, or **Recuperar tarea** if a step is somehow still running.
+- Never invent a successful scan/`complete` when access was denied or the host timed out.
 
 Logs may contain public summaries, actions and observations. Do not expose or request private chain-of-thought. Hyperion only displays the events you submit; it does not intercept your tools. Parallel gates make work eligible together; report simultaneous execution only when it actually happened. Adapter diagnostics for create rejects, wait arm/expiry and missing resume connectors append JSONL to `.hyperion/harness.log` (gitignored; separate from `server.log`). Inspect that file locally when a harness stalls; never paste credentials or full plans from it into chat.
 

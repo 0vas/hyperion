@@ -137,9 +137,11 @@ El agente puede anotar un `log` mediante:
 }
 ```
 
-`trace.kind` admite `summary` (resumen público de decisión), `action` u `observation`. Esta secuencia permite inspeccionar una traza al estilo ReAct. No extrae ni solicita el razonamiento privado del LLM. Solo presenta información que el agente comparte expresamente; Hyperion no intercepta automáticamente todas sus llamadas a herramientas. La secuencia de eventos registra causalidad y no debe confundirse con `run.revision`, que aumenta una vez por comando aceptado.
+`trace.kind` admite `summary` (resumen público de decisión), `action` u `observation`. Esta secuencia permite inspeccionar una traza al estilo ReAct. No extrae ni solicita el razonamiento privado del LLM. Solo presenta información que el agente comparte expresamente; Hyperion no intercepta automáticamente todas sus llamadas a herramientas ni el panel Computer Use. La secuencia de eventos registra causalidad y no debe confundirse con `run.revision`, que aumenta una vez por comando aceptado.
 
-No registres credenciales ni datos privados innecesarios en las trazas. El contenido queda guardado como parte del flujo local.
+Durante trabajo de host/shell largo (más de ~30 s sin hito natural), el arnés debe emitir al menos un `log` de latido cada ~60 s, además del log antes de la primera acción material y después de cada observación material. Un permiso denegado o un timeout de herramienta del host debe terminar en `fail` con mensaje público; un solo log no basta y no debe dejar el paso `running` al cerrar el turno. Envía siempre el `attempt` de `start` en cada `log`/`fail`/`complete`.
+
+No registres credenciales ni datos privados innecesarios en las trazas. El contenido queda guardado como parte del flujo local. **Actividad** / **Logs** solo muestran lo que el agente envió.
 
 ## Trabajos y decisiones (0.4)
 

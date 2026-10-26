@@ -18,4 +18,19 @@ test('MCP server instructions require Hyperion-first use when tools are loaded',
   assert.match(source, /do not leave the pane blank/);
   assert.match(source, /action=fail/);
   assert.match(source, /log alone is not enough/);
+  assert.match(source, /heartbeat log/);
+  assert.match(source, /~60s/);
+  assert.match(source, /host\/tool timeout/);
+  assert.match(source, /chat-only/);
+});
+
+test('portable skill requires mirrored host progress and fail on timeout', () => {
+  const skill = readFileSync(resolve('skills/hyperion/SKILL.md'), 'utf8');
+  assert.match(skill, /Hard rule: mirror host progress into Hyperion logs/);
+  assert.match(skill, /Before.*\*\* the first material host action/s);
+  assert.match(skill, /After.*\*\* each material observation/s);
+  assert.match(skill, /~60s/);
+  assert.match(skill, /~30s/);
+  assert.match(skill, /host\/tool timeout/);
+  assert.match(skill, /attempt.*returned by `start`/i);
 });

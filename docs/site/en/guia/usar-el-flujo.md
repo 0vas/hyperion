@@ -25,7 +25,7 @@ Paths reflect recorded progress. Animation does not prove that an agent is conne
 
 Forms should ask a concrete question using dropdowns, Yes/No, numbers or text. No choice is approved by default. Expand help only when needed.
 
-**I/O** shows inputs and outputs. **Logs** contains public summaries, actions and observations sent by the agent, not an automatic recording of every tool or private reasoning.
+**I/O** shows inputs and outputs. **Logs** contains public summaries, actions and observations sent by the agent—including heartbeats during long host work. A host timeout or permission denial should leave the step **Failed**, not endless **In progress**. Logs are not an automatic recording of every tool or private reasoning.
 
 ## Resume work
 

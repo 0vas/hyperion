@@ -25,7 +25,7 @@ Las rutas muestran el avance registrado. La animación no garantiza que el agent
 
 Cada formulario debe tener una pregunta concreta. El agente puede usar desplegables, Sí/No, cantidades o texto según el dato. Ninguna elección debe estar aprobada por defecto. La ayuda y los detalles opcionales se despliegan cuando los necesitas.
 
-En **I/O** ves las entradas y salidas; en **Logs**, resúmenes, acciones y observaciones públicas. Se actualizan cuando el agente envía eventos. No son una grabación automática de todas sus herramientas ni de su razonamiento privado.
+En **I/O** ves las entradas y salidas; en **Logs**, resúmenes, acciones y observaciones públicas. Se actualizan cuando el agente envía eventos. El trabajo largo en el host debe aparecer aquí (incluye latidos); un timeout o permiso denegado debe dejar el paso **Falló**, no **En curso** sin fin. No son una grabación automática de todas sus herramientas ni de su razonamiento privado.
 
 ## Retomar el trabajo
 

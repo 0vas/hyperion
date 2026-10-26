@@ -137,7 +137,7 @@ Snapshots include the full event history and are retained locally without automa
 
 Each run includes read-only `steps[].availableContext`, derived from its request, shared context and completed ancestors. Inputs can explicitly use `contextKey`; see the process contract.
 
-Emit `log` before a material action and after its real observation, including failures, then complete with evidence and typed outputs. The UI streams only submitted events: it cannot intercept arbitrary harness tools or private model reasoning. Brief receipt signals mean newly arrived records/data, never an independent agent heartbeat. Human approval enables a task but does not wake an idle host conversation.
+Emit `log` before a material action and after its real observation, including failures, then complete with evidence and typed outputs. While host / computer-use / shell work is expected to run longer than about 30 seconds without a natural checkpoint, emit at least one public heartbeat `log` every about 60 seconds of wall time; chat-only narration is not mirrored progress. On host/OS permission deny, missing entitlement or host/tool timeout, `fail` with a public message—do not leave the step `running` after the turn ends unless an active wait or verified durable suspend is held. The UI streams only submitted events: it cannot intercept arbitrary harness tools, Computer Use panes or private model reasoning. Brief receipt signals mean newly arrived records/data, never an independent agent heartbeat invented by the canvas. Human approval enables a task but does not wake an idle host conversation.
 
 ## Exceptional plan revision
 
