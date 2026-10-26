@@ -1,6 +1,6 @@
 # ADR 0036 — Outbound host prompts (send connector / outbox)
 
-Status: **accepted in source** (PR1: `continuation_prompt` domain/store/HTTP + synthetic tests; PR2: continuation Enviar → enqueue when host supplies ResumeConnector). `linked_cycle_prompt`, PR3 worker, and native provider send connectors remain follow-up.
+Status: **accepted in source** (PR1 outbox; PR2 continuation Enviar; PR3 generic bridge `send` worker for `continuation_prompt`, synthetic in CI). `linked_cycle_prompt` and native provider send connectors remain follow-up.
 Date: 2026-10-26.
 
 Parents: Phase 0 notes `1e160c0f`, `42fab25a`, Architect gate `ffcdba70`; product design `027c9591`.
@@ -60,7 +60,8 @@ Do not overload `Store.continuations` human-answer rows with linked-cycle create
 
 - Phase 0 CTAs remain valid until a certified connector flips `outboundSendConfigured`.
 - **PR1 landed:** domain schema, `OutboundPromptQueue`, HTTP enqueue/claim/settle, synthetic tests, protocol + send-column honesty.
-- **PR2:** continuation **Enviar** wires to enqueue when the host supplies a real ResumeConnector; without it Enviar stays hidden and Copiar remains primary. Linked-cycle Enviar and native connectors remain later.
+- **PR2:** continuation **Enviar** wires to enqueue when the host supplies a real ResumeConnector; without it Enviar stays hidden and Copiar remains primary.
+- **PR3:** `dispatchOutboundOnce` / bridge `send` claims outbound jobs with prompt text; synthetic connector tests only. Linked-cycle Enviar and native connectors remain later.
 - Host spikes (Claude Code session, Cursor CLI, Codex App Server, Desktop helper) stay Phase 2; each must prove idempotent delivery before product claims.
 - Docs and capability matrices gain an explicit **send** column distinct from MCP and from human-answer resume.
 - Risk: conflating “Enviar succeeded” with “child run exists” or “step completed” — UI and receipts must separate delivery from execution.
