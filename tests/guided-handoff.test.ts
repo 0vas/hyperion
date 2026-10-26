@@ -126,6 +126,8 @@ test('guided handoff renews timed out waits and returns saved input for immediat
     assert.equal(renewals, 3);
     assert.equal(announcements, 1);
     assert.equal(handoff(updated).action, 'execute');
+    assert.deepEqual(handoff(updated).stepIds, ['work']);
+    assert.match(handoff(updated).instruction || '', /ALL ready|listo/i);
     assert.deepEqual(updated.steps[0]!.outputValues, { product: 'idea' });
     assert.equal(updated.steps[1]!.status, 'ready');
     assert.equal(updated.steps[1]!.attempt, 0); // The integration never pretends to perform the actual work.

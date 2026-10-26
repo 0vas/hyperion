@@ -5,6 +5,49 @@ import { createApp } from '../src/server/app.js';
 import { Store } from '../src/server/store.js';
 import { HyperionClient } from '../src/adapters/client.js';
 
+test('approval wakes the subscribed coordinator without a chat nudge', async () => {
+  const store = new Store(':memory:');
+  const app = createApp({
+    store,
+    agentToken: 'agent',
+    humanToken: 'human',
+    agentId: 'codex',
+    getAgentTokens: () => ({ codex: 'agent' }),
+  });
+  const url = await app.listen(0);
+  const agent = new HyperionClient({ url, token: 'agent' });
+  const human = new HyperionClient({ url, token: 'human' });
+  try {
+    const run = await agent.create({
+      title: 'Approve and continue',
+      steps: [
+        { id: 'gate', title: 'Gate', kind: 'approval' },
+        {
+          id: 'work',
+          title: 'After gate',
+          kind: 'agent',
+          dependencies: ['gate'],
+        },
+      ],
+    });
+    const waiter = agent.wait(run.id, run.revision, 2);
+    for (let i = 0; i < 100 && !(await agent.get(run.id)).agentWaiting; i++)
+      await delay(10);
+    assert.equal((await agent.get(run.id)).agentWaiting, true);
+    await human.command(run.id, {
+      type: 'approve',
+      stepId: 'gate',
+      expectedRevision: run.revision,
+    });
+    const update = await waiter;
+    assert.equal(update.steps[1]!.status, 'ready');
+    assert.equal((await agent.get(run.id)).agentWaiting, false);
+  } finally {
+    await app.close();
+    store.close();
+  }
+});
+
 test('confirmation wakes the subscribed coordinator without polling or an extra human message', async () => {
   const store = new Store(':memory:');
   const app = createApp({

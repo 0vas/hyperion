@@ -57,7 +57,7 @@ O pedir verlo junto al chat. La disponibilidad de una vista dividida depende de 
 
 Abre la tarea marcada **Tu turno**, responde y guarda. Las opciones conocidas aparecen como desplegables en los planes que las declaran; las preguntas abiertas admiten texto.
 
-Si el agente sigue esperando tu respuesta, puede retomar el trabajo en ese mismo turno. Si el chat ya terminó, pulsa **Copiar continuación** y envía ese mensaje en el chat. La decisión ya quedó guardada: no tienes que escribirla otra vez.
+Si el agente sigue esperando tu respuesta («Agente conectado»), al confirmar en el canvas retoma el trabajo en ese mismo turno y debe ejecutar todos los pasos de agente listos—no hace falta escribir «listo» en el chat. Si el chat ya terminó, pulsa **Copiar continuación** (incluye cada paso listo) y pega ese mensaje en el chat. La decisión ya quedó guardada: no tienes que escribirla otra vez.
 
 ## Comprueba tu primera prueba
 

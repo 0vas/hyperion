@@ -21,7 +21,7 @@ Cuando el trabajo toca **archivos, carpetas o la terminal del proyecto**, **Clau
 3. Abre un **chat nuevo** de Claude Code en el proyecto de trabajo (no regenerues un hilo antiguo sin Hyperion).
 4. Ejecuta **`/mcp`**: el servidor `hyperion` debe figurar como conectado. Comprueba una lectura (`hyperion_list_runs`) antes de afirmar que las herramientas funcionan en ese chat.
 5. Pide el objetivo: **«Usa Hyperion para…»**. El agente crea el flujo, comparte la **URL del canvas** y espera. Ábrela en el **navegador** o en la ventana de Hyperion Desktop—Code no abre un panel Hyperion dentro del terminal.
-6. Responde formularios y aprobaciones **solo en el canvas**. Tras guardar, el agente debe mantener `hyperion_wait` (o suspensión durable verificada) en el mismo turno. Si el chat ya terminó, usa **Copiar continuación** y pégalo en Code.
+6. Responde formularios y aprobaciones **solo en el canvas**. Con espera activa, al guardar se reanuda el turno: el agente ejecuta **todos** los pasos listos sin pedirte «listo» en el chat. Tras guardar, el agente debe mantener `hyperion_wait` (o suspensión durable verificada) en el mismo turno. Si el chat ya terminó, usa **Copiar continuación** (incluye cada `stepId` listo) y pégalo en Code; **Enviar** solo con conector real.
 
 Durante pasos agente, Code puede usar shell y archivos locales; debe reflejar progreso en Logs de Hyperion (latidos en trabajo largo) y `fail` ante permiso denegado o timeout—no dejar el paso «En curso» huérfano.
 

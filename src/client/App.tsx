@@ -20,6 +20,8 @@ import {
   stuckRunningKind,
 } from './stuck-running';
 import { canSendNewBeginningToChat } from './next-cycle-send';
+import { continuationClipboardBody } from './continuation-prompt';
+
 import {
   useCallback,
   useEffect,
@@ -1512,10 +1514,7 @@ export function App() {
     try {
       await navigator.clipboard.writeText(
         run
-          ? t(
-              'Continúa el flujo de Hyperion {0}. Lee su estado y mi respuesta; ejecuta solo los pasos habilitados y registra resultados reales.',
-              { 0: run.id },
-            )
+          ? continuationClipboardBody(t, run)
           : t(
               'Quiero usar Hyperion. Pregúntame qué actividad quiero realizar y crea el flujo desde mi respuesta.',
             ),

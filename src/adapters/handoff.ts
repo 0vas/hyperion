@@ -18,7 +18,7 @@ export function handoff(run: Run) {
       action: 'execute',
       stepIds: ready,
       instruction:
-        'Read the saved inputs, start ready tasks and execute their real work NOW in this turn. Do not ask the user to repeat their answer or send another message.',
+        'Read the saved inputs, then start and execute ALL ready agent steps listed in stepIds NOW in this same turn. Do not ask the user to type listo, continue, or send another chat nudge; the canvas answer is already saved.',
     };
   if (run.steps.some((s) => s.status === 'running'))
     return {

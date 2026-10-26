@@ -144,6 +144,7 @@
   "Continuar desde aquí": "Continue from here",
   "Continuar desde el chat": "Continue from chat",
   "Continúa el flujo de Hyperion {0}. Lee su estado y mi respuesta; ejecuta solo los pasos habilitados y registra resultados reales.": "Continue Hyperion workflow {0}. Read its state and my answer; execute only eligible steps and record real results.",
+  "Continúa el flujo de Hyperion {0}. Lee su estado y mi respuesta guardada. Ejecuta YA todos estos pasos de agente listos: {1}. Registra resultados reales. No me pidas escribir listo ni repetir la respuesta en el chat.": "Continue Hyperion workflow {0}. Read its state and my saved answer. Execute ALL of these ready agent steps NOW: {1}. Record real results. Do not ask me to type ready/listo or repeat the answer in chat.",
   "Continúa en el chat": "Continue in chat",
   "Continúa en tu chat": "Continue in your chat",
   "Contrato anterior y nuevo": "Previous and new contracts",

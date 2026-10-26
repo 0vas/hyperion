@@ -49,7 +49,7 @@ You can ask for a desktop window or a canvas beside your chat. Split view availa
 
 Open the task marked **Tu turno** (Your turn), answer and save. Known choices appear as dropdowns when the plan declares their options; open questions accept text. The application currently uses Spanish labels; this documentation supports both languages.
 
-If the agent is still waiting through the integration, it can continue in the same turn. If the chat has ended, use **Copiar continuación** (Copy continuation) and send the message in the connected chat. Your answer is already saved. See [pause and resume](./reanudacion.md) for connector capabilities.
+If the agent is still waiting through the integration (“Agent connected”), confirming on the canvas continues in the same turn—it must run every ready agent step without asking you to type “ready” in chat. If the chat has ended, use **Copiar continuación** (Copy continuation)—one prompt naming each ready step—and paste it in the connected chat. Your answer is already saved. See [pause and resume](./reanudacion.md) for connector capabilities.
 
 ## Check your first run
 
