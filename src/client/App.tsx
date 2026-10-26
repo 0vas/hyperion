@@ -21,6 +21,10 @@ import {
 } from './stuck-running';
 import { canSendNewBeginningToChat } from './next-cycle-send';
 import { continuationClipboardBody } from './continuation-prompt';
+import {
+  showResultadoWakeContinuationCta,
+  showWakeContinuationCta,
+} from './wake-continuation-cta';
 
 import {
   useCallback,
@@ -1543,6 +1547,20 @@ export function App() {
   const waiting = run?.steps.filter((s) => s.status === 'waiting').length || 0;
   const ready = run?.steps.filter((s) => s.status === 'ready').length || 0;
   const live = run?.status === 'active';
+  const wakeContinuationOpen =
+    !!run &&
+    showWakeContinuationCta({
+      live,
+      agentWaiting: !!run.agentWaiting,
+      readyAgentCount: ready,
+      humanWaitingCount: waiting,
+      hasDurableContinuation: !!run.continuation,
+    });
+  const canSendWakeContinuation = canSendNewBeginningToChat({
+    // Phase 0: no certified ResumeConnector → Enviar hidden.
+    // Outbound host-prompt enqueue flips this gate when a real connector exists.
+    outboundSendConfigured: false,
+  });
   const permissionStall =
     !!run && hasPermissionStall(run.steps, run.events, !!run.agentWaiting);
   const blockedReason = step?.dependencies
@@ -1999,16 +2017,39 @@ export function App() {
                     <ArrowUpRight size={16} />
                   </button>
                 )}
-                {live && !waiting && ready > 0 && !run.continuation && (
-                  <button className="canvas-next" onClick={copyPrompt}>
+                {wakeContinuationOpen && (
+                  <button
+                    type="button"
+                    className="canvas-next"
+                    onClick={copyPrompt}
+                  >
                     <HarnessIcon name={run.coordinator} />
                     <span>
                       <strong>{t('Continuar desde el chat')}</strong>
                       {copied
                         ? t('Pégala en tu chat para continuar')
-                        : t('Respuesta guardada · Copiar continuación')}
+                        : t(
+                            'Respuesta guardada · Copiar continuación (todos los pasos listos)',
+                          )}
                     </span>
                     <Copy size={15} />
+                  </button>
+                )}
+                {wakeContinuationOpen && canSendWakeContinuation && (
+                  <button
+                    type="button"
+                    className="canvas-next"
+                    onClick={() => {
+                      // Phase 1 outbound outbox enqueue; never invent a connector.
+                    }}
+                  >
+                    <Send size={15} />
+                    <span>
+                      <strong>{t('Enviar')}</strong>
+                      {t(
+                        'Requiere un conector de reanudación; MCP solo no despierta el chat.',
+                      )}
+                    </span>
                   </button>
                 )}
               </div>
@@ -2115,12 +2156,17 @@ export function App() {
                               </div>
                             );
                           })()}
-                        {step.status === 'ready' && live && (
-                          <div className="step-hint">
+                        {showResultadoWakeContinuationCta({
+                          live,
+                          agentWaiting: !!run.agentWaiting,
+                          stepKind: step.kind,
+                          stepStatus: step.status,
+                        }) && (
+                          <div className="step-hint wake-continuation-cta">
                             <Bot size={17} />
                             <p>
                               {t(
-                                'Este paso está listo. Si tu chat terminó su turno, envía la continuación para que el agente lo retome.',
+                                'Hay trabajo de agente listo y el chat no está en espera. Copia la continuación (incluye todos los pasos listos) y pégala en el chat conectado. MCP solo no despierta el chat.',
                               )}
                               <button
                                 className="secondary"
@@ -2130,9 +2176,34 @@ export function App() {
                                   ? t('Pega la petición en tu chat')
                                   : t('Copiar continuación')}
                               </button>
+                              {canSendWakeContinuation ? (
+                                <button
+                                  type="button"
+                                  className="secondary"
+                                  onClick={() => {
+                                    /* Phase 1 Enviar enqueue */
+                                  }}
+                                >
+                                  <Send size={15} />
+                                  {t('Enviar')}
+                                </button>
+                              ) : null}
                             </p>
                           </div>
                         )}
+                        {step.status === 'ready' &&
+                          live &&
+                          !!run.agentWaiting &&
+                          step.kind === 'agent' && (
+                            <div className="step-hint">
+                              <Bot size={17} />
+                              <p>
+                                {t(
+                                  'Este paso está listo. El agente sigue en espera activa y lo retomará al confirmar en el canvas—sin escribir listo en el chat.',
+                                )}
+                              </p>
+                            </div>
+                          )}
                       </>
                     ) : undefined
                   }
