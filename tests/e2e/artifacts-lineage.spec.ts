@@ -68,45 +68,48 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   await expect(
     page.getByRole('heading', { name: 'Artefactos 1' }),
   ).toBeVisible();
-  await page
+  const resultado = page.getByTestId('resultado-stage');
+  await resultado
     .getByRole('button', { name: 'Ver artefacto', exact: true })
     .click();
-  const iframe = page.locator('iframe.artifact-html-frame');
+  const iframe = resultado.locator('iframe.artifact-html-frame');
   await expect(iframe).toBeVisible();
   await expect(iframe).toHaveAttribute('sandbox', '');
   await expect(
-    page.getByText(
+    resultado.getByText(
       'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
       { exact: true },
     ),
   ).toBeVisible();
-  const preview = page.frameLocator('iframe.artifact-html-frame');
+  const preview = resultado.frameLocator('iframe.artifact-html-frame');
   await expect(
     preview.getByRole('heading', { name: 'Guía real' }),
   ).toBeVisible();
   expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
-  await page
+  await resultado
     .getByRole('button', { name: 'Código fuente', exact: true })
     .click();
-  await expect(page.locator('.artifact-text')).toContainText(
+  await expect(resultado.locator('.artifact-text')).toContainText(
     '<h1>Guía real</h1>',
   );
   await expect(
-    page.getByText(
+    resultado.getByText(
       'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
       { exact: true },
     ),
   ).toHaveCount(0);
-  await page.getByRole('button', { name: 'Vista previa', exact: true }).click();
+  await resultado
+    .getByRole('button', { name: 'Vista previa', exact: true })
+    .click();
   await expect(iframe).toBeVisible();
   await expect(
-    page.getByText(
+    resultado.getByText(
       'Vista previa inerte: sin JavaScript ni red. El aspecto puede diferir del navegador completo.',
       { exact: true },
     ),
   ).toBeVisible();
   const download = page.waitForEvent('download');
-  await page.getByRole('link', { name: 'Descargar', exact: true }).click();
+  await resultado.getByRole('link', { name: 'Descargar', exact: true }).click();
   expect((await download).suggestedFilename()).toBe('guia.html');
   await page
     .getByRole('button', { name: 'Cerrar resultado', exact: true })

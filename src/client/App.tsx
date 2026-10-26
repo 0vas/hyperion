@@ -95,7 +95,14 @@ import { CurrentEdge } from './CurrentEdge';
 import { BpmnSymbol } from './BpmnSymbol';
 import { HumanForm } from './HumanForm';
 import { parseField } from './decision-form';
-import { canvasInsets, resultadoDock } from './viewport';
+import { canvasInsets, previewTileBreakpoint, resultadoDock } from './viewport';
+import {
+  previewNodeId,
+  previewTileLayout,
+  previewTilePosition,
+  selectCanvasPreviewCandidates,
+} from './canvas-preview';
+import { PreviewNode } from './PreviewNode';
 import { FlowLegend } from './FlowLegend';
 import { JobNode } from './JobNode';
 import { Settings } from './Settings';
@@ -553,7 +560,12 @@ function TraceView({ step, run }: { step: Step; run: Run }) {
   );
 }
 const edgeTypes = { current: CurrentEdge };
-const nodeTypes = { step: StepNode, job: JobNode, lineage: RunLinkNode };
+const nodeTypes = {
+  step: StepNode,
+  job: JobNode,
+  lineage: RunLinkNode,
+  preview: PreviewNode,
+};
 function FitCanvas({ view }: { view: string }) {
   useLocale();
   const { getNodes, getInternalNode, setViewport } = useReactFlow();
@@ -775,6 +787,15 @@ export function App() {
   const [resultadoOpen, setResultadoOpen] = useState(false);
   const [resultadoSection, setResultadoSection] =
     useState<ResultadoSection>('evidence');
+  const [viewportWidth, setViewportWidth] = useState(
+    () => globalThis.innerWidth || 1280,
+  );
+  useEffect(() => {
+    const onResize = () => setViewportWidth(globalThis.innerWidth || 1280);
+    globalThis.addEventListener?.('resize', onResize);
+    return () => globalThis.removeEventListener?.('resize', onResize);
+  }, []);
+  const showPreviewTiles = viewportWidth >= previewTileBreakpoint;
   const [following, setFollowing] = useState(false);
   const [focusedStepId, setFocusedStepId] = useState('');
   const [focusRequest, setFocusRequest] = useState<FocusRequest>(null);
@@ -1419,6 +1440,71 @@ export function App() {
         setNextRequest('');
         setPopup('next-cycle');
       });
+    // Client-only preview satellites (not domain DAG). Steps view + ≥900px.
+    if (showPreviewTiles && !collapsed) {
+      const candidates = selectCanvasPreviewCandidates(run.steps, {
+        selectedStepId: stepId || focusedStepId,
+        maxVisible: previewTileLayout.maxVisible,
+      });
+      for (const candidate of candidates) {
+        const producerPos = positions[candidate.producerStepId];
+        if (!producerPos) continue;
+        const producerMeasured =
+          measurements.key === measurementKey
+            ? measurements.nodes[candidate.producerStepId]
+            : undefined;
+        const producerSize = {
+          width: producerMeasured?.width || (horizontal ? 220 : 280),
+          height: producerMeasured?.height || (horizontal ? 140 : 180),
+        };
+        const id = previewNodeId(candidate.producerStepId);
+        const producer = run.steps.find(
+          (s) => s.id === candidate.producerStepId,
+        );
+        nodes.push({
+          id,
+          type: 'preview',
+          position: previewTilePosition(producerPos, producerSize, horizontal),
+          measured:
+            measurements.key === measurementKey
+              ? measurements.nodes[id]
+              : undefined,
+          data: {
+            producerStepId: candidate.producerStepId,
+            producerTitle: producer?.title || candidate.producerStepId,
+            runId: run.id,
+            artifact: candidate.artifact,
+            remoteOnly: candidate.remoteOnly,
+            extraCount: candidate.extraCount,
+            emphasized:
+              focusedStepId === candidate.producerStepId ||
+              (resultadoOpen && stepId === candidate.producerStepId),
+            horizontal,
+            onSelectProducer: (producerId: string) => selectStep(producerId),
+          },
+          draggable: false,
+          selectable: false,
+          connectable: false,
+          focusable: true,
+        });
+        edges.push({
+          id: `preview-tether:${candidate.producerStepId}`,
+          source: candidate.producerStepId,
+          target: id,
+          type: 'smoothstep',
+          className: 'preview-tether',
+          animated: false,
+          selectable: false,
+          focusable: false,
+          interactionWidth: 0,
+          style: {
+            stroke: 'var(--muted)',
+            strokeDasharray: '4 6',
+            strokeWidth: 1.25,
+          },
+        });
+      }
+    }
     return {
       nodes: nodes.map((node) => ({
         ...node,
@@ -1439,6 +1525,7 @@ export function App() {
     manualPositions,
     selection,
     step?.id,
+    stepId,
     jobId,
     selectStep,
     selectJobRollup,
@@ -1449,6 +1536,7 @@ export function App() {
     busy,
     preferences.reduceMotion,
     online,
+    showPreviewTiles,
   ]);
   function requestRetry(id: string) {
     const target = run?.steps.find((item) => item.id === id);
