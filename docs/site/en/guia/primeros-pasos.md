@@ -101,7 +101,7 @@ CalVer appears in the **Connections** view and in **About** (macOS). The header 
 Switching the interface does not translate task names, agent questions, answers, results or logs. It does not restart the workflow or discard an unsubmitted form. Original tool and service diagnostics retain their text for troubleshooting.
 :::
 
-Included in the **2026.10.12.1722 UTC · Preview** installer, together with step artifacts and linked runs.
+Included in the **2026.10.26.1533 UTC · Preview** installer, together with step artifacts and linked runs.
 
 ## Update Desktop
 

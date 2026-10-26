@@ -162,4 +162,4 @@ Included in the **2026.10.26.1533 UTC · Preview** installers.
 
 ### Deliverables and continued conversations
 
-Each agent step can expose generated files and links in **Artifacts**, with safe previews and downloads. A new user request after completion can start a linked workflow: the graph shows the previous end and the new beginning while retaining both histories. Included in **2026.10.26.1533 UTC · Preview**. See [the usage guide](docs/manual-uso.md) and [integration examples](docs/integration.md).
+Each agent step can expose generated files and links in **Artifacts**, with authenticated downloads and inert previews (HTML/SVG in a sandboxed `iframe` with Preview/Source; not malware scanning). A new user request after completion can start a linked workflow: the graph shows the previous end and the new beginning while retaining both histories. **Copy request for chat** does not notify the agent; automatic send is not shipped without a real send connector. Included in **2026.10.26.1533 UTC · Preview**. See [the usage guide](docs/manual-uso.md) and [integration examples](docs/integration.md).

@@ -67,7 +67,7 @@ En **Artefactos** encontrarás los archivos y enlaces que el agente haya registr
 Por ejemplo, el paso «Preparar guía» puede contener `bienvenida.md`, una ilustración y el enlace al documento compartido. **I/O** conserva sus datos y **Logs** explica las acciones; **Artefactos** te permite acceder al resultado.
 :::
 
-El agente debe registrar el archivo; Hyperion no recorre tu disco ni publica documentos automáticamente. HTML y SVG se previsualizan en un marco aislado (sin JavaScript ni red; el aspecto puede diferir del navegador completo); puedes ver también el código fuente. Los archivos subidos tienen un límite de 10 MiB.
+El agente debe registrar el archivo; Hyperion no recorre tu disco ni publica documentos automáticamente. HTML y SVG se muestran en un `iframe` con `sandbox=""` vacío: alterna **Vista previa** y **Código**; bajo Vista previa aparece el aviso de vista previa inerte (sin JavaScript ni red; el aspecto puede diferir del navegador completo). No es un navegador completo ni un escudo antimalware. Los archivos subidos tienen un límite de 10 MiB.
 
 ## Continúa después del final
 
@@ -76,7 +76,7 @@ Puedes decir en el mismo chat: «Ahora traduce esta guía al inglés». El agent
 **Continuar desde aquí**, al final del gráfico, te ayuda a preparar esa petición. **Copiar petición para el chat** es el camino habitual (copiar ≠ entregar). Pega la petición en el chat conectado; el envío automático requiere un conector de envío — MCP solo no despierta el chat (**Enviar** oculto en esta fase). El agente debe crear el recorrido enlazado. Si el proceso sigue abierto y necesitas cambiarlo, usa la revisión del plan; si falló una tarea, usa reintentar.
 
 ::: info Disponibilidad
-Los instaladores **2026.10.12.1722 UTC · Preview** incluyen artefactos y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
+Los instaladores **2026.10.26.1533 UTC · Preview** incluyen artefactos (vista previa HTML/SVG aislada) y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
 :::
 
 ## Mueve y ordena los nodos

@@ -63,7 +63,7 @@ The 0.4.1 runtime added active-agent presence and event delivery. The 0.4.2 skil
 For example, “Prepare guide” can contain `welcome.md`, an illustration and a shared document link. **I/O** retains its data, **Logs** explains the actions, and **Artifacts** provides access to the result.
 :::
 
-The agent must register the file; Hyperion does not scan your disk or publish documents automatically. HTML and SVG open in a sandboxed frame (inert preview: no JavaScript or network; layout may differ from a full browser); you can switch to source. Uploaded files are limited to 10 MiB.
+The agent must register the file; Hyperion does not scan your disk or publish documents automatically. HTML and SVG open in an `iframe` with empty `sandbox=""`: switch **Preview** and **Source**; under Preview you see the inert-preview caption (no JavaScript or network; layout may differ from a full browser). This is not a full browser and not malware protection. Uploaded files are limited to 10 MiB.
 
 ## Continue after the end
 
@@ -72,7 +72,7 @@ Say in the same chat: “Now translate this guide into English.” The agent cre
 **Continue from here**, at the end of the graph, helps you draft that request. **Copy request for chat** is the usual path (copy ≠ delivery). Paste into the connected chat; automatic send needs a send connector — MCP alone cannot wake the chat (**Send** hidden in this phase). The agent must create the linked run. Use plan revision for changes to unfinished work, or retry for a failed task.
 
 ::: info Availability
-The **2026.10.12.1722 UTC · Preview** installers include artifacts and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
+The **2026.10.26.1533 UTC · Preview** installers include artifacts (sandboxed HTML/SVG preview) and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
 :::
 
 ## Move and arrange nodes

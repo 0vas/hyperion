@@ -58,9 +58,9 @@ Para publicar archivos ya probados sin volver a compilarlos, crear primero una r
 
 La web usa `docs/site/.vitepress/release.json` como registro de la última release **publicada**. Actualizarlo solo después de subir y verificar los instaladores; no anunciar un enlace antes de que exista su asset. El campo `macNotarized` solo puede ser verdadero con evidencia de notarización y validación de Gatekeeper.
 
-## Entregables y recorridos enlazados (2026.10.12.1722)
+## Entregables y recorridos enlazados (2026.10.26.1533)
 
-Esta preview incluye español e inglés, artefactos por paso con vista previa/descarga y vínculos entre un flujo completado y un nuevo recorrido. Los archivos permanecen asociados a su intento; la continuación conserva el historial anterior. La publicación no añade notarización.
+Esta preview incluye español e inglés, artefactos por paso (vista previa HTML/SVG en `iframe` con `sandbox=""`, aviso inerte y toggle a código; descarga autenticada) y vínculos entre un flujo completado y un nuevo recorrido. **Copiar petición para el chat** es el camino de Phase 0; **Enviar** permanece oculto sin conector de envío. Los archivos permanecen asociados a su intento; la continuación conserva el historial anterior. La publicación no añade notarización.
 
 ## Interface language
 

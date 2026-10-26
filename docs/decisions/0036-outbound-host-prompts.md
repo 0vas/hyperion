@@ -18,10 +18,10 @@ Add a separate **outbound host-prompt outbox**, additive to ADR 0022, with the s
 
 ### Job kinds
 
-| `kind` | Human text | Connector effect | Must not |
-| --- | --- | --- | --- |
-| `continuation_prompt` | Copiar continuación body (or edited) | Start a host turn with that exact text so the agent can read the run and continue | Invent answers; mark steps complete |
-| `linked_cycle_prompt` | New-beginning draft from canvas | Start a host turn with that exact text; agent may `create_run` with real `plan.request` + `parentRunId` | Auto-create the child run; invent the next request |
+| `kind`                | Human text                           | Connector effect                                                                                        | Must not                                           |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `continuation_prompt` | Copiar continuación body (or edited) | Start a host turn with that exact text so the agent can read the run and continue                       | Invent answers; mark steps complete                |
+| `linked_cycle_prompt` | New-beginning draft from canvas      | Start a host turn with that exact text; agent may `create_run` with real `plan.request` + `parentRunId` | Auto-create the child run; invent the next request |
 
 Each job carries at least: `id`, `kind`, `runId`, optional `parentRunId`, immutable `text`, `commandId` (idempotency), `connectorId` / harness, timestamps, and settlement fields aligned with ADR 0022 leases.
 
@@ -39,12 +39,12 @@ Each job carries at least: `id`, `kind`, `runId`, optional `parentRunId`, immuta
 
 ### Separation from ADR 0022
 
-| | ADR 0022 continuation | ADR 0036 outbound prompt |
-| --- | --- | --- |
-| Trigger | Human submits/approves at a suspended checkpoint | Human chooses Enviar on authored prompt text |
-| Payload | Decision already in the run snapshot | Prompt text for the **host chat/CLI turn** |
-| Goal | Wake connector to continue the **same** run | Deliver text so the agent can continue or plan a **new** linked run |
-| UI without connector | Cooperative wait / Copiar continuación | Copiar only (Phase 0) |
+|                      | ADR 0022 continuation                            | ADR 0036 outbound prompt                                            |
+| -------------------- | ------------------------------------------------ | ------------------------------------------------------------------- |
+| Trigger              | Human submits/approves at a suspended checkpoint | Human chooses Enviar on authored prompt text                        |
+| Payload              | Decision already in the run snapshot             | Prompt text for the **host chat/CLI turn**                          |
+| Goal                 | Wake connector to continue the **same** run      | Deliver text so the agent can continue or plan a **new** linked run |
+| UI without connector | Cooperative wait / Copiar continuación           | Copiar only (Phase 0)                                               |
 
 Do not overload `Store.continuations` human-answer rows with linked-cycle create semantics. Prefer a dedicated outbound store (or a clearly typed job discriminant) so projections and leases stay honest.
 

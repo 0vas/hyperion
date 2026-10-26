@@ -21,7 +21,7 @@ El canvas muestra el estado real:
 | No se pudo reanudar           | Se verificó que no empezó un turno. Puedes reintentar desde la tarea.                              |
 | Comprobar la reanudación      | Se perdió la confirmación; el conector debe verificar si comenzó un turno antes de repetirlo.      |
 
-Sin un conector de reanudación, continúa disponible la espera cooperativa de MCP/CLI: el chat debe mantener su llamada abierta. Instalar MCP por sí solo **no activa la reanudación de un chat cerrado**.
+Sin un conector de reanudación, continúa disponible la espera cooperativa de MCP/CLI: el chat debe mantener su llamada abierta. Instalar MCP por sí solo **no activa la reanudación de un chat cerrado**. Empujar un borrador del canvas («nuevo inicio» / **Copiar petición**) al chat del host es otro problema: Phase 0 solo ofrece copiar; el envío automático permanece propuesto en [ADR 0036](decisions/0036-outbound-host-prompts.md) y no está implementado.
 
 ## Cobertura actual por aplicación
 

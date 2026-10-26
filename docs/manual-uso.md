@@ -37,7 +37,7 @@ El modo automático toma el idioma del sistema o del navegador; si no está sopo
 **Tu contenido conserva su idioma.**
 Cambiar la interfaz no traduce nombres de tareas, preguntas del agente, respuestas, resultados ni logs. Tampoco reinicia el flujo ni descarta un formulario sin enviar. En las fuentes de desarrollo, las explicaciones conocidas de Hyperion sobre conflictos, lectura y configuración de conexiones, y sus avisos de éxito, siguen el idioma elegido incluso si ya están abiertos. Las rutas y los diagnósticos no reconocidos de herramientas o del servicio mantienen su texto original para poder investigarlos; no se traducen mensajes arbitrarios ni se deducen causas nuevas.
 
-Incluido en el instalador **2026.10.12.1722 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
+Incluido en el instalador **2026.10.26.1533 UTC · Preview**, junto con los artefactos por paso y los recorridos enlazados.
 
 ## Invocarlo desde una conversación
 
@@ -210,7 +210,7 @@ Esta espera adjunta corresponde al runtime **0.4.2** y a su skill actualizada. L
 
 ## Artefactos dentro del paso
 
-Abre el paso y su sección **Artefactos**, o pulsa el icono de paquete del nodo cuando tenga resultados. Allí puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar archivos. Los textos pequeños e imágenes compatibles tienen vista previa. **HTML** (y SVG) se muestran en una vista previa aislada (scripts inactivos); puedes alternar **Vista previa** y **Código fuente**. En vista previa verás el aviso: vista previa inerte, sin JavaScript ni red. Los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
+Abre el paso y su sección **Artefactos**, o pulsa el icono de paquete del nodo cuando tenga resultados. Allí puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar archivos. Los textos pequeños e imágenes compatibles tienen vista previa. **HTML** (y SVG) se muestran en un `iframe` con `sandbox=""` vacío; puedes alternar **Vista previa** y **Código fuente**. En Vista previa verás el aviso: vista previa inerte, sin JavaScript ni red (el aspecto puede diferir del navegador completo). No es un navegador completo ni un escudo antimalware. Los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
 
 Si se reintenta una tarea, los artefactos anteriores permanecen identificados por intento. I/O sigue mostrando los datos del contrato y Logs la actividad: un artefacto es el entregable que puedes abrir.
 
