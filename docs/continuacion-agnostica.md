@@ -21,25 +21,43 @@ El canvas muestra el estado real:
 | No se pudo reanudar           | Se verificó que no empezó un turno. Puedes reintentar desde la tarea.                              |
 | Comprobar la reanudación      | Se perdió la confirmación; el conector debe verificar si comenzó un turno antes de repetirlo.      |
 
-Sin un conector de reanudación, continúa disponible la espera cooperativa de MCP/CLI: el chat debe mantener su llamada abierta. Instalar MCP por sí solo **no activa la reanudación de un chat cerrado**. Empujar texto al chat del host es un canal distinto ([ADR 0036](decisions/0036-outbound-host-prompts.md)): la cola HTTP `continuation_prompt` y el **Enviar** de continuación del canvas encolan solo si el host aporta un `ResumeConnector` válido (`connectorSchema`, harness coincidente); sin él, **Copiar** sigue siendo el camino primario. No hay conector nativo certificado ni envío de `linked_cycle_prompt`.
+Sin un conector de reanudación, continúa disponible la espera cooperativa de MCP/CLI: el chat debe mantener su llamada abierta. Instalar MCP por sí solo **no activa la reanudación de un chat cerrado**. Empujar texto al chat del host es un canal distinto ([ADR 0036](decisions/0036-outbound-host-prompts.md)): la cola HTTP `continuation_prompt` y el **Enviar** de continuación del canvas encolan solo si el host aporta un `ResumeConnector` válido (`connectorSchema`, harness coincidente); sin él, **Copiar** sigue siendo el camino primario. **Hyperion Desktop** puede certificar un envío outbound local (`userData/outbound-send.json`, transporte `clipboard-open`): copia el texto de continuación al portapapeles y opcionalmente abre una URL; el worker ADR 0036 asienta la entrega. Eso **no** inyecta un mensaje en el panel de chat del proveedor ni ejecuta pasos. No hay envío de `linked_cycle_prompt` ni ejecutor local (W2) en este corte.
 
 ## Cobertura actual por aplicación
 
 Esta versión incorpora la cola persistente, API, herramienta MCP `hyperion_suspend`, cliente y worker genérico. Los conectores nativos de reanudación de la tabla son trabajo de integración pendiente; no se incluyen como ejecutores de proveedor listos para usar. Las pruebas usan un conector sintético y las identidades de harness documentadas; no certifican aplicaciones reales.
 
-| Herramienta                  | Conexión disponible con Hyperion                                                                                          | Vía documentada para construir su conector                                                                                                | Envío outbound (`continuation_prompt`) |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Codex                        | MCP local y skill; asistente Desktop                                                                                      | App Server: `thread/resume` y `turn/start`. Requiere acceso a esa sesión; no supone control del chat abierto en Codex Desktop.            | No certificado                         |
-| ChatGPT                      | Pendiente el transporte remoto autenticado; no puede usar este MCP stdio local. Work mode no es un requisito de Hyperion. | Plugin MCP Events: suscripción y entrega de eventos. Puede activar tareas; no garantiza continuar el mismo chat visible.                  | No certificado                         |
-| Claude Desktop               | MCP local; asistente Desktop                                                                                              | No se ha verificado una API pública para despertar el mismo chat cerrado. No anunciar reanudación automática.                             | No certificado                         |
-| Claude Code                  | Skill y MCP local                                                                                                         | Agent SDK con ID explícito de sesión persistida. Una sesión administrada por SDK no es automáticamente la conversación de Claude Desktop. | No certificado                         |
-| Cursor                       | MCP local y skill; asistente Desktop                                                                                      | CLI en modo no interactivo, reanudando un ID de chat explícito. Debe conservar sus permisos normales.                                     | No certificado                         |
-| Hermes Agent (Nous Research) | MCP stdio mediante configuración de Hermes; identidad `hermes`                                                            | CLI permite reanudar una sesión por ID. Falta el conector que guarde y reconcilie sus recibos de entrega.                                 | No certificado                         |
-| Google Antigravity           | MCP local, asistente Desktop y `setup antigravity` en `main`; fuera de la preview 0.4.0                                   | Conector de reanudación pendiente. No se ha validado una sesión real ni el despertar del mismo chat.                                      | No certificado                         |
+| Herramienta                  | Conexión disponible con Hyperion                                                                                          | Vía documentada para construir su conector                                                                                                | Envío outbound (`continuation_prompt`)                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Codex                        | MCP local y skill; asistente Desktop                                                                                      | App Server: `thread/resume` y `turn/start`. Requiere acceso a esa sesión; no supone control del chat abierto en Codex Desktop.            | No certificado                                                                  |
+| ChatGPT                      | Pendiente el transporte remoto autenticado; no puede usar este MCP stdio local. Work mode no es un requisito de Hyperion. | Plugin MCP Events: suscripción y entrega de eventos. Puede activar tareas; no garantiza continuar el mismo chat visible.                  | No certificado                                                                  |
+| Claude Desktop               | MCP local; asistente Desktop                                                                                              | No se ha verificado una API pública para despertar el mismo chat cerrado. No anunciar reanudación automática.                             | No certificado                                                                  |
+| Claude Code                  | Skill y MCP local                                                                                                         | Agent SDK con ID explícito de sesión persistida. Una sesión administrada por SDK no es automáticamente la conversación de Claude Desktop. | No certificado                                                                  |
+| Cursor                       | MCP local y skill; asistente Desktop                                                                                      | CLI en modo no interactivo, reanudando un ID de chat explícito. Debe conservar sus permisos normales.                                     | Desktop opcional: `clipboard-open` (ver abajo); no es inyección nativa del chat |
+| Hermes Agent (Nous Research) | MCP stdio mediante configuración de Hermes; identidad `hermes`                                                            | CLI permite reanudar una sesión por ID. Falta el conector que guarde y reconcilie sus recibos de entrega.                                 | No certificado                                                                  |
+| Google Antigravity           | MCP local, asistente Desktop y `setup antigravity` en `main`; fuera de la preview 0.4.0                                   | Conector de reanudación pendiente. No se ha validado una sesión real ni el despertar del mismo chat.                                      | No certificado                                                                  |
 
 Fuentes oficiales consultadas el 10 de octubre de 2026: [Codex App Server](https://developers.openai.com/codex/app-server/), [ChatGPT MCP Events](https://developers.openai.com/plugins/build/mcp-events), [Claude Desktop MCP](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop), [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/sessions), [Cursor CLI](https://cursor.com/docs/cli/reference/parameters), [Hermes CLI](https://hermes-agent.nousresearch.com/docs/user-guide/cli/) y [Hermes MCP](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp/).
 
 Para Hermes, un integrador puede generar la conexión con `hyperion connect hermes` y trasladar `command`, `args` y `env` del servidor generado a `mcp_servers.hyperion` en su configuración. Es compatible con el transporte documentado; todavía no tiene botón propio en el instalador Desktop. No se debe exponer el puerto local a internet para conectar ChatGPT: hacen falta un despliegue remoto, autenticación y aislamiento que esta edición no implementa.
+
+### Desktop outbound send (W1, `clipboard-open`)
+
+Coloca `outbound-send.json` en el `userData` de Hyperion Desktop (no en el plan del modelo). `harness` debe coincidir con el coordinador del flujo. Reinicia o recarga el canvas para que `window.hyperionDesktop.resumeConnector` exponga el conector y aparezca **Enviar**.
+
+```json
+{
+  "id": "desktop-clipboard-send",
+  "harness": "cursor",
+  "sessionId": "real-session-reference",
+  "scope": "managed-session",
+  "capabilities": { "resume": true, "idempotentDelivery": true },
+  "transport": "clipboard-open",
+  "openUrl": "https://cursor.com"
+}
+```
+
+Tras **Enviar**, el worker copia el cuerpo de continuación al portapapeles (y abre `openUrl` si existe). El acuse de entrega no marca pasos completados: el chat/CLI debe ejecutar los `stepId` listos. Sin este archivo, **Copiar** permanece el camino primario.
 
 ## Contrato para desarrollar conectores
 

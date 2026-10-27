@@ -27,6 +27,11 @@ import { createUpdateController } from './update-dialog.mjs';
 import { consumePostUpdateRefresh } from './post-update-refresh.mjs';
 import { refreshSameInstallConflicts } from '../dist/adapters/post-update-connections.js';
 import { recoverStartup } from './startup.mjs';
+import {
+  syncDesktopOutboundWorker,
+  stopDesktopOutboundWorker,
+  readResumeConnectorForPreload,
+} from './outbound-send.mjs';
 const language = createLanguageStore({
   file: resolve(app.getPath('userData'), 'language.json'),
   systemLanguages: () => app.getPreferredSystemLanguages(),
@@ -156,6 +161,24 @@ async function openRun(args) {
   if (window.isMinimized()) window.restore();
   window.show();
   window.focus();
+  try {
+    syncDesktopOutboundWorker({
+      userData: app.getPath('userData'),
+      directory: target.directory,
+      url: target.service,
+      clipboard,
+      shell,
+      onError: (error) => {
+        try {
+          diagnostics(error);
+        } catch {}
+      },
+    });
+  } catch (error) {
+    try {
+      diagnostics(error);
+    } catch {}
+  }
 }
 function report(error) {
   dialog.showErrorBox(
@@ -202,6 +225,19 @@ if (!app.requestSingleInstanceLock()) {
       ipcMain.handle('hyperion:updates:check', async (event) => {
         validateDesktopSender(event);
         await updater.check(true);
+      });
+      // Sync preload read: expose ResumeConnector only when outbound-send.json is valid.
+      // Preload may run before the frame URL is local — still require our BrowserWindow sender.
+      ipcMain.on('hyperion:outbound-send:resume-connector-sync', (event) => {
+        try {
+          if (!window || event.sender !== window.webContents)
+            throw new Error('Invalid desktop request');
+          event.returnValue = readResumeConnectorForPreload(
+            app.getPath('userData'),
+          );
+        } catch {
+          event.returnValue = undefined;
+        }
       });
       rebuildMenu();
 
@@ -268,7 +304,10 @@ if (!app.requestSingleInstanceLock()) {
     if (!window || window.isDestroyed())
       void openRun(process.argv).catch(report);
   });
-  app.on('before-quit', () => updater.cancel());
+  app.on('before-quit', () => {
+    updater.cancel();
+    stopDesktopOutboundWorker();
+  });
   app.on('window-all-closed', () => app.quit());
 }
 
