@@ -40,11 +40,11 @@ Google Antigravity is supported by the Desktop connection assistant and `setup a
 
 The request is enough: the agent asks for missing context, constructs the workflow and shares its canvas. You can request **split** or **desktop** in the chat; both show the same run. After a human handoff, ask the chat to continue. Hyperion does not wake an idle conversation automatically.
 
-**Direct downloads:** [macOS · Apple Silicon](https://github.com/0vas/hyperion/releases/download/v2026.10.26.2039/Hyperion-2026.10.26.2039-mac-arm64.dmg) · [Windows · x64](https://github.com/0vas/hyperion/releases/download/v2026.10.26.2039/Hyperion-2026.10.26.2039-win-x64.exe).
+**Direct downloads:** [macOS · Apple Silicon](https://github.com/0vas/hyperion/releases/download/v2026.10.27.1408/Hyperion-2026.10.27.1408-mac-arm64.dmg) · [Windows · x64](https://github.com/0vas/hyperion/releases/download/v2026.10.27.1408/Hyperion-2026.10.27.1408-win-x64.exe).
 
-These are **2026.10.26.2039 UTC · Preview** installers (CalVer: year, month, day, hour and minute) with Update and Restart, foreign-port alternate recovery when another Hyperion owns `:4317`, a readable canvas, Spanish/English interfaces, step artifacts, linked conversation cycles and in-app update downloads. The Apple Silicon macOS installer is Developer ID signed and Apple-notarized; Windows installers have no publisher signature. Intel macOS is not published in this release. The first migration from 0.4/0.5.1 to CalVer is manual; the old updater cannot read CalVer tags.
+These are **2026.10.27.1408 UTC · Preview** installers (CalVer: year, month, day, hour and minute) with Update and Restart, foreign-port alternate recovery when another Hyperion owns `:4317`, a readable canvas, Spanish/English interfaces, step artifacts, linked conversation cycles and in-app update downloads. The Apple Silicon macOS installer is Developer ID signed and Apple-notarized; Windows installers have no publisher signature. Intel macOS is not published in this release. The first migration from 0.4/0.5.1 to CalVer is manual; the old updater cannot read CalVer tags.
 
-**[Download Hyperion Desktop — preview](https://github.com/0vas/hyperion/releases/tag/v2026.10.26.2039)** · macOS Apple Silicon · Windows x64.
+**[Download Hyperion Desktop — preview](https://github.com/0vas/hyperion/releases/tag/v2026.10.27.1408)** · macOS Apple Silicon · Windows x64.
 
 A stable channel release remains pending. New Desktop builds target **macOS Apple Silicon (arm64)** and **Windows x64** only. Both native jobs in the [Desktop installers workflow](https://github.com/0vas/hyperion/actions/workflows/desktop.yml) must pass before their tested installers can be published. Intel Mac builds are no longer produced; historical release assets remain available. Source versions may be newer than the published installers linked above. Protocol tests do not replace native conversation testing in every AI client.
 
@@ -158,8 +158,8 @@ Use `127.0.0.1` in browser URLs, not `localhost`; Host and Origin are checked ag
 
 The canvas and Desktop support Spanish and English, automatically selected from the system/browser language. Change it in **Settings → Language** (or **Ajustes → Idioma**); Desktop also exposes **Hyperion → Language**. The preference persists, and switching preserves current workflow data and unsubmitted answers. User/agent content and original diagnostics are not translated. See the [language guide](https://0vas.github.io/hyperion/en/guia/primeros-pasos.html#app-language).
 
-Included in the **2026.10.26.2039 UTC · Preview** installers.
+Included in the **2026.10.27.1408 UTC · Preview** installers.
 
 ### Deliverables and continued conversations
 
-Each agent step can expose generated files and links in **Artifacts**, with authenticated downloads and inert previews (HTML/SVG in a sandboxed `iframe` with Preview/Source; not malware scanning). A new user request after completion can start a linked workflow: the graph shows the previous end and the new beginning while retaining both histories. **Copy request for chat** does not notify the agent; automatic send is not shipped without a real send connector. Included in **2026.10.26.2039 UTC · Preview**. See [the usage guide](docs/manual-uso.md) and [integration examples](docs/integration.md).
+Each agent step can expose generated files and links in **Artifacts**, with authenticated downloads and inert previews (HTML/SVG in a sandboxed `iframe` with Preview/Source; not malware scanning). A new user request after completion can start a linked workflow: the graph shows the previous end and the new beginning while retaining both histories. **Copy request for chat** does not notify the agent; automatic send is not shipped without a real send connector. Included in **2026.10.27.1408 UTC · Preview**. See [the usage guide](docs/manual-uso.md) and [integration examples](docs/integration.md).
