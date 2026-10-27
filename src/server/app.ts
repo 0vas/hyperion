@@ -218,6 +218,11 @@ export function createApp(options: Options) {
             'Authentication required',
             401,
           );
+        // Lightweight auth probe for Desktop ensureServer — must not project runs.
+        if (url.pathname === '/api/auth/check' && req.method === 'GET') {
+          json(res, 200, { ok: true, role: actor.role, id: actor.id });
+          return;
+        }
         if (url.pathname === '/api/events' && req.method === 'GET') {
           res.writeHead(200, {
             'content-type': 'text/event-stream; charset=utf-8',
@@ -225,11 +230,18 @@ export function createApp(options: Options) {
             'x-accel-buffering': 'no',
           });
           streams.add(res);
-          send(
-            res,
-            'snapshot',
-            options.store.list().map((run) => present(readRun(run.id))),
-          );
+          const snapshot = [];
+          for (const run of options.store.list()) {
+            try {
+              snapshot.push(present(readRun(run.id)));
+            } catch (error) {
+              console.error(
+                `Hyperion skipped unreadable run ${run.id} on SSE snapshot:`,
+                error,
+              );
+            }
+          }
+          send(res, 'snapshot', snapshot);
           const heartbeat = setInterval(() => {
             refreshContinuations();
             if (!res.write(': heartbeat\n\n')) res.destroy();
@@ -312,11 +324,20 @@ export function createApp(options: Options) {
           return;
         }
         if (url.pathname === '/api/runs' && req.method === 'GET') {
-          json(
-            res,
-            200,
-            options.store.list().map((run) => present(readRun(run.id))),
-          );
+          const runs = [];
+          for (const item of options.store.list()) {
+            try {
+              runs.push(present(readRun(item.id)));
+            } catch (error) {
+              // One corrupt/unreadable snapshot must not 500 the catalog —
+              // Desktop ensureServer used to call list() and could not boot.
+              console.error(
+                `Hyperion skipped unreadable run ${item.id}:`,
+                error,
+              );
+            }
+          }
+          json(res, 200, runs);
           return;
         }
         if (url.pathname === '/api/runs' && req.method === 'POST') {
