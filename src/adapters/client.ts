@@ -92,9 +92,11 @@ export class HyperionClient {
     return body as T;
   }
   /** Authenticated liveness without projecting workflows (Desktop ensureServer). */
-  authCheck() {
+  authCheck(timeoutMs = 10000) {
     return this.request<{ ok: true; role: string; id: string }>(
       '/api/auth/check',
+      undefined,
+      timeoutMs,
     );
   }
   list() {

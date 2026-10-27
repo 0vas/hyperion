@@ -162,40 +162,45 @@ async function bindOrReuse(
     }
     return health.version;
   };
-  /** Credential match ⇒ same data directory (credentials.json is per directory). */
+  /**
+   * Credential match ⇒ same data directory (credentials.json is per directory).
+   * Probe ports in parallel with short timeouts — a sequential scan of every
+   * Windows loopback listener stalled MCP connect (-32001) on CI.
+   */
   const sameDirectoryPeerPids = async (keepPort?: number) => {
-    const pids: number[] = [];
     let ports: number[] = [];
     try {
       ports = await loopbackListenPorts();
     } catch {
-      return pids;
+      return [];
     }
-    for (const port of ports) {
-      if (keepPort && port === keepPort) continue;
-      const url = `http://127.0.0.1:${port}`;
-      try {
-        const health = await fetch(url + '/api/health', {
-          signal: AbortSignal.timeout(800),
-        });
-        if (!health.ok) continue;
-        const body = (await health.json()) as {
-          ok?: boolean;
-          version?: string;
-        };
-        if (body.ok !== true || typeof body.version !== 'string') continue;
-        await new HyperionClient({
-          ...options,
-          url,
-          directory,
-        }).authCheck();
-        const pid = await listenerPid(port);
-        if (pid) pids.push(pid);
-      } catch {
-        /* Foreign, dead, or non-Hyperion — leave alone. */
-      }
-    }
-    return pids;
+    const candidates = ports.filter((port) => port !== keepPort);
+    const found = await Promise.all(
+      candidates.map(async (port) => {
+        const url = `http://127.0.0.1:${port}`;
+        try {
+          const health = await fetch(url + '/api/health', {
+            signal: AbortSignal.timeout(250),
+          });
+          if (!health.ok) return undefined;
+          const body = (await health.json()) as {
+            ok?: boolean;
+            version?: string;
+          };
+          if (body.ok !== true || typeof body.version !== 'string')
+            return undefined;
+          await new HyperionClient({
+            ...options,
+            url,
+            directory,
+          }).authCheck(500);
+          return await listenerPid(port);
+        } catch {
+          return undefined;
+        }
+      }),
+    );
+    return found.filter((pid): pid is number => typeof pid === 'number');
   };
 
   const reapZombies = async (
