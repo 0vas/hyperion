@@ -1,5 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
-// Deliberately expose only language + update check — never filesystem or shell access.
+// Language, update check, and optional host ResumeConnector for ADR 0036 Enviar.
+// Never expose filesystem or shell access to the renderer.
+const resumeConnector = ipcRenderer.sendSync(
+  'hyperion:outbound-send:resume-connector-sync',
+);
 contextBridge.exposeInMainWorld('hyperionDesktop', {
   getLanguage: () => ipcRenderer.invoke('hyperion:language:get'),
   setLanguage: (value) => ipcRenderer.invoke('hyperion:language:set', value),
@@ -9,4 +13,5 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
     );
   },
   checkForUpdates: () => ipcRenderer.invoke('hyperion:updates:check'),
+  ...(resumeConnector ? { resumeConnector } : {}),
 });

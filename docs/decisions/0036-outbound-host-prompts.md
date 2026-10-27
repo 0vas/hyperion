@@ -1,6 +1,6 @@
 # ADR 0036 — Outbound host prompts (send connector / outbox)
 
-Status: **accepted in source** (PR1 outbox; PR2 continuation Enviar; PR3 generic bridge `send` worker for `continuation_prompt`, synthetic in CI). `linked_cycle_prompt` and native provider send connectors remain follow-up.
+Status: **accepted in source** (PR1 outbox; PR2 continuation Enviar; PR3 generic bridge `send` worker for `continuation_prompt`, synthetic in CI; Desktop W1 optional `clipboard-open` send via `userData/outbound-send.json`). `linked_cycle_prompt`, provider-native chat injection, and Desktop local executor (W2) remain follow-up.
 Date: 2026-10-26.
 
 Parents: Phase 0 notes `1e160c0f`, `42fab25a`, Architect gate `ffcdba70`; product design `027c9591`.
