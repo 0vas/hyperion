@@ -1849,6 +1849,10 @@ button:active:not(:disabled) {
   color: #dce6dd;
   background: #35463e;
 }
+[data-theme='dark'] :is(.status-tag.ready, .status-tag.running) {
+  color: #e4f0e7;
+  background: #2f4a3c;
+}
 [data-theme='dark'] :is(.status-tag.waiting, .run-status.paused) {
   color: #f1dab2;
   background: #51452f;
@@ -1856,6 +1860,17 @@ button:active:not(:disabled) {
 [data-theme='dark'] :is(.status-tag.failed, .status-tag.rejected) {
   color: #ffd2cc;
   background: #653e3b;
+}
+[data-theme='dark'] .step-node.waiting {
+  border-color: #c9a45a;
+  background: #2a2418;
+  box-shadow:
+    0 4px 22px #00000055,
+    0 0 0 3px #c9a45a33;
+}
+[data-theme='dark'] .step-node.waiting .node-action {
+  color: #f0d7a0;
+  border-color: #4a3f2c;
 }
 [data-theme='dark'] .primary {
   background: #dfc187;

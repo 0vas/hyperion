@@ -90,20 +90,28 @@ export function ArtifactSandboxPreview({
           </button>
         </div>
         {mode === 'preview' && (
-          <p className="muted artifact-preview-disclaimer">
+          <p className="artifact-preview-disclaimer">
             {t(INERT_PREVIEW_DISCLAIMER_ES)}
           </p>
         )}
         {mode === 'preview' ? (
-          <iframe
+          <div
             className={
-              compact ? 'preview-tile-html-frame' : 'artifact-html-frame'
+              compact
+                ? 'artifact-preview-stage preview-tile-stage'
+                : 'artifact-preview-stage'
             }
-            title={t('Vista previa de {0}', { 0: artifact.name })}
-            srcDoc={text}
-            sandbox=""
-            referrerPolicy="no-referrer"
-          />
+          >
+            <iframe
+              className={
+                compact ? 'preview-tile-html-frame' : 'artifact-html-frame'
+              }
+              title={t('Vista previa de {0}', { 0: artifact.name })}
+              srcDoc={text}
+              sandbox=""
+              referrerPolicy="no-referrer"
+            />
+          </div>
         ) : (
           <pre className="artifact-text">{text}</pre>
         )}

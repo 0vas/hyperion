@@ -72,6 +72,7 @@ test('step artifacts preview safely and a finished graph links to a requested ne
   await resultado
     .getByRole('button', { name: 'Ver artefacto', exact: true })
     .click();
+  await expect(resultado.locator('.artifact-preview-stage')).toBeVisible();
   const iframe = resultado.locator('iframe.artifact-html-frame');
   await expect(iframe).toBeVisible();
   await expect(iframe).toHaveAttribute('sandbox', '');

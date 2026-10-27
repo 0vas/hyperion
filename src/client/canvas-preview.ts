@@ -6,10 +6,11 @@ import { pickPreferredArtifact } from './resultado-evidence.js';
 /** Hide on-canvas preview tiles below this viewport width (Architect R2.4). */
 export const PREVIEW_TILE_BREAKPOINT = 900;
 
+/** Modest P0.5 bump (~320×220) — still a satellite, not P1 full stage. */
 export const previewTileLayout = {
   gap: 28,
-  width: 250,
-  bodyHeight: 160,
+  width: 320,
+  bodyHeight: 220,
   maxVisible: 5,
 } as const;
 

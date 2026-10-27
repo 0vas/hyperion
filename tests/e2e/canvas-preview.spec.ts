@@ -65,6 +65,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   await expect(
     tile.getByRole('group', { name: 'Vista previa del paso Preparar guía' }),
   ).toBeVisible();
+  await expect(tile.locator('.artifact-preview-stage')).toBeVisible();
   const frame = tile.locator('iframe.preview-tile-html-frame');
   await expect(frame).toBeVisible();
   await expect(frame).toHaveAttribute('sandbox', '');

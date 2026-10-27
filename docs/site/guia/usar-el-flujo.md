@@ -65,7 +65,7 @@ Las integraciones MCP reciben la siguiente acción y los argumentos de espera en
 
 En **Artefactos** (dentro de **Resultado**) encontrarás los archivos y enlaces que el agente haya registrado. El icono de paquete del nodo abre Resultado centrado en esa lista. Puedes ver textos pequeños e imágenes compatibles, descargar archivos o abrir el enlace de un documento. Los resultados de intentos anteriores permanecen identificados.
 
-En pantallas ≥900px, un artefacto previsualizable también aparece como **mosaico junto al paso productor** en el canvas (vista previa inerte; un clic selecciona el productor y abre Resultado). Bajo 900px esos mosaicos se ocultan y la vista previa queda en Resultado. No son nodos del proceso ni un editor.
+En pantallas ≥900px, un artefacto previsualizable también aparece como **mosaico junto al paso productor** en el canvas (vista previa inerte; un clic selecciona el productor y abre Resultado). Bajo 900px esos mosaicos se ocultan y la vista previa queda en Resultado. No son nodos del proceso ni un editor. La vista previa HTML/SVG usa un marco mate alrededor del iframe (página en claro; sin invertir el CSS del documento).
 
 ::: tip Entregables a mano
 Por ejemplo, el paso «Preparar guía» puede contener `bienvenida.md`, una ilustración y el enlace al documento compartido. **I/O** conserva sus datos y **Logs** explica las acciones; **Artefactos** te permite acceder al resultado.
