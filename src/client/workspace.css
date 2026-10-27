@@ -431,12 +431,16 @@
 .artifact-html-frame {
   display: block;
   width: 100%;
-  min-height: 220px;
+  min-height: 280px;
   max-height: 360px;
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: 10px;
   background: #fff;
   color-scheme: light;
+}
+.artifact-preview-style-status {
+  margin: 0;
+  font-size: 12px;
 }
 .artifact-image {
   display: block;
@@ -450,7 +454,7 @@
   z-index: 3;
 }
 .preview-tile {
-  width: 320px;
+  width: 480px;
   display: grid;
   gap: 0;
   background: var(--glass);
@@ -499,8 +503,8 @@
 }
 .preview-tile-body {
   padding: 8px 10px 10px;
-  min-height: 200px;
-  max-height: 240px;
+  min-height: 280px;
+  max-height: 360px;
   overflow: auto;
 }
 .preview-tile-stage {
@@ -532,8 +536,8 @@
 .preview-tile-html-frame {
   display: block;
   width: 100%;
-  min-height: 150px;
-  max-height: 190px;
+  min-height: 240px;
+  max-height: 300px;
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: 8px;
   background: #fff;
@@ -542,7 +546,7 @@
 .preview-tile-image {
   display: block;
   max-width: 100%;
-  max-height: 190px;
+  max-height: 280px;
   object-fit: contain;
   margin: 0 auto;
 }

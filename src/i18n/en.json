@@ -247,6 +247,8 @@
   "Escribe una respuesta breve…": "Enter a short answer…",
   "ESPACIO DE TRABAJO": "WORKSPACE",
   "Espera al agente": "Waiting for agent",
+  "Estilos incluidos (inerte)": "Styles included (inert)",
+  "Estilos parciales · faltan archivos": "Partial styles · files missing",
   "Esta acción corresponde a otro participante.": "This action belongs to another participant.",
   "Esta versión coordina a un agente externo. No inicia agentes ni conversaciones automáticamente.": "This version coordinates an external agent. It does not automatically start agents or conversations.",
   "Estado de tus integraciones": "Your integration status",

@@ -17,7 +17,7 @@ test('shared ArtifactSandboxPreview keeps empty sandbox, Preview/Source, and ine
     resolve('src/client/ArtifactSandboxPreview.tsx'),
     'utf8',
   );
-  assert.match(source, /srcDoc=\{text\}/);
+  assert.match(source, /srcDoc=\{srcDoc\}/);
   assert.match(source, /sandbox=""/);
   assert.match(source, /referrerPolicy="no-referrer"/);
   assert.match(source, /Vista previa/);
@@ -27,17 +27,26 @@ test('shared ArtifactSandboxPreview keeps empty sandbox, Preview/Source, and ine
     source,
     /Vista previa inerte: sin JavaScript ni red\. El aspecto puede diferir del navegador completo\./,
   );
+  assert.match(source, /composeInertHtmlSrcDoc/);
+  assert.match(source, /selectCssSiblingArtifacts/);
+  assert.match(source, /Estilos incluidos \(inerte\)/);
+  assert.match(source, /Estilos parciales · faltan archivos/);
   assert.match(source, /mode === 'preview' &&/);
   assert.match(source, /isSandboxedMarkup/);
   assert.match(source, /artifact-preview-stage/);
+  assert.doesNotMatch(source, /allow-scripts/);
+  assert.doesNotMatch(source, /allow-same-origin/);
 });
 
-test('preview stage CSS keeps light page inside a dark matte well', () => {
+test('preview stage CSS keeps light page inside a dark matte well and P1 stage band', () => {
   const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
   assert.match(css, /\.artifact-preview-stage/);
   assert.match(css, /color-scheme:\s*light/);
   assert.match(css, /\[data-theme='dark'\] \.artifact-preview-stage/);
   assert.match(css, /\[data-theme='dark'\] \.artifact-preview-disclaimer/);
+  assert.match(css, /\.preview-tile\s*\{[^}]*width:\s*480px/s);
+  assert.match(css, /\.preview-tile-body\s*\{[^}]*min-height:\s*280px/s);
+  assert.match(css, /\.artifact-html-frame\s*\{[^}]*min-height:\s*280px/s);
 });
 
 test('trace scope select forces readable ink on dark theme', () => {
