@@ -9,9 +9,11 @@ import {
   parsePreviewTileUiState,
   previewTileCompactLayout,
   previewTileMountsIframe,
+  previewTileStoredPosition,
   previewTileUiDefaults,
   previewTileUiStorageKey,
   readPreviewTileUiState,
+  resolvePreviewTilePosition,
   togglePreviewTileSize,
   writePreviewTileUiState,
 } from '../src/client/preview-tile-ui.js';
@@ -72,12 +74,14 @@ test('read/write round-trip and clear by run', () => {
   writePreviewTileUiState(
     'run-a',
     'write',
-    { size: 'compact', collapsed: true },
+    { size: 'compact', collapsed: true, x: 40, y: 80 },
     storage,
   );
   assert.deepEqual(readPreviewTileUiState('run-a', 'write', storage), {
     size: 'compact',
     collapsed: true,
+    x: 40,
+    y: 80,
   });
   writePreviewTileUiState(
     'run-a',
@@ -100,6 +104,45 @@ test('read/write round-trip and clear by run', () => {
     size: 'compact',
     collapsed: false,
   });
+});
+
+test('E1: dragged position survives compact/collapse and is not wiped as default', () => {
+  const storage = memoryStorage();
+  writePreviewTileUiState(
+    'run-a',
+    'write',
+    { size: 'expanded', collapsed: false, x: 120, y: 240 },
+    storage,
+  );
+  const dragged = readPreviewTileUiState('run-a', 'write', storage);
+  assert.deepEqual(previewTileStoredPosition(dragged), { x: 120, y: 240 });
+  writePreviewTileUiState(
+    'run-a',
+    'write',
+    { ...dragged, size: 'compact' },
+    storage,
+  );
+  writePreviewTileUiState(
+    'run-a',
+    'write',
+    {
+      ...readPreviewTileUiState('run-a', 'write', storage),
+      collapsed: true,
+    },
+    storage,
+  );
+  const after = readPreviewTileUiState('run-a', 'write', storage);
+  assert.equal(after.size, 'compact');
+  assert.equal(after.collapsed, true);
+  assert.deepEqual(previewTileStoredPosition(after), { x: 120, y: 240 });
+  assert.deepEqual(
+    resolvePreviewTilePosition(after, undefined, { x: 999, y: 999 }),
+    { x: 120, y: 240 },
+  );
+  assert.deepEqual(
+    resolvePreviewTilePosition(after, { x: 1, y: 2 }, { x: 999, y: 999 }),
+    { x: 1, y: 2 },
+  );
 });
 
 test('size toggle and collapse/expand helpers', () => {
@@ -131,11 +174,14 @@ test('PreviewNode exposes chrome drag handle and never bare role claims', () => 
   assert.doesNotMatch(source, /Office|pen\.dev complete|W2/);
 });
 
-test('App enables preview dragHandle without domain snapshot writes', () => {
+test('App enables preview dragHandle and persists position outside domain', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
   assert.match(source, /type:\s*'preview'/);
   assert.match(source, /dragHandle:\s*['"]\.preview-tile-drag['"]/);
   assert.match(source, /draggable:\s*true/);
+  assert.match(source, /resolvePreviewTilePosition/);
+  assert.match(source, /onNodeDragStop/);
   assert.match(source, /clearPreviewTileUiForRun/);
+  assert.match(source, /node\.type === 'preview'/);
   assert.doesNotMatch(source, /previewTile.*snapshot|artifacts\.push.*x:/);
 });

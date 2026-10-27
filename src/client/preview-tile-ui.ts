@@ -3,6 +3,8 @@
 export type PreviewTileSize = 'expanded' | 'compact';
 
 export type PreviewTileUiState = {
+  x?: number;
+  y?: number;
   size: PreviewTileSize;
   collapsed: boolean;
 };
@@ -28,12 +30,42 @@ export function previewTileUiStorageKey(
   return `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:${producerStepId}`;
 }
 
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+export function previewTileStoredPosition(
+  state: PreviewTileUiState,
+): { x: number; y: number } | undefined {
+  const x = finiteNumber(state.x);
+  const y = finiteNumber(state.y);
+  if (x === undefined || y === undefined) return undefined;
+  return { x, y };
+}
+
+export function isPreviewTileUiDefault(state: PreviewTileUiState): boolean {
+  return (
+    state.size === previewTileUiDefaults.size &&
+    state.collapsed === previewTileUiDefaults.collapsed &&
+    previewTileStoredPosition(state) === undefined
+  );
+}
+
 export function parsePreviewTileUiState(raw: unknown): PreviewTileUiState {
   if (!raw || typeof raw !== 'object') return { ...previewTileUiDefaults };
   const value = raw as Record<string, unknown>;
   const size = value.size === 'compact' ? 'compact' : 'expanded';
   const collapsed = value.collapsed === true;
-  return { size, collapsed };
+  const x = finiteNumber(value.x);
+  const y = finiteNumber(value.y);
+  return {
+    size,
+    collapsed,
+    ...(x !== undefined ? { x } : {}),
+    ...(y !== undefined ? { y } : {}),
+  };
 }
 
 export function readPreviewTileUiState(
@@ -58,20 +90,26 @@ export function writePreviewTileUiState(
 ): void {
   const key = previewTileUiStorageKey(runId, producerStepId);
   try {
-    if (
-      state.size === previewTileUiDefaults.size &&
-      state.collapsed === previewTileUiDefaults.collapsed
-    ) {
+    if (isPreviewTileUiDefault(state)) {
       storage.removeItem(key);
       return;
     }
-    storage.setItem(key, JSON.stringify(state));
+    const payload: PreviewTileUiState = {
+      size: state.size,
+      collapsed: state.collapsed,
+    };
+    const position = previewTileStoredPosition(state);
+    if (position) {
+      payload.x = position.x;
+      payload.y = position.y;
+    }
+    storage.setItem(key, JSON.stringify(payload));
   } catch {
     /* Prefer usable UI when storage is unavailable. */
   }
 }
 
-/** Drop all Track E size/collapse prefs for a run (layout reset). */
+/** Drop all Track E size/collapse/position prefs for a run (layout reset). */
 export function clearPreviewTileUiForRun(
   runId: string,
   storage: Pick<Storage, 'length' | 'key' | 'removeItem'> = localStorage,
@@ -110,4 +148,17 @@ export function expandPreviewTile(
 /** Live iframe mounts only when the tile is visible and not collapsed. */
 export function previewTileMountsIframe(state: PreviewTileUiState): boolean {
   return !state.collapsed;
+}
+
+/**
+ * Resolve canvas position: live drag → stored UI coords → satellite default.
+ * Compact/collapse must not fall back to satellite when x/y were stored (E1).
+ */
+export function resolvePreviewTilePosition(
+  state: PreviewTileUiState,
+  liveDrag: { x: number; y: number } | undefined,
+  satellite: { x: number; y: number },
+): { x: number; y: number } {
+  if (liveDrag) return liveDrag;
+  return previewTileStoredPosition(state) ?? satellite;
 }
