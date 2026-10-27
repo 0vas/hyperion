@@ -90,7 +90,8 @@ for (const scenario of [
 ])
   test(
     `MCP launcher uses the authenticated URL with ${scenario}`,
-    { timeout: 30000 },
+    // Windows CI is slower to spawn stdio + ensureServer; keep headroom above MCP connect.
+    { timeout: process.platform === 'win32' ? 60000 : 30000 },
     async () => {
       const home = mkdtempSync(join(tmpdir(), 'hyperion-mcp-launcher spaces-'));
       const directory = join(home, 'owned');
@@ -187,7 +188,9 @@ for (const scenario of [
           stderr: 'pipe',
         });
         transport.stderr?.on('data', () => {});
-        await client.connect(transport, { timeout: 15000 });
+        await client.connect(transport, {
+          timeout: process.platform === 'win32' ? 45000 : 15000,
+        });
         const checksAfterStartup = authenticationChecks;
         const tools = await client.listTools();
         assert.ok(
