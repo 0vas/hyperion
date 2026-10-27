@@ -248,12 +248,25 @@ for (const scenario of [
         } finally {
           await app?.close();
           listenerStore?.close();
-          rmSync(home, {
-            recursive: true,
-            force: true,
-            maxRetries: 10,
-            retryDelay: 100,
-          });
+          try {
+            rmSync(home, {
+              recursive: true,
+              force: true,
+              maxRetries: 10,
+              retryDelay: 100,
+            });
+          } catch (error) {
+            // Windows runners can leave a transient lock on temp dirs with
+            // spaces; assertions already ran — do not fail the suite on cleanup.
+            if (
+              !error ||
+              typeof error !== 'object' ||
+              !('code' in error) ||
+              (error.code !== 'EPERM' && error.code !== 'EBUSY')
+            ) {
+              throw error;
+            }
+          }
         }
       }
     },
