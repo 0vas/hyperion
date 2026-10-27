@@ -14,6 +14,8 @@ Hyperion incluye **español e inglés** en el canvas y en los menús y diálogos
 
 La versión CalVer (p. ej. `2026.10.27.1605 UTC · preview`) aparece al abrir **Menú** (al pie), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
 
+En Desktop, **Ver → Recargar** (⌘R) vuelve a montar el canvas contra el servicio local resuelto —incluido un puerto alterno recordado—; no es un refresco vacío del `BrowserWindow`. Si la carga falla, aparece el mismo diálogo de recuperación del arranque (Reintentar / Ver diagnóstico / …), no una ventana oscura en blanco. Esta corrección está en las fuentes de desarrollo; el instalador **2026.10.27.1605** aún puede mostrar el síntoma hasta la siguiente preview.
+
 ## Conexiones e integraciones
 
 La cabecera muestra el **servicio local** Hyperion y un único **Menú** (sin iconos sueltos de Ajustes/Guía/Ayuda). «Conectado» solo dice que el proceso local responde; no afirma que un chat tenga las herramientas cargadas.

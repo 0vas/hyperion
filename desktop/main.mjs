@@ -28,6 +28,11 @@ import { consumePostUpdateRefresh } from './post-update-refresh.mjs';
 import { refreshSameInstallConflicts } from '../dist/adapters/post-update-connections.js';
 import { recoverStartup } from './startup.mjs';
 import {
+  assertNoBareReloadRoles,
+  desktopViewReloadMenuItems,
+  shouldRecoverFailedLoad,
+} from './reload.mjs';
+import {
   syncDesktopOutboundWorker,
   stopDesktopOutboundWorker,
   readResumeConnectorForPreload,
@@ -75,6 +80,10 @@ async function startWithRecovery(args) {
 let target;
 const pending = [];
 let connecting = false;
+/** True while openRun is loading the service URL (did-fail-load defers to its throw). */
+let loadingRun = false;
+/** Serialize menu remount / failed-load recovery so dialogs do not stack. */
+let remountBusy = false;
 async function connect() {
   if (connecting) return;
   connecting = true;
@@ -106,6 +115,39 @@ const isLocal = (url) => {
     return false;
   }
 };
+async function remountDesktopRun() {
+  if (remountBusy) return;
+  remountBusy = true;
+  try {
+    const ok = await startWithRecovery(process.argv);
+    if (!ok) app.quit();
+  } finally {
+    remountBusy = false;
+  }
+}
+
+function attachLoadHonesty(win) {
+  win.webContents.on(
+    'did-fail-load',
+    (_event, errorCode, errorDescription, _validatedURL, isMainFrame) => {
+      if (
+        !shouldRecoverFailedLoad({ isMainFrame, errorCode }) ||
+        loadingRun ||
+        remountBusy
+      )
+        return;
+      try {
+        diagnostics(
+          new Error(
+            `did-fail-load ${errorCode}: ${errorDescription || 'load failed'}`,
+          ),
+        );
+      } catch {}
+      void remountDesktopRun();
+    },
+  );
+}
+
 async function openRun(args) {
   const next = desktopTarget(args);
   if (
@@ -117,67 +159,73 @@ async function openRun(args) {
         'Cierra Hyperion Desktop antes de conectar otra instancia local. Tu flujo actual está protegido.',
       ),
     );
-  const preferred = await resolveWorkspaceService(next);
-  const startup = await ensureServer({
-    directory: next.directory,
-    url: preferred,
-  });
-  const service = startup.url || preferred;
-  target = {
-    ...next,
-    service,
-    url: desktopWindowUrl(next, service),
-  };
-  rememberWorkspace(target);
-  if (!window || window.isDestroyed()) {
-    window = new BrowserWindow({
-      title: 'Hyperion',
-      width: 1200,
-      height: 820,
-      minWidth: 390,
-      minHeight: 480,
-      backgroundColor: '#171e23',
-      show: false,
-      webPreferences: {
-        preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
-        nodeIntegration: false,
-        contextIsolation: true,
-        sandbox: true,
-      },
-    });
-    window.webContents.on('will-navigate', (event, url) => {
-      if (!isLocal(url)) event.preventDefault();
-    });
-    window.webContents.setWindowOpenHandler(({ url }) => {
-      if (isLocal(url)) void window.loadURL(url);
-      else if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
-      return { action: 'deny' };
-    });
-    window.once('ready-to-show', () => window.show());
-  }
-  // Load the resolved service from ensureServer — never next.url (stale
-  // remembered alternate) which flashes ERR_CONNECTION_REFUSED before Retry.
-  await window.loadURL(target.url);
-  if (window.isMinimized()) window.restore();
-  window.show();
-  window.focus();
+  loadingRun = true;
   try {
-    syncDesktopOutboundWorker({
-      userData: app.getPath('userData'),
-      directory: target.directory,
-      url: target.service,
-      clipboard,
-      shell,
-      onError: (error) => {
-        try {
-          diagnostics(error);
-        } catch {}
-      },
+    const preferred = await resolveWorkspaceService(next);
+    const startup = await ensureServer({
+      directory: next.directory,
+      url: preferred,
     });
-  } catch (error) {
+    const service = startup.url || preferred;
+    target = {
+      ...next,
+      service,
+      url: desktopWindowUrl(next, service),
+    };
+    rememberWorkspace(target);
+    if (!window || window.isDestroyed()) {
+      window = new BrowserWindow({
+        title: 'Hyperion',
+        width: 1200,
+        height: 820,
+        minWidth: 390,
+        minHeight: 480,
+        backgroundColor: '#171e23',
+        show: false,
+        webPreferences: {
+          preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+        },
+      });
+      window.webContents.on('will-navigate', (event, url) => {
+        if (!isLocal(url)) event.preventDefault();
+      });
+      window.webContents.setWindowOpenHandler(({ url }) => {
+        if (isLocal(url)) void window.loadURL(url);
+        else if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+        return { action: 'deny' };
+      });
+      attachLoadHonesty(window);
+      window.once('ready-to-show', () => window.show());
+    }
+    // Load the resolved service from ensureServer — never next.url (stale
+    // remembered alternate) which flashes ERR_CONNECTION_REFUSED before Retry.
+    await window.loadURL(target.url);
+    if (window.isMinimized()) window.restore();
+    window.show();
+    window.focus();
     try {
-      diagnostics(error);
-    } catch {}
+      syncDesktopOutboundWorker({
+        userData: app.getPath('userData'),
+        directory: target.directory,
+        url: target.service,
+        clipboard,
+        shell,
+        onError: (error) => {
+          try {
+            diagnostics(error);
+          } catch {}
+        },
+      });
+    } catch (error) {
+      try {
+        diagnostics(error);
+      } catch {}
+    }
+  } finally {
+    loadingRun = false;
   }
 }
 function report(error) {
@@ -370,8 +418,12 @@ function rebuildMenu() {
       {
         label: t('Ver'),
         submenu: [
-          { label: t('Recargar'), role: 'reload' },
-          { label: t('Forzar recarga'), role: 'forceReload' },
+          ...assertNoBareReloadRoles(
+            desktopViewReloadMenuItems({
+              t,
+              onReload: () => void remountDesktopRun(),
+            }),
+          ),
           { label: t('Herramientas de desarrollo'), role: 'toggleDevTools' },
           { type: 'separator' },
           { label: t('Tamaño real'), role: 'resetZoom' },
