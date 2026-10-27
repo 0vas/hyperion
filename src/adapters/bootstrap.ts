@@ -7,8 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { loadCredentials } from '../server/config.js';
 import { HyperionClient } from './client.js';
 import {
+  assertDataDirWritable,
+  DATA_DIR_BUSY_MESSAGE,
+  listenerPid,
+  loopbackListenPorts,
   olderRuntime,
   replaceOlderRuntime,
+  stopOwnedDataDirServers,
   withRuntimeLock,
 } from './runtime-upgrade.js';
 
@@ -17,6 +22,8 @@ export const DEFAULT_SERVICE = 'http://127.0.0.1:4317';
 /** Spanish source string; Desktop/en.json localize it. Never surface bare UNAUTHORIZED. */
 export const FOREIGN_PORT_MESSAGE =
   'Otro Hyperion, otra cuenta de este Mac u otra instalación ya usa este puerto local. Cierra esa app o esa sesión e inténtalo de nuevo. Hyperion no detuvo ese proceso.';
+
+export { DATA_DIR_BUSY_MESSAGE };
 
 type EnsureOptions = { directory?: string; url?: string; agentId?: string };
 type EnsureResult = {
@@ -155,9 +162,67 @@ async function bindOrReuse(
     }
     return health.version;
   };
+  /** Credential match ⇒ same data directory (credentials.json is per directory). */
+  const sameDirectoryPeerPids = async (keepPort?: number) => {
+    const pids: number[] = [];
+    let ports: number[] = [];
+    try {
+      ports = await loopbackListenPorts();
+    } catch {
+      return pids;
+    }
+    for (const port of ports) {
+      if (keepPort && port === keepPort) continue;
+      const url = `http://127.0.0.1:${port}`;
+      try {
+        const health = await fetch(url + '/api/health', {
+          signal: AbortSignal.timeout(800),
+        });
+        if (!health.ok) continue;
+        const body = (await health.json()) as {
+          ok?: boolean;
+          version?: string;
+        };
+        if (body.ok !== true || typeof body.version !== 'string') continue;
+        await new HyperionClient({
+          ...options,
+          url,
+          directory,
+        }).authCheck();
+        const pid = await listenerPid(port);
+        if (pid) pids.push(pid);
+      } catch {
+        /* Foreign, dead, or non-Hyperion — leave alone. */
+      }
+    }
+    return pids;
+  };
+
+  const reapZombies = async (
+    keepPids?: Iterable<number>,
+    keepPort?: number,
+  ) => {
+    // Unix: lsof on hyperion.sqlite is enough. Windows has no portable lsof, so
+    // fall back to credential-matched loopback listeners (same credentials.json).
+    const peers =
+      process.platform === 'win32' ? await sameDirectoryPeerPids(keepPort) : [];
+    await stopOwnedDataDirServers({
+      directory,
+      command: serverArgs,
+      keepPids,
+      extraOwnedPids: peers,
+    });
+    await assertDataDirWritable(directory, keepPids);
+  };
+
   return withRuntimeLock(directory, async () => {
     const running = await probe();
-    if (running === VERSION) return { started: false, url: client.url };
+    if (running === VERSION) {
+      const port = Number(target.port || 80);
+      const keep = await listenerPid(port);
+      await reapZombies(keep ? [keep] : [], port);
+      return { started: false, url: client.url };
+    }
     let backup: string | undefined;
     if (running) {
       if (!olderRuntime(running, VERSION))
@@ -180,6 +245,7 @@ async function bindOrReuse(
         throw error;
       }
     }
+    await reapZombies();
     const root = fileURLToPath(new URL('../../', import.meta.url));
     const log = resolve(directory, 'server.log');
     const descriptor = openSync(log, 'a', 0o600);

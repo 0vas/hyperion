@@ -20,6 +20,7 @@ Never commit or include `.hyperion/credentials.json` in a report. The agent inte
 | ------ | ------------------------ | ----------------------------------------------------------------------------------- |
 | GET    | `/api/health`            | Health and version, no credentials required                                         |
 | GET    | `/api/auth/check`        | Authenticated liveness (`{ok, role, id}`); does not project runs                    |
+| —      | `DATA_IN_USE` (503)      | SQLite busy/locked while another process holds the data folder                      |
 | GET    | `/api/session`           | Bootstrap a local human browser session                                             |
 | GET    | `/api/connections`       | Human-only configuration inventory and owned-file preflight                         |
 | POST   | `/api/connections/setup` | Human-only explicit setup; returns updated inventory                                |
