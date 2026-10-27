@@ -415,7 +415,8 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.canvas-popup .trace-scope {
+.canvas-popup .trace-scope,
+.trace-scope {
   color: var(--ink);
   display: flex;
   gap: 12px;
@@ -425,10 +426,21 @@
 .trace-scope select {
   min-height: 36px;
   padding: 6px 10px;
-  color: inherit;
-  background: var(--node-surface);
+  color: var(--ink);
+  background: var(--node-surface, #fffef9);
   border: 1px solid var(--line);
   border-radius: 8px;
+  color-scheme: light dark;
+}
+.trace-scope select option {
+  color: var(--ink);
+  background: var(--node-surface, #fffef9);
+}
+[data-theme='dark'] .trace-scope select,
+[data-theme='dark'] .trace-scope select option {
+  color: #f3ebe0;
+  background: #2a2620;
+  border-color: #4a4338;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-receiving='true'] > svg {

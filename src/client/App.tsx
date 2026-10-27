@@ -1136,6 +1136,10 @@ export function App() {
     setStepId(id);
     setResultadoSection(stepViewToResultado(view));
     setResultadoOpen(true);
+    // Evidence-first camera: include producer + preview tile when present (P0.5 C5).
+    if (view === 'step' || view === 'artifacts') {
+      setFocusRequest({ id, nonce: ++focusNonce.current });
+    }
   }, []);
   const selectJobRollup = useCallback((id: string) => {
     setStepId('');

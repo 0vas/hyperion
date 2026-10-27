@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   PREVIEW_TILE_BREAKPOINT,
   previewNodeId,
+  previewTileLayout,
   previewTilePosition,
   selectCanvasPreviewCandidates,
 } from '../src/client/canvas-preview.js';
@@ -32,6 +33,12 @@ const step = (
 test('tile breakpoint stays aligned with viewport export at 900', () => {
   assert.equal(PREVIEW_TILE_BREAKPOINT, 900);
   assert.equal(previewTileBreakpoint, 900);
+});
+
+test('P0.5 tile layout is a modest satellite bump, not a full stage', () => {
+  assert.equal(previewTileLayout.width, 320);
+  assert.equal(previewTileLayout.bodyHeight, 220);
+  assert.ok(previewTileLayout.width < 480);
 });
 
 test('preview node ids are client-only satellites of the producer', () => {

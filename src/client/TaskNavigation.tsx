@@ -87,37 +87,65 @@ export function TaskNavigation({
   const lastRequest = useRef(-1);
   const focus = useCallback(
     (id: string) => {
-      const child = run.steps.find((s) => s.id === id);
-      const n =
+      const producerId = id.startsWith('preview:')
+        ? id.slice('preview:'.length)
+        : id;
+      const child = run.steps.find((s) => s.id === producerId);
+      const producer =
+        getNode(producerId) ||
         getNode(id) ||
         (child?.jobId ? getNode(`job:${child.jobId}`) : undefined);
-      if (!n) return;
-      const nodeWidth = n.measured?.width || 280,
-        nodeHeight = n.measured?.height || 200;
+      if (!producer) return;
+      const preview = getNode(`preview:${producerId}`);
+      const targets = preview
+        ? [getInternalNode(producer.id)!, getInternalNode(preview.id)!].filter(
+            Boolean,
+          )
+        : [getInternalNode(producer.id)!].filter(Boolean);
+      const bounds =
+        targets.length > 1
+          ? getNodesBounds(targets)
+          : {
+              x: producer.position.x,
+              y: producer.position.y,
+              width: producer.measured?.width || 280,
+              height: producer.measured?.height || 200,
+            };
       const { top, bottom } = canvasInsets;
       const visibleHeight = Math.max(80, height - top - bottom);
       const zoom = Math.min(
         1,
         Math.max(
           0.15,
-          Math.min((width - 48) / nodeWidth, visibleHeight / nodeHeight),
+          Math.min(
+            (width - 48) / Math.max(bounds.width, 1),
+            visibleHeight / Math.max(bounds.height, 1),
+          ),
         ),
       );
       const centerY = top + visibleHeight / 2;
       void setViewport(
         {
-          x: width / 2 - (n.position.x + nodeWidth / 2) * zoom,
-          y: centerY - (n.position.y + nodeHeight / 2) * zoom,
+          x: width / 2 - (bounds.x + bounds.width / 2) * zoom,
+          y: centerY - (bounds.y + bounds.height / 2) * zoom,
           zoom,
         },
         {
           duration: motionDuration(),
         },
       );
-      setFocused(id);
-      onFocused(id);
+      setFocused(producerId);
+      onFocused(producerId);
     },
-    [getNode, setViewport, width, height, onFocused, run.steps],
+    [
+      getNode,
+      getInternalNode,
+      setViewport,
+      width,
+      height,
+      onFocused,
+      run.steps,
+    ],
   );
   useEffect(() => {
     if (!following) {

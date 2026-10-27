@@ -29,6 +29,21 @@ test('shared ArtifactSandboxPreview keeps empty sandbox, Preview/Source, and ine
   );
   assert.match(source, /mode === 'preview' &&/);
   assert.match(source, /isSandboxedMarkup/);
+  assert.match(source, /artifact-preview-stage/);
+});
+
+test('preview stage CSS keeps light page inside a dark matte well', () => {
+  const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
+  assert.match(css, /\.artifact-preview-stage/);
+  assert.match(css, /color-scheme:\s*light/);
+  assert.match(css, /\[data-theme='dark'\] \.artifact-preview-stage/);
+  assert.match(css, /\[data-theme='dark'\] \.artifact-preview-disclaimer/);
+});
+
+test('trace scope select forces readable ink on dark theme', () => {
+  const css = readFileSync(resolve('src/client/process.css'), 'utf8');
+  assert.match(css, /\.trace-scope select option/);
+  assert.match(css, /\[data-theme='dark'\] \.trace-scope select/);
 });
 
 test('Artifacts reuses the shared sandbox preview helper', () => {
