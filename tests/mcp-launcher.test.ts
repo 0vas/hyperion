@@ -47,6 +47,34 @@ async function stopServer(pid: number) {
   throw new Error('Synthetic service did not stop after SIGTERM');
 }
 
+function isTransientFsLock(error: unknown): boolean {
+  const codes = new Set<string>();
+  const walk = (value: unknown) => {
+    if (!value || typeof value !== 'object') return;
+    if ('code' in value && typeof value.code === 'string')
+      codes.add(value.code);
+    if ('errors' in value && Array.isArray(value.errors))
+      for (const nested of value.errors) walk(nested);
+    if ('cause' in value) walk(value.cause);
+  };
+  walk(error);
+  return codes.has('EPERM') || codes.has('EBUSY') || codes.has('ENOTEMPTY');
+}
+
+/** Assertions already ran; Windows can briefly lock temp trees that contain spaces. */
+function removeTempTreeBestEffort(path: string) {
+  try {
+    rmSync(path, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    });
+  } catch (error) {
+    if (!isTransientFsLock(error)) throw error;
+  }
+}
+
 function seed(store: Store, title: string) {
   return store.create(
     { title, steps: [{ id: 'work', title: 'Work', kind: 'agent' }] },
@@ -248,25 +276,8 @@ for (const scenario of [
         } finally {
           await app?.close();
           listenerStore?.close();
-          try {
-            rmSync(home, {
-              recursive: true,
-              force: true,
-              maxRetries: 10,
-              retryDelay: 100,
-            });
-          } catch (error) {
-            // Windows runners can leave a transient lock on temp dirs with
-            // spaces; assertions already ran — do not fail the suite on cleanup.
-            if (
-              !error ||
-              typeof error !== 'object' ||
-              !('code' in error) ||
-              (error.code !== 'EPERM' && error.code !== 'EBUSY')
-            ) {
-              throw error;
-            }
-          }
+          // Keep spaced home path (launcher intent); only cleanup is best-effort.
+          removeTempTreeBestEffort(home);
         }
       }
     },
