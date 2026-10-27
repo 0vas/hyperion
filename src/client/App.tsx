@@ -102,6 +102,13 @@ import {
   previewTilePosition,
   selectCanvasPreviewCandidates,
 } from './canvas-preview';
+import {
+  clearPreviewTileUiForRun,
+  readPreviewTileUiState,
+  resolvePreviewTilePosition,
+  writePreviewTileUiState,
+  type PreviewTileUiState,
+} from './preview-tile-ui';
 import { PreviewNode } from './PreviewNode';
 import { FlowLegend } from './FlowLegend';
 import { JobNode } from './JobNode';
@@ -1160,6 +1167,12 @@ export function App() {
     ids: Record<string, boolean>;
   }>({ key: '', ids: {} });
   const [layoutReset, setLayoutReset] = useState(0);
+  /** Bumps when Track E size/collapse prefs change (UI-only localStorage). */
+  const [previewTileUiTick, setPreviewTileUiTick] = useState(0);
+  /** Live drag coords for preview:* — authoritative until drag-stop writes the UI store. */
+  const [previewDragPositions, setPreviewDragPositions] = useState<
+    Record<string, { x: number; y: number }>
+  >({});
   const [measurements, setMeasurements] = useState<{
     key: string;
     nodes: Record<string, { width: number; height: number }>;
@@ -1465,10 +1478,20 @@ export function App() {
         const producer = run.steps.find(
           (s) => s.id === candidate.producerStepId,
         );
+        const tileUi = readPreviewTileUiState(run.id, candidate.producerStepId);
+        const satellite = previewTilePosition(
+          producerPos,
+          producerSize,
+          horizontal,
+        );
         nodes.push({
           id,
           type: 'preview',
-          position: previewTilePosition(producerPos, producerSize, horizontal),
+          position: resolvePreviewTilePosition(
+            tileUi,
+            previewDragPositions[id],
+            satellite,
+          ),
           measured:
             measurements.key === measurementKey
               ? measurements.nodes[id]
@@ -1485,9 +1508,25 @@ export function App() {
               focusedStepId === candidate.producerStepId ||
               (resultadoOpen && stepId === candidate.producerStepId),
             horizontal,
+            tileUi,
             onSelectProducer: (producerId: string) => selectStep(producerId),
+            onTileUiChange: (next: PreviewTileUiState) => {
+              const current = readPreviewTileUiState(
+                run.id,
+                candidate.producerStepId,
+              );
+              writePreviewTileUiState(run.id, candidate.producerStepId, {
+                ...current,
+                ...next,
+                // Keep drag coords across compact/collapse (Architect E1).
+                x: next.x ?? current.x,
+                y: next.y ?? current.y,
+              });
+              setPreviewTileUiTick((n) => n + 1);
+            },
           },
-          draggable: false,
+          draggable: true,
+          dragHandle: '.preview-tile-drag',
           selectable: false,
           connectable: false,
           focusable: true,
@@ -1513,9 +1552,14 @@ export function App() {
     return {
       nodes: nodes.map((node) => ({
         ...node,
-        position: Object.hasOwn(manualPositions, node.id)
-          ? manualPositions[node.id]!
-          : node.position,
+        // Preview tiles own position via UI store / live drag — do not let
+        // process-node manualPositions (or RF dimension churn) snap them back.
+        position:
+          node.type === 'preview'
+            ? node.position
+            : Object.hasOwn(manualPositions, node.id)
+              ? manualPositions[node.id]!
+              : node.position,
         selected:
           selection.key === measurementKey && selection.ids[node.id] === true,
       })),
@@ -1542,6 +1586,8 @@ export function App() {
     preferences.reduceMotion,
     online,
     showPreviewTiles,
+    previewTileUiTick,
+    previewDragPositions,
   ]);
   function requestRetry(id: string) {
     const target = run?.steps.find((item) => item.id === id);
@@ -2024,7 +2070,43 @@ export function App() {
                   deleteKeyCode={null}
                   nodesConnectable={false}
                   nodesDraggable
-                  onNodeDragStart={() => setFollowing(false)}
+                  onNodeDragStart={(_event, node) => {
+                    setFollowing(false);
+                    if (node.type === 'preview')
+                      setPreviewDragPositions((previous) => ({
+                        ...previous,
+                        [node.id]: node.position,
+                      }));
+                  }}
+                  onNodeDrag={(_event, node) => {
+                    if (node.type !== 'preview') return;
+                    setPreviewDragPositions((previous) => ({
+                      ...previous,
+                      [node.id]: node.position,
+                    }));
+                  }}
+                  onNodeDragStop={(_event, node) => {
+                    if (node.type !== 'preview' || !run) return;
+                    const producerStepId = node.id.startsWith('preview:')
+                      ? node.id.slice('preview:'.length)
+                      : '';
+                    if (!producerStepId) return;
+                    const current = readPreviewTileUiState(
+                      run.id,
+                      producerStepId,
+                    );
+                    writePreviewTileUiState(run.id, producerStepId, {
+                      ...current,
+                      x: node.position.x,
+                      y: node.position.y,
+                    });
+                    setPreviewDragPositions((previous) => {
+                      const next = { ...previous };
+                      delete next[node.id];
+                      return next;
+                    });
+                    setPreviewTileUiTick((n) => n + 1);
+                  }}
                   elementsSelectable
                   zoomOnDoubleClick={false}
                   onPaneClick={() => clearResultado()}
@@ -2040,6 +2122,8 @@ export function App() {
                     canReset={Object.keys(manualPositions).length > 0}
                     onReset={() => {
                       resetPositions();
+                      if (run) clearPreviewTileUiForRun(run.id);
+                      setPreviewTileUiTick((n) => n + 1);
                       setFollowing(false);
                       setLayoutReset((n) => n + 1);
                     }}
