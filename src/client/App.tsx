@@ -102,6 +102,12 @@ import {
   previewTilePosition,
   selectCanvasPreviewCandidates,
 } from './canvas-preview';
+import {
+  clearPreviewTileUiForRun,
+  readPreviewTileUiState,
+  writePreviewTileUiState,
+  type PreviewTileUiState,
+} from './preview-tile-ui';
 import { PreviewNode } from './PreviewNode';
 import { FlowLegend } from './FlowLegend';
 import { JobNode } from './JobNode';
@@ -1160,6 +1166,8 @@ export function App() {
     ids: Record<string, boolean>;
   }>({ key: '', ids: {} });
   const [layoutReset, setLayoutReset] = useState(0);
+  /** Bumps when Track E size/collapse prefs change (UI-only localStorage). */
+  const [previewTileUiTick, setPreviewTileUiTick] = useState(0);
   const [measurements, setMeasurements] = useState<{
     key: string;
     nodes: Record<string, { width: number; height: number }>;
@@ -1465,6 +1473,7 @@ export function App() {
         const producer = run.steps.find(
           (s) => s.id === candidate.producerStepId,
         );
+        const tileUi = readPreviewTileUiState(run.id, candidate.producerStepId);
         nodes.push({
           id,
           type: 'preview',
@@ -1485,9 +1494,15 @@ export function App() {
               focusedStepId === candidate.producerStepId ||
               (resultadoOpen && stepId === candidate.producerStepId),
             horizontal,
+            tileUi,
             onSelectProducer: (producerId: string) => selectStep(producerId),
+            onTileUiChange: (next: PreviewTileUiState) => {
+              writePreviewTileUiState(run.id, candidate.producerStepId, next);
+              setPreviewTileUiTick((n) => n + 1);
+            },
           },
-          draggable: false,
+          draggable: true,
+          dragHandle: '.preview-tile-drag',
           selectable: false,
           connectable: false,
           focusable: true,
@@ -1542,6 +1557,7 @@ export function App() {
     preferences.reduceMotion,
     online,
     showPreviewTiles,
+    previewTileUiTick,
   ]);
   function requestRetry(id: string) {
     const target = run?.steps.find((item) => item.id === id);
@@ -2040,6 +2056,8 @@ export function App() {
                     canReset={Object.keys(manualPositions).length > 0}
                     onReset={() => {
                       resetPositions();
+                      if (run) clearPreviewTileUiForRun(run.id);
+                      setPreviewTileUiTick((n) => n + 1);
                       setFollowing(false);
                       setLayoutReset((n) => n + 1);
                     }}
