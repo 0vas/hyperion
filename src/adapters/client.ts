@@ -91,6 +91,12 @@ export class HyperionClient {
     if (!response.ok) throw new Error(`${body.error}: ${body.message}`);
     return body as T;
   }
+  /** Authenticated liveness without projecting workflows (Desktop ensureServer). */
+  authCheck() {
+    return this.request<{ ok: true; role: string; id: string }>(
+      '/api/auth/check',
+    );
+  }
   list() {
     return this.request<Run[]>('/api/runs');
   }

@@ -141,9 +141,16 @@ async function bindOrReuse(
         'The configured port belongs to another service. No process was stopped.',
       );
     try {
-      await client.list(); // Authenticate before considering ANY replacement.
+      // Auth only — never GET /api/runs here. A single unreadable snapshot used
+      // to surface as INTERNAL and block Desktop openRun entirely.
+      await client.authCheck();
     } catch (error) {
       if (isUnauthorized(error)) throw foreignConflict(error);
+      if (error instanceof Error && /^INTERNAL:/.test(error.message)) {
+        throw new Error(
+          `${error.message} Review ${resolve(directory, 'server.log')}.`,
+        );
+      }
       throw error;
     }
     return health.version;

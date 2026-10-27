@@ -16,16 +16,17 @@ Never commit or include `.hyperion/credentials.json` in a report. The agent inte
 
 ## Routes
 
-| Method | Route                    | Result                                                      |
-| ------ | ------------------------ | ----------------------------------------------------------- |
-| GET    | `/api/health`            | Health and version, no credentials required                 |
-| GET    | `/api/session`           | Bootstrap a local human browser session                     |
-| GET    | `/api/connections`       | Human-only configuration inventory and owned-file preflight |
-| POST   | `/api/connections/setup` | Human-only explicit setup; returns updated inventory        |
-| GET    | `/api/runs`              | Up to 100 most recent snapshots, newest first               |
-| POST   | `/api/runs`              | Agent creates `{commandId, plan}`; returns 201              |
-| GET    | `/api/runs/:id`          | A complete run snapshot                                     |
-| POST   | `/api/runs/:id/commands` | Apply one command atomically                                |
+| Method | Route                    | Result                                                                              |
+| ------ | ------------------------ | ----------------------------------------------------------------------------------- |
+| GET    | `/api/health`            | Health and version, no credentials required                                         |
+| GET    | `/api/auth/check`        | Authenticated liveness (`{ok, role, id}`); does not project runs                    |
+| GET    | `/api/session`           | Bootstrap a local human browser session                                             |
+| GET    | `/api/connections`       | Human-only configuration inventory and owned-file preflight                         |
+| POST   | `/api/connections/setup` | Human-only explicit setup; returns updated inventory                                |
+| GET    | `/api/runs`              | Up to 100 most recent snapshots, newest first; skips unreadable rows instead of 500 |
+| POST   | `/api/runs`              | Agent creates `{commandId, plan}`; returns 201                                      |
+| GET    | `/api/runs/:id`          | A complete run snapshot                                                             |
+| POST   | `/api/runs/:id/commands` | Apply one command atomically                                                        |
 
 The session bootstrap is protected by exact Host/Origin and Fetch Metadata checks. It assumes trusted local programs and does not establish user identity over the Internet.
 

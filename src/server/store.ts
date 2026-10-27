@@ -164,23 +164,32 @@ export class Store {
   }
   links(id: string): NonNullable<Run['links']> {
     const run = this.get(id);
-    const link = (id: string) => {
-      const item = this.get(id);
-      return {
-        id: item.id,
-        title: item.title,
-        status: item.status,
-        request: item.request,
-      };
+    const link = (linkedId: string) => {
+      try {
+        const item = this.get(linkedId);
+        return {
+          id: item.id,
+          title: item.title,
+          status: item.status,
+          request: item.request,
+        };
+      } catch (error) {
+        if (error instanceof WorkflowError && error.code === 'NOT_FOUND')
+          return undefined;
+        throw error;
+      }
     };
+    const previous = run.origin ? link(run.origin.runId) : undefined;
+    const next = this.db
+      .prepare(
+        'SELECT child_id FROM run_links WHERE parent_id=? ORDER BY rowid',
+      )
+      .all(id)
+      .map((row) => link(row.child_id as string))
+      .filter((item): item is NonNullable<typeof item> => !!item);
     return {
-      ...(run.origin ? { previous: link(run.origin.runId) } : {}),
-      next: this.db
-        .prepare(
-          'SELECT child_id FROM run_links WHERE parent_id=? ORDER BY rowid',
-        )
-        .all(id)
-        .map((row) => link(row.child_id as string)),
+      ...(previous ? { previous } : {}),
+      next,
     };
   }
   addArtifact(id: string, input: unknown, actor: Principal): Run {
@@ -267,10 +276,22 @@ export class Store {
     }
   }
   list(): Run[] {
-    return this.db
-      .prepare('SELECT snapshot FROM runs ORDER BY created_at DESC LIMIT 100')
-      .all()
-      .map((row) => JSON.parse(row.snapshot as string) as Run);
+    const runs: Run[] = [];
+    for (const row of this.db
+      .prepare(
+        'SELECT id, snapshot FROM runs ORDER BY created_at DESC LIMIT 100',
+      )
+      .all()) {
+      try {
+        runs.push(JSON.parse(row.snapshot as string) as Run);
+      } catch (error) {
+        console.error(
+          `Hyperion skipped corrupt run snapshot ${String(row.id)}:`,
+          error,
+        );
+      }
+    }
+    return runs;
   }
   close() {
     this.db.close();
