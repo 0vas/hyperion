@@ -36,6 +36,8 @@ La preview 0.4.0 tiene una firma macOS incompleta: `codesign --verify --deep --s
 
 Si el servicio no inicia, Desktop mantiene un diálogo con Reintentar, Ver diagnóstico, Buscar actualizaciones y Salir. El diagnóstico se guarda en la carpeta de logs de la aplicación. No borra ejecuciones ni detiene procesos ajenos; un puerto ocupado o una versión incompatible se informa explícitamente.
 
+**Ver → Recargar** / **Forzar recarga** (y ⌘R / Ctrl+R) no usan el `role: reload` de Electron: vuelven a entrar por `ensureServer` + `openRun` + la misma recuperación del arranque en frío, para no dejar la ventana en el fondo mate sin canvas cuando el servicio está en un puerto alterno sticky. Un fallo de carga del frame principal dispara esa recuperación; no se deja una pantalla en negro silenciosa.
+
 ## Actualizaciones desde la aplicación
 
 **Hyperion → Buscar actualizaciones…** consulta las últimas 30 releases públicas de `0vas/hyperion`, excluye borradores y elige una versión superior con instalador para el sistema y arquitectura actuales. Las versiones preview también reciben previews; una versión estable solo recibe estables. Al abrir Desktop empaquetado se hace una comprobación después del asistente inicial. Fallos de red en esa comprobación automática no interrumpen el trabajo; una comprobación manual muestra el error.
