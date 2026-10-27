@@ -1478,6 +1478,7 @@ export function App() {
             producerTitle: producer?.title || candidate.producerStepId,
             runId: run.id,
             artifact: candidate.artifact,
+            siblings: producer?.artifacts || [],
             remoteOnly: candidate.remoteOnly,
             extraCount: candidate.extraCount,
             emphasized:

@@ -61,13 +61,13 @@ The 0.4.1 runtime added active-agent presence and event delivery. The 0.4.2 skil
 
 **Artifacts** (inside **Result**) lists files and links registered by the agent. The node's package icon opens Result focused on that list. Preview small text files and supported images, download files, or open a document link. Results from earlier attempts remain labeled.
 
-On viewports ≥900px, a previewable artifact also appears as a **tile next to the producing step** on the canvas (inert preview; a click selects the producer and opens Result). Below 900px those tiles hide and preview stays in Result. They are not process nodes and not an editor. HTML/SVG preview sits in a matte stage around the iframe (page stays light; document CSS is not inverted).
+On viewports ≥900px, a previewable artifact also appears as a **larger tile next to the producing step** on the canvas (inert preview; a click selects the producer and opens Result). Below 900px those tiles hide and preview stays in Result. They are not process nodes, not an editor, and not draggable frames. HTML/SVG preview sits in a matte stage around the iframe (page stays light; document CSS is not inverted).
 
 ::: tip Deliverables within reach
 For example, “Prepare guide” can contain `welcome.md`, an illustration and a shared document link. **I/O** retains its data, **Logs** explains the actions, and **Artifacts** provides access to the result.
 :::
 
-The agent must register the file; Hyperion does not scan your disk or publish documents automatically. HTML and SVG open in an `iframe` with empty `sandbox=""`: switch **Preview** and **Source**; under Preview you see the inert-preview caption (no JavaScript or network; layout may differ from a full browser). This is not a full browser and not malware protection. Uploaded files are limited to 10 MiB.
+The agent must register the file; Hyperion does not scan your disk or publish documents automatically. HTML and SVG open in an `iframe` with empty `sandbox=""`: switch **Preview** and **Source**; under Preview you see the inert-preview caption (no JavaScript or network; layout may differ from a full browser). Sibling `text/css` sheets from the same step can be folded into that inert preview; this is not full-browser parity and not Office rendering. Uploaded files are limited to 10 MiB.
 
 ## Continue after the end
 

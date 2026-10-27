@@ -12,11 +12,13 @@ import { t, useLocale } from './i18n';
 function ArtifactCard({
   runId,
   artifact,
+  siblings,
   attempt,
   autoOpen = false,
 }: {
   runId: string;
   artifact: Artifact;
+  siblings: Artifact[];
   attempt: number;
   autoOpen?: boolean;
 }) {
@@ -66,7 +68,13 @@ function ArtifactCard({
           {artifact.url ? t('Abrir enlace') : t('Descargar')}
         </a>
       </div>
-      {open && <ArtifactSandboxPreview runId={runId} artifact={artifact} />}
+      {open && (
+        <ArtifactSandboxPreview
+          runId={runId}
+          artifact={artifact}
+          siblings={siblings}
+        />
+      )}
     </li>
   );
 }
@@ -81,6 +89,7 @@ export function Artifacts({
   autoOpenId?: string;
 }) {
   useLocale();
+  const siblings = step.artifacts || [];
   return (
     <section className="step-artifacts" aria-label={t('Artefactos del paso')}>
       <h3>
@@ -94,6 +103,7 @@ export function Artifacts({
               key={artifact.id}
               runId={runId}
               artifact={artifact}
+              siblings={siblings}
               attempt={step.attempt}
               autoOpen={autoOpenId === artifact.id}
             />

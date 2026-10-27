@@ -9,6 +9,8 @@ export type PreviewNodeData = {
   producerTitle: string;
   runId: string;
   artifact: Artifact;
+  /** Producer step artifacts for sibling CSS compose into inert srcDoc. */
+  siblings: Artifact[];
   remoteOnly: boolean;
   extraCount: number;
   emphasized: boolean;
@@ -67,6 +69,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           <ArtifactSandboxPreview
             runId={data.runId}
             artifact={data.artifact}
+            siblings={data.siblings}
             compact
           />
         </div>

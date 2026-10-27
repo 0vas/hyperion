@@ -35,10 +35,13 @@ test('tile breakpoint stays aligned with viewport export at 900', () => {
   assert.equal(previewTileBreakpoint, 900);
 });
 
-test('P0.5 tile layout is a modest satellite bump, not a full stage', () => {
-  assert.equal(previewTileLayout.width, 320);
-  assert.equal(previewTileLayout.bodyHeight, 220);
-  assert.ok(previewTileLayout.width < 480);
+test('P1 tile layout sits in the sealed stage band, still a satellite', () => {
+  assert.equal(previewTileLayout.width, 480);
+  assert.equal(previewTileLayout.bodyHeight, 320);
+  assert.ok(previewTileLayout.width >= 420 && previewTileLayout.width <= 520);
+  assert.ok(
+    previewTileLayout.bodyHeight >= 280 && previewTileLayout.bodyHeight <= 360,
+  );
 });
 
 test('preview node ids are client-only satellites of the producer', () => {
@@ -48,7 +51,7 @@ test('preview node ids are client-only satellites of the producer', () => {
 test('satellite position sits to the right of the producer box', () => {
   assert.deepEqual(
     previewTilePosition({ x: 100, y: 40 }, { width: 280, height: 160 }, false),
-    { x: 408, y: 40 },
+    { x: 100 + 280 + previewTileLayout.gap, y: 40 },
   );
 });
 
