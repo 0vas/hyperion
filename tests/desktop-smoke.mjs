@@ -226,6 +226,7 @@ test('desktop and split share one real service, decisions and agent progress', a
       .getByRole('button', { name: 'Ver artefacto', exact: true })
       .click();
     await page
+      .getByTestId('resultado-stage')
       .locator('.artifact-text')
       .filter({ hasText: '# Guía preparada' })
       .waitFor();
