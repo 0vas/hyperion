@@ -52,15 +52,23 @@ export function desktopTarget(
     throw new Error('Invalid run ID');
   const fromArg = option('url');
   const fromEnv = process.env.HYPERION_URL;
+  const stickyDirectory = rememberedWorkspaceDirectory(previous, home);
+  // Electron sticky-home remaps away from portable dirs — drop their remembered
+  // alternate ports so we do not thrash spawn against a dead workspace service.
+  const stickyRemapped =
+    !!process.versions.electron &&
+    !!previous.directory &&
+    stickyDirectory === undefined;
+  const rememberedService = stickyRemapped ? undefined : previous.service;
   const serviceSource: DesktopServiceSource = fromArg
     ? 'arg'
     : fromEnv
       ? 'env'
-      : previous.service
+      : rememberedService
         ? 'workspace'
         : 'default';
   const service = new URL(
-    fromArg || fromEnv || previous.service || DEFAULT_SERVICE,
+    fromArg || fromEnv || rememberedService || DEFAULT_SERVICE,
   );
   if (
     service.protocol !== 'http:' ||
@@ -75,7 +83,7 @@ export function desktopTarget(
   const directory = resolve(
     option('directory') ||
       process.env.HYPERION_DATA_DIR ||
-      rememberedWorkspaceDirectory(previous, home) ||
+      stickyDirectory ||
       defaultDirectory(home),
   );
   return {
@@ -114,7 +122,8 @@ export async function resolveWorkspaceService(
       const body = (await health.json()) as { ok?: boolean };
       if (body.ok !== true) return 'dead';
       const { HyperionClient } = await import('./client.js');
-      await new HyperionClient({ url, directory }).list();
+      // Auth only — listing runs must not gate workspace reopen.
+      await new HyperionClient({ url, directory }).authCheck();
       return 'ours';
     } catch {
       return 'dead';

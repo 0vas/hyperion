@@ -404,6 +404,7 @@
   "Origen: {0}.{1}": "Source: {0}.{1}",
   "Otra opción": "Another option",
   "Otro Hyperion, otra cuenta de este Mac u otra instalación ya usa este puerto local. Cierra esa app o esa sesión e inténtalo de nuevo. Hyperion no detuvo ese proceso.": "Another Hyperion, another account on this Mac, or another installation already uses this local port. Close that app or session and try again. Hyperion did not stop that process.",
+  "Otro Hyperion ya está usando esta carpeta de datos. Cierra las otras ventanas o procesos de Hyperion de esta cuenta e inténtalo de nuevo. Tus flujos no se han borrado.": "Another Hyperion is already using this data folder. Close other Hyperion windows or processes from this account and try again. Your workflows have not been deleted.",
   "Outputs · Salidas": "Outputs",
   "Pantalla completa": "Full screen",
   "Para buscar actualizaciones usa Hyperion → Buscar actualizaciones… en el menú de la aplicación.": "To check for updates, use Hyperion → Check for updates… in the application menu.",

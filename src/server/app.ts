@@ -659,6 +659,18 @@ export function createApp(options: Options) {
         json(res, error.status, { error: error.code, message: error.message });
         return;
       }
+      if (
+        error instanceof Error &&
+        /SQLITE_BUSY|SQLITE_LOCKED|database is locked/i.test(error.message)
+      ) {
+        console.error('Hyperion request failed:', error);
+        json(res, 503, {
+          error: 'DATA_IN_USE',
+          message:
+            'Another Hyperion process is using this data folder. Close other Hyperion windows from this account and retry.',
+        });
+        return;
+      }
       console.error('Hyperion request failed:', error);
       json(res, 500, { error: 'INTERNAL', message: 'Unexpected server error' });
     }

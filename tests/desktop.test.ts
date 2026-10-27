@@ -82,8 +82,9 @@ test('Electron ignores a remembered portable data directory from workspace.json'
     );
     const target = desktopTarget([], home);
     assert.equal(target.directory, defaultDirectory(home));
-    assert.equal(target.service, 'http://127.0.0.1:54321');
-    assert.equal(target.serviceSource, 'workspace');
+    // Sticky remapping drops the portable alternate port (avoid zombie spawn thrash).
+    assert.equal(target.service, DEFAULT_SERVICE);
+    assert.equal(target.serviceSource, 'default');
   } finally {
     Object.defineProperty(process.versions, 'electron', {
       value: previous,
