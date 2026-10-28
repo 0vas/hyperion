@@ -19,7 +19,7 @@ for (const locale of ['es', 'en'] as const) {
       await openAppMenu(page);
       const menu = page.getByRole('menu');
       await expect(menu.locator(':scope > :last-child')).toContainText(
-        'Hyperion 2026.10.28.1640 UTC · preview',
+        'Hyperion 2026.10.28.1821 UTC · preview',
       );
       await expect(menu.locator('.app-menu-section')).toHaveCount(0);
       const box = (await menu.boundingBox())!;
