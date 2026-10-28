@@ -18,7 +18,7 @@ El perfil `bpmn-lite` admite inicio, fin y compuertas exclusivas, inclusivas y p
 
 ## Distribución actual
 
-La preview publicada `2026.10.28.1821` ofrece Mac Apple Silicon (arm64), firmado con Developer ID y notarizado por Apple, y Windows x64, sin firma de editor. Los [enlaces de descarga](../guia/primeros-pasos.md) corresponden a esa release publicada, no a una compilación pendiente.
+La preview publicada `2026.10.28.2302` ofrece Mac Apple Silicon (arm64), firmado con Developer ID y notarizado por Apple, y Windows x64, sin firma de editor. Los [enlaces de descarga](../guia/primeros-pasos.md) corresponden a esa release publicada, no a una compilación pendiente.
 
 Las nuevas compilaciones y publicaciones incluyen solo macOS arm64 y Windows x64. Ambos deben superar las pruebas nativas y del instalador empaquetado; ya no se generan paquetes nuevos para Mac Intel. La release histórica `v0.4.0-preview.1` sí incluyó Apple Silicon, Intel y Windows; sus archivos se conservan. Las pruebas nativas no certifican una conversación real en cada cliente de IA.
 
