@@ -5,18 +5,30 @@ export type PreviewTileSize = 'expanded' | 'compact';
 export type PreviewTileUiState = {
   x?: number;
   y?: number;
+  /** mini ≡ compact (default); large ≡ expanded. */
   size: PreviewTileSize;
   collapsed: boolean;
 };
 
-export const PREVIEW_TILE_UI_VERSION = 'v1';
+export type PreviewTileGlobalState = {
+  /** When true, canvas preview tiles are not mounted (≠ delete artifacts). */
+  hideAll: boolean;
+};
 
+export const PREVIEW_TILE_UI_VERSION = 'v1';
+export const PREVIEW_TILE_GLOBAL_VERSION = 'v1';
+
+/** New tiles default to mini/compact (Track F / Arch M3). */
 export const previewTileUiDefaults: PreviewTileUiState = {
-  size: 'expanded',
+  size: 'compact',
   collapsed: false,
 };
 
-/** Compact body target (~280×180) — Architect match seal. */
+export const previewTileGlobalDefaults: PreviewTileGlobalState = {
+  hideAll: false,
+};
+
+/** Compact / mini body target (~280×180) — Architect match seal. */
 export const previewTileCompactLayout = {
   width: 280,
   bodyHeight: 180,
@@ -28,6 +40,10 @@ export function previewTileUiStorageKey(
   producerStepId: string,
 ): string {
   return `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:${producerStepId}`;
+}
+
+export function previewTileGlobalStorageKey(runId: string): string {
+  return `hyperion.previewTileGlobal.${PREVIEW_TILE_GLOBAL_VERSION}:${runId}`;
 }
 
 function finiteNumber(value: unknown): number | undefined {
@@ -53,10 +69,15 @@ export function isPreviewTileUiDefault(state: PreviewTileUiState): boolean {
   );
 }
 
+export function parsePreviewTileSize(value: unknown): PreviewTileSize {
+  if (value === 'expanded' || value === 'compact') return value;
+  return previewTileUiDefaults.size;
+}
+
 export function parsePreviewTileUiState(raw: unknown): PreviewTileUiState {
   if (!raw || typeof raw !== 'object') return { ...previewTileUiDefaults };
   const value = raw as Record<string, unknown>;
-  const size = value.size === 'compact' ? 'compact' : 'expanded';
+  const size = parsePreviewTileSize(value.size);
   const collapsed = value.collapsed === true;
   const x = finiteNumber(value.x);
   const y = finiteNumber(value.y);
@@ -66,6 +87,14 @@ export function parsePreviewTileUiState(raw: unknown): PreviewTileUiState {
     ...(x !== undefined ? { x } : {}),
     ...(y !== undefined ? { y } : {}),
   };
+}
+
+export function parsePreviewTileGlobalState(
+  raw: unknown,
+): PreviewTileGlobalState {
+  if (!raw || typeof raw !== 'object') return { ...previewTileGlobalDefaults };
+  const value = raw as Record<string, unknown>;
+  return { hideAll: value.hideAll === true };
 }
 
 export function readPreviewTileUiState(
@@ -109,16 +138,47 @@ export function writePreviewTileUiState(
   }
 }
 
-/** Drop all Track E size/collapse/position prefs for a run (layout reset). */
+export function readPreviewTileGlobalState(
+  runId: string,
+  storage: Pick<Storage, 'getItem'> = localStorage,
+): PreviewTileGlobalState {
+  try {
+    const raw = storage.getItem(previewTileGlobalStorageKey(runId));
+    if (!raw) return { ...previewTileGlobalDefaults };
+    return parsePreviewTileGlobalState(JSON.parse(raw));
+  } catch {
+    return { ...previewTileGlobalDefaults };
+  }
+}
+
+export function writePreviewTileGlobalState(
+  runId: string,
+  state: PreviewTileGlobalState,
+  storage: Pick<Storage, 'setItem' | 'removeItem'> = localStorage,
+): void {
+  const key = previewTileGlobalStorageKey(runId);
+  try {
+    if (!state.hideAll) {
+      storage.removeItem(key);
+      return;
+    }
+    storage.setItem(key, JSON.stringify({ hideAll: true }));
+  } catch {
+    /* Prefer usable UI when storage is unavailable. */
+  }
+}
+
+/** Drop all Track E/F size/collapse/position prefs for a run (layout reset). */
 export function clearPreviewTileUiForRun(
   runId: string,
   storage: Pick<Storage, 'length' | 'key' | 'removeItem'> = localStorage,
 ): void {
   const prefix = `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:`;
+  const globalKey = previewTileGlobalStorageKey(runId);
   const toRemove: string[] = [];
   for (let i = 0; i < storage.length; i++) {
     const key = storage.key(i);
-    if (key?.startsWith(prefix)) toRemove.push(key);
+    if (key?.startsWith(prefix) || key === globalKey) toRemove.push(key);
   }
   for (const key of toRemove) storage.removeItem(key);
 }
@@ -126,7 +186,8 @@ export function clearPreviewTileUiForRun(
 export function togglePreviewTileSize(
   state: PreviewTileUiState,
 ): PreviewTileUiState {
-  if (state.collapsed) return { ...state, collapsed: false, size: 'expanded' };
+  if (state.collapsed)
+    return { ...state, collapsed: false, size: state.size || 'compact' };
   return {
     ...state,
     size: state.size === 'expanded' ? 'compact' : 'expanded',

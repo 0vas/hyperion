@@ -632,5 +632,12 @@
   "¿Qué sigue?": "What’s next?",
   "¿Reemplazar la conexión Hyperion?": "Replace the Hyperion connection?",
   "Ámbar · En pausa": "Amber · Paused",
-  "Ámbar · Tu turno": "Amber · Your turn"
+  "Ámbar · Tu turno": "Amber · Your turn",
+  "Ampliar vista": "Expand preview",
+  "Vista mini": "Mini preview",
+  "Abrir en web": "Open in browser",
+  "Ocultar todas las vistas previas": "Hide all previews",
+  "Mostrar vistas previas": "Show previews",
+  "Vistas previas ocultas": "Previews hidden",
+  "Enlace remoto — ábrelo desde el cromo": "Remote link — open it from the chrome"
 }

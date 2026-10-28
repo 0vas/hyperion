@@ -1,4 +1,11 @@
-import { ExternalLink, GripVertical } from 'lucide-react';
+import {
+  ExternalLink,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import type { Artifact } from '../domain/artifacts';
 import { ArtifactSandboxPreview } from './ArtifactSandboxPreview';
@@ -31,7 +38,9 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   const { tileUi } = data;
   const mountsPreview = previewTileMountsIframe(tileUi);
   const compact = tileUi.size === 'compact';
-  const sizeLabel = tileUi.size === 'expanded' ? t('Compactar') : t('Ampliar');
+  const sizeLabel =
+    tileUi.size === 'expanded' ? t('Vista mini') : t('Ampliar vista');
+  const hideLabel = tileUi.collapsed ? t('Mostrar vista') : t('Ocultar vista');
   return (
     <div
       className={`preview-tile${data.emphasized ? ' emphasized' : ''}${
@@ -72,7 +81,9 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           {!tileUi.collapsed && (
             <button
               type="button"
-              className="secondary preview-tile-action"
+              className="secondary icon-button preview-tile-action"
+              aria-label={sizeLabel}
+              title={sizeLabel}
               onClick={(event) => {
                 event.stopPropagation();
                 data.onTileUiChange({
@@ -81,12 +92,18 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
                 });
               }}
             >
-              {sizeLabel}
+              {tileUi.size === 'expanded' ? (
+                <Minimize2 size={15} aria-hidden="true" />
+              ) : (
+                <Maximize2 size={15} aria-hidden="true" />
+              )}
             </button>
           )}
           <button
             type="button"
-            className="secondary preview-tile-action"
+            className="secondary icon-button preview-tile-action"
+            aria-label={hideLabel}
+            title={hideLabel}
             onClick={(event) => {
               event.stopPropagation();
               data.onTileUiChange({
@@ -95,25 +112,41 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
               });
             }}
           >
-            {tileUi.collapsed ? t('Mostrar vista') : t('Ocultar vista')}
+            {tileUi.collapsed ? (
+              <Eye size={15} aria-hidden="true" />
+            ) : (
+              <EyeOff size={15} aria-hidden="true" />
+            )}
           </button>
+          {data.remoteOnly && data.artifact.url && !tileUi.collapsed && (
+            <a
+              className="secondary icon-button preview-tile-action"
+              href={data.artifact.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t('Abrir en web')}
+              title={t('Abrir en web')}
+              onClick={(event) => {
+                event.stopPropagation();
+                data.onSelectProducer(data.producerStepId);
+              }}
+            >
+              <ExternalLink size={15} aria-hidden="true" />
+            </a>
+          )}
         </div>
       </div>
       {mountsPreview &&
         (data.remoteOnly ? (
-          <a
-            className="secondary preview-tile-remote"
-            href={data.artifact.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(event) => {
-              event.stopPropagation();
-              data.onSelectProducer(data.producerStepId);
-            }}
+          <button
+            type="button"
+            className="preview-tile-remote-body nodrag nopan"
+            onClick={() => data.onSelectProducer(data.producerStepId)}
           >
-            <ExternalLink size={15} />
-            {t('Abrir enlace')}
-          </a>
+            <span className="muted">
+              {t('Enlace remoto — ábrelo desde el cromo')}
+            </span>
+          </button>
         ) : (
           <div
             className="preview-tile-body nodrag nopan"
