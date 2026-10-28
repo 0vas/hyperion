@@ -10,6 +10,7 @@ import {
   PREVIEW_TILE_SIZE_OPTIONS,
   previewTileCompactLayout,
   previewTileMediumLayout,
+  previewTileMiniContainScale,
   previewTileMountsIframe,
   previewTileStageLayout,
   type PreviewTileSize,
@@ -33,6 +34,8 @@ export type PreviewNodeData = {
   paneSize: { width: number; height: number };
   onSelectProducer: (stepId: string) => void;
   onTileUiChange: (next: PreviewTileUiState) => void;
+  /** After Abrir opens a separate tab — shell/run stay; show return cue. */
+  onOpenedInBrowser?: () => void;
 };
 
 function sizeOptionLabel(size: PreviewTileSize): string {
@@ -50,6 +53,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   const stage = tileUi.size === 'stage';
   const medium = tileUi.size === 'medium';
   const stageLayout = previewTileStageLayout(data.paneSize);
+  const miniScale = previewTileMiniContainScale();
   const hideLabel = tileUi.collapsed
     ? t('Mostrar artefacto')
     : t('Ocultar artefacto');
@@ -154,7 +158,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           )}
           <button
             type="button"
-            className="secondary preview-tile-action preview-tile-action-text"
+            className="secondary icon-button preview-tile-action"
             aria-label={hideLabel}
             title={hideLabel}
             onClick={(event) => {
@@ -170,7 +174,6 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
             ) : (
               <EyeOff size={15} aria-hidden="true" />
             )}
-            <span>{t('Artefactos')}</span>
           </button>
           {offerOpen && (
             <button
@@ -181,11 +184,14 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
               onClick={(event) => {
                 event.stopPropagation();
                 data.onSelectProducer(data.producerStepId);
-                void openPreviewInBrowser(
-                  data.runId,
-                  data.artifact,
-                  data.siblings,
-                );
+                void (async () => {
+                  const result = await openPreviewInBrowser(
+                    data.runId,
+                    data.artifact,
+                    data.siblings,
+                  );
+                  if (result.ok) data.onOpenedInBrowser?.();
+                })();
               }}
             >
               <ExternalLink size={15} aria-hidden="true" />
@@ -207,34 +213,41 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           </button>
         ) : (
           <div
-            className="preview-tile-body nodrag nopan"
+            className={`preview-tile-body nodrag nopan${
+              mini ? ' is-mini-contain' : ''
+            }`}
             style={{ minHeight: bodyMin, maxHeight: bodyMin + 40 }}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => data.onSelectProducer(data.producerStepId)}
           >
-            <div
-              className={
-                mini
-                  ? 'preview-tile-scale-wrap is-scaled'
-                  : 'preview-tile-scale-wrap'
-              }
-              style={
-                mini
-                  ? {
-                      transform: `scale(${previewTileCompactLayout.scale})`,
-                      transformOrigin: 'top left',
-                      width: `${100 / previewTileCompactLayout.scale}%`,
-                    }
-                  : undefined
-              }
-            >
-              <ArtifactSandboxPreview
-                runId={data.runId}
-                artifact={data.artifact}
-                siblings={data.siblings}
-                compact={mini || medium}
-              />
-            </div>
+            {mini ? (
+              <div className="preview-tile-contain-viewport">
+                <div
+                  className="preview-tile-contain-content"
+                  style={{
+                    width: previewTileMediumLayout.width,
+                    height: previewTileMediumLayout.bodyHeight,
+                    transform: `scale(${miniScale})`,
+                  }}
+                >
+                  <ArtifactSandboxPreview
+                    runId={data.runId}
+                    artifact={data.artifact}
+                    siblings={data.siblings}
+                    compact
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="preview-tile-scale-wrap">
+                <ArtifactSandboxPreview
+                  runId={data.runId}
+                  artifact={data.artifact}
+                  siblings={data.siblings}
+                  compact={medium}
+                />
+              </div>
+            )}
           </div>
         ))}
     </div>

@@ -71,7 +71,6 @@ import {
   Send,
   History,
   Info,
-  Layers3,
   LoaderCircle,
   LockKeyhole,
   MessageSquareText,
@@ -1564,6 +1563,10 @@ export function App() {
               });
               setPreviewTileUiTick((n) => n + 1);
             },
+            onOpenedInBrowser: () =>
+              setNotice(
+                t('La vista previa sigue en Hyperion — vuelve a esta ventana'),
+              ),
           },
           draggable: true,
           dragHandle: '.preview-tile-drag',
@@ -1845,20 +1848,6 @@ export function App() {
         </button>
       </div>
       <div className="canvas-tools-group">
-        {!!run.jobs?.length && (
-          <button
-            className="secondary"
-            onClick={() =>
-              setPreferences((p) => ({
-                ...p,
-                view: p.view === 'steps' ? 'jobs' : 'steps',
-              }))
-            }
-          >
-            <Layers3 size={15} />
-            {preferences.view === 'steps' ? t('Ver trabajos') : t('Ver pasos')}
-          </button>
-        )}
         <button className="secondary continue-button" onClick={copyPrompt}>
           <Copy size={15} />
           {copied ? t('Pega la petición en tu chat') : t('Copiar continuación')}
@@ -2848,7 +2837,7 @@ export function App() {
                     <strong>{t('Explora trabajos y pasos')}</strong>
                     <span>
                       {t(
-                        'En «Más opciones», «Ver trabajos» resume el plan. Pulsa un trabajo para desplegar el detalle. «Ajustes» permite elegir tema y navegación.',
+                        'En «Ajustes → Vista del flujo» elige «Trabajos · resumen del plan» para contraer el canvas. Pulsa un trabajo para desplegar el detalle. «Ajustes» también permite tema y navegación.',
                       )}
                     </span>
                   </li>

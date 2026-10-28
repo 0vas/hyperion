@@ -13,6 +13,7 @@ import {
   previewTileGlobalDefaults,
   previewTileGlobalStorageKey,
   previewTileMediumLayout,
+  previewTileMiniContainScale,
   previewTileMountsIframe,
   previewTileStageLayout,
   previewTileStoredPosition,
@@ -97,6 +98,20 @@ test('mini and medium layout bands match Architect stamps', () => {
   assert.equal(previewTileCompactLayout.bodyHeight, 180);
   assert.equal(previewTileMediumLayout.width, 480);
   assert.equal(previewTileMediumLayout.bodyHeight, 320);
+});
+
+test('mini contain uses uniform letterbox scale, not fixed 0.8 crop', () => {
+  const scale = previewTileMiniContainScale();
+  assert.equal(scale, Math.min(280 / 480, 180 / 320));
+  assert.ok(scale < 0.8);
+  assert.doesNotMatch(
+    readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8'),
+    /scale\(0\.8\)|transformOrigin:\s*['"]top left['"]/,
+  );
+  assert.match(
+    readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8'),
+    /previewTileMiniContainScale|is-mini-contain/,
+  );
 });
 
 test('stage layout is near-full pane without free-resize', () => {
@@ -203,7 +218,7 @@ test('open-browser CSP meta is injected for local blob documents', () => {
   assert.match(bare, /^<head><meta http-equiv="Content-Security-Policy"/);
 });
 
-test('PreviewNode exposes labeled resolution and artifacts wording', () => {
+test('PreviewNode tile hide is icon-only; keep resolution and Abrir', () => {
   const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
   assert.match(source, /preview-tile-drag/);
   assert.match(source, /Resolución/);
@@ -211,20 +226,25 @@ test('PreviewNode exposes labeled resolution and artifacts wording', () => {
   assert.match(source, /select/);
   assert.match(source, /Abrir en navegador/);
   assert.match(source, /openPreviewInBrowser/);
-  assert.match(source, /Artefactos/);
+  assert.match(source, /onOpenedInBrowser/);
+  assert.match(source, /Ocultar artefacto|Mostrar artefacto/);
+  assert.match(source, /icon-button preview-tile-action/);
+  assert.doesNotMatch(source, /\{t\(['"]Artefactos['"]\)\}/);
   assert.doesNotMatch(source, /Maximize2|Minimize2/);
   assert.doesNotMatch(source, /Office|pen\.dev complete|W2|free-resize/);
 });
 
-test('App global hide shows Artefactos wording and stage soft-cap', () => {
+test('App global hide keeps Artefactos wording; Jobs demoted from canvas-tools', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
   assert.match(source, /Ocultar artefactos|Mostrar artefactos/);
   assert.match(source, /PaneSizeReporter|flowPaneSize|paneSize/);
   assert.match(source, /size === 'stage'/);
   assert.match(source, /dragHandle:\s*['"]\.preview-tile-drag['"]/);
   assert.match(source, /clearPreviewTileUiForRun/);
-  assert.doesNotMatch(
+  assert.match(
     source,
-    /Ocultar todas las vistas previas[\s\S]*options-only/,
+    /La vista previa sigue en Hyperion — vuelve a esta ventana/,
   );
+  assert.doesNotMatch(source, /Ver trabajos/);
+  assert.doesNotMatch(source, /Layers3/);
 });
