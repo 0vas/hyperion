@@ -29,18 +29,30 @@ export const previewTileGlobalDefaults: PreviewTileGlobalState = {
   hideAll: false,
 };
 
-/** Mini body target (~280×180) — Architect match seal. */
+/** Mini outer frame (~280×180). Contain scale is computed — not a fixed 0.8 crop. */
 export const previewTileCompactLayout = {
   width: 280,
   bodyHeight: 180,
-  scale: 0.8,
 } as const;
 
-/** Medium band (~480×320) — F large / 2047 stage. */
+/** Medium band (~480×320) — also the design content box for mini contain. */
 export const previewTileMediumLayout = {
   width: 480,
   bodyHeight: 320,
 } as const;
+
+/**
+ * Uniform contain scale: fit medium content box into mini frame (letterbox OK).
+ * Hardcoded 0.8 top-left crop is FAIL (Track H / Arch).
+ */
+export function previewTileMiniContainScale(
+  frame: { width: number; bodyHeight: number } = previewTileCompactLayout,
+  content: { width: number; bodyHeight: number } = previewTileMediumLayout,
+): number {
+  const sx = frame.width / content.width;
+  const sy = frame.bodyHeight / content.bodyHeight;
+  return Math.min(sx, sy);
+}
 
 export const PREVIEW_TILE_SIZE_OPTIONS: PreviewTileSize[] = [
   'mini',
