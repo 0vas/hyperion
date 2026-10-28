@@ -32,6 +32,7 @@ import {
   desktopViewReloadMenuItems,
   shouldRecoverFailedLoad,
 } from './reload.mjs';
+import { classifyWindowOpenUrl } from './window-open-policy.mjs';
 import {
   syncDesktopOutboundWorker,
   stopDesktopOutboundWorker,
@@ -193,8 +194,11 @@ async function openRun(args) {
         if (!isLocal(url)) event.preventDefault();
       });
       window.webContents.setWindowOpenHandler(({ url }) => {
-        if (isLocal(url)) void window.loadURL(url);
-        else if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+        // Track I: never replace the primary window with blob/artifact HTML.
+        const decision = classifyWindowOpenUrl(url, target?.service);
+        if (decision.action === 'load-primary') void window.loadURL(url);
+        else if (decision.action === 'open-external')
+          void shell.openExternal(url);
         return { action: 'deny' };
       });
       attachLoadHonesty(window);

@@ -21,7 +21,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm test && npm run build && npm run test:production && npm run format:check",
-    "test:production": "node --test tests/production-smoke.mjs tests/desktop-onboarding.mjs tests/desktop-language.mjs tests/desktop-updates.mjs tests/desktop-startup.mjs tests/desktop-update-dialog.mjs tests/desktop-apply-update.mjs tests/desktop-upgrade.mjs",
+    "test:production": "node --test tests/production-smoke.mjs tests/desktop-onboarding.mjs tests/desktop-language.mjs tests/desktop-updates.mjs tests/desktop-startup.mjs tests/desktop-update-dialog.mjs tests/desktop-apply-update.mjs tests/desktop-upgrade.mjs tests/desktop-window-open-policy.mjs",
     "prepack": "npm run build",
     "desktop": "npm run build && electron desktop/main.mjs",
     "desktop:pack": "npm run build && electron-builder --config desktop/builder.config.cjs --dir --publish never",
