@@ -113,6 +113,8 @@ import {
   type PreviewTileUiState,
 } from './preview-tile-ui';
 import { PreviewNode } from './PreviewNode';
+import { PreviewOpenShell } from './PreviewOpenShell';
+import type { Artifact } from '../domain/artifacts';
 import { FlowLegend } from './FlowLegend';
 import { JobNode } from './JobNode';
 import { Settings } from './Settings';
@@ -1200,6 +1202,13 @@ export function App() {
   const [layoutReset, setLayoutReset] = useState(0);
   /** Bumps when Track E size/collapse prefs change (UI-only localStorage). */
   const [previewTileUiTick, setPreviewTileUiTick] = useState(0);
+  /** Track I in-app Abrir shell — keeps Hyperion chrome; never blob-navigates SPA. */
+  const [previewOpenShell, setPreviewOpenShell] = useState<{
+    runId: string;
+    artifact: Artifact;
+    siblings: Artifact[];
+    producerStepId: string;
+  } | null>(null);
   /** Live drag coords for preview:* — authoritative until drag-stop writes the UI store. */
   const [previewDragPositions, setPreviewDragPositions] = useState<
     Record<string, { x: number; y: number }>
@@ -1563,7 +1572,14 @@ export function App() {
               });
               setPreviewTileUiTick((n) => n + 1);
             },
-            onOpenedInBrowser: () =>
+            onOpenInAppShell: () =>
+              setPreviewOpenShell({
+                runId: run.id,
+                artifact: candidate.artifact,
+                siblings: producer?.artifacts || [],
+                producerStepId: candidate.producerStepId,
+              }),
+            onOpenedRemote: () =>
               setNotice(
                 t('La vista previa sigue en Hyperion — vuelve a esta ventana'),
               ),
@@ -2212,6 +2228,18 @@ export function App() {
                     onFocused={setFocusedStepId}
                   />
                 </ReactFlow>
+                {previewOpenShell && (
+                  <PreviewOpenShell
+                    runId={previewOpenShell.runId}
+                    artifact={previewOpenShell.artifact}
+                    siblings={previewOpenShell.siblings}
+                    onBack={() => {
+                      const producer = previewOpenShell.producerStepId;
+                      setPreviewOpenShell(null);
+                      if (producer) selectStep(producer);
+                    }}
+                  />
+                )}
                 {noticeView}
                 {error && !dialogOpen && (
                   <div role="alert" className="canvas-alert popup-error">

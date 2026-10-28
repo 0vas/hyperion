@@ -207,7 +207,7 @@ test('E1: dragged position survives size changes and collapse', () => {
   });
 });
 
-test('open-browser CSP meta is injected for local blob documents', () => {
+test('open-browser CSP meta is injected for composed documents', () => {
   const withHead = injectOpenBrowserCsp(
     '<html><head></head><body>x</body></html>',
   );
@@ -218,7 +218,49 @@ test('open-browser CSP meta is injected for local blob documents', () => {
   assert.match(bare, /^<head><meta http-equiv="Content-Security-Policy"/);
 });
 
-test('PreviewNode tile hide is icon-only; keep resolution and Abrir', () => {
+test('Abrir prefers in-app shell for local markup (Track I)', async () => {
+  const { openPreviewInBrowser, prefersInAppPreviewShell } =
+    await import('../src/client/preview-open-browser.js');
+  assert.equal(
+    prefersInAppPreviewShell({
+      id: 'a',
+      name: 'x.html',
+      mediaType: 'text/html',
+      createdAt: '',
+      attempt: 1,
+    }),
+    true,
+  );
+  const local = await openPreviewInBrowser('run', {
+    id: 'a',
+    name: 'x.html',
+    mediaType: 'text/html',
+    createdAt: '',
+    attempt: 1,
+  });
+  assert.deepEqual(local, { ok: true, via: 'in-app-shell' });
+  let opened = '';
+  const remote = await openPreviewInBrowser(
+    'run',
+    {
+      id: 'a',
+      name: 'ext',
+      mediaType: 'text/html',
+      url: 'https://example.com/p',
+      createdAt: '',
+      attempt: 1,
+    },
+    [],
+    (url) => {
+      opened = url;
+      return {} as Window;
+    },
+  );
+  assert.deepEqual(remote, { ok: true, via: 'remote' });
+  assert.equal(opened, 'https://example.com/p');
+});
+
+test('PreviewNode tile hide is icon-only; Abrir uses in-app shell hook', () => {
   const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
   assert.match(source, /preview-tile-drag/);
   assert.match(source, /Resolución/);
@@ -226,7 +268,7 @@ test('PreviewNode tile hide is icon-only; keep resolution and Abrir', () => {
   assert.match(source, /select/);
   assert.match(source, /Abrir en navegador/);
   assert.match(source, /openPreviewInBrowser/);
-  assert.match(source, /onOpenedInBrowser/);
+  assert.match(source, /onOpenInAppShell|in-app-shell/);
   assert.match(source, /Ocultar artefacto|Mostrar artefacto/);
   assert.match(source, /icon-button preview-tile-action/);
   assert.doesNotMatch(source, /\{t\(['"]Artefactos['"]\)\}/);
@@ -234,17 +276,22 @@ test('PreviewNode tile hide is icon-only; keep resolution and Abrir', () => {
   assert.doesNotMatch(source, /Office|pen\.dev complete|W2|free-resize/);
 });
 
-test('App global hide keeps Artefactos wording; Jobs demoted from canvas-tools', () => {
+test('App hosts PreviewOpenShell chrome; Jobs demoted; Artefactos on toolbar', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
   assert.match(source, /Ocultar artefactos|Mostrar artefactos/);
+  assert.match(source, /PreviewOpenShell/);
+  assert.match(source, /onOpenInAppShell/);
+  assert.match(source, /previewOpenShell/);
   assert.match(source, /PaneSizeReporter|flowPaneSize|paneSize/);
-  assert.match(source, /size === 'stage'/);
   assert.match(source, /dragHandle:\s*['"]\.preview-tile-drag['"]/);
-  assert.match(source, /clearPreviewTileUiForRun/);
-  assert.match(
-    source,
-    /La vista previa sigue en Hyperion — vuelve a esta ventana/,
-  );
   assert.doesNotMatch(source, /Ver trabajos/);
   assert.doesNotMatch(source, /Layers3/);
+  const shell = readFileSync(
+    resolve('src/client/PreviewOpenShell.tsx'),
+    'utf8',
+  );
+  assert.match(shell, /Volver al canvas/);
+  assert.match(shell, /Vista en Hyperion/);
+  assert.match(shell, /Cerrar vista/);
+  assert.match(shell, /ArtifactSandboxPreview/);
 });

@@ -34,8 +34,10 @@ export type PreviewNodeData = {
   paneSize: { width: number; height: number };
   onSelectProducer: (stepId: string) => void;
   onTileUiChange: (next: PreviewTileUiState) => void;
-  /** After Abrir opens a separate tab — shell/run stay; show return cue. */
-  onOpenedInBrowser?: () => void;
+  /** Local Abrir → in-app Hyperion chrome shell (Track I). */
+  onOpenInAppShell?: () => void;
+  /** After remote Abrir in OS/tab — optional secondary toast. */
+  onOpenedRemote?: () => void;
 };
 
 function sizeOptionLabel(size: PreviewTileSize): string {
@@ -190,7 +192,12 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
                     data.artifact,
                     data.siblings,
                   );
-                  if (result.ok) data.onOpenedInBrowser?.();
+                  if (!result.ok) return;
+                  if (result.via === 'in-app-shell') {
+                    data.onOpenInAppShell?.();
+                    return;
+                  }
+                  data.onOpenedRemote?.();
                 })();
               }}
             >
