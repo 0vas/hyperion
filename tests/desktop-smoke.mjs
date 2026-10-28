@@ -227,7 +227,7 @@ test('desktop and split share one real service, decisions and agent progress', a
       .click();
     await page
       .getByTestId('resultado-stage')
-      .locator('.artifact-text')
+      .locator('.preview-note-body')
       .filter({ hasText: '# Guía preparada' })
       .waitFor();
     // Native download uses the same authenticated session, with no navigation away.
