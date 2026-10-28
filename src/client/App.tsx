@@ -66,6 +66,8 @@ import {
   Check,
   ChevronRight,
   Copy,
+  Eye,
+  EyeOff,
   Send,
   History,
   Info,
@@ -104,8 +106,10 @@ import {
 } from './canvas-preview';
 import {
   clearPreviewTileUiForRun,
+  readPreviewTileGlobalState,
   readPreviewTileUiState,
   resolvePreviewTilePosition,
+  writePreviewTileGlobalState,
   writePreviewTileUiState,
   type PreviewTileUiState,
 } from './preview-tile-ui';
@@ -1458,7 +1462,8 @@ export function App() {
         setPopup('next-cycle');
       });
     // Client-only preview satellites (not domain DAG). Steps view + ≥900px.
-    if (showPreviewTiles && !collapsed) {
+    const previewGlobal = readPreviewTileGlobalState(run.id);
+    if (showPreviewTiles && !collapsed && !previewGlobal.hideAll) {
       const candidates = selectCanvasPreviewCandidates(run.steps, {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
@@ -1777,6 +1782,9 @@ export function App() {
     detached.opener = null;
     setPopup(null);
   };
+  const previewHideAll = run
+    ? readPreviewTileGlobalState(run.id).hideAll
+    : false;
   const runTools = run && (
     <div className="canvas-tools">
       <div className="canvas-tools-group">
@@ -1829,6 +1837,40 @@ export function App() {
             {copiedLink
               ? t('Enlace copiado · ábrelo en Browse')
               : t('Copiar enlace del canvas')}
+          </button>
+        )}
+        {run && showPreviewTiles && (
+          <button
+            type="button"
+            className="secondary"
+            aria-pressed={previewHideAll}
+            aria-label={
+              previewHideAll
+                ? t('Vistas previas ocultas')
+                : t('Ocultar todas las vistas previas')
+            }
+            title={
+              previewHideAll
+                ? t('Mostrar vistas previas')
+                : t('Ocultar todas las vistas previas')
+            }
+            onClick={() => {
+              writePreviewTileGlobalState(run.id, {
+                hideAll: !previewHideAll,
+              });
+              setPreviewTileUiTick((n) => n + 1);
+            }}
+          >
+            {previewHideAll ? (
+              <Eye size={15} aria-hidden="true" />
+            ) : (
+              <EyeOff size={15} aria-hidden="true" />
+            )}
+            <span className="options-only">
+              {previewHideAll
+                ? t('Mostrar vistas previas')
+                : t('Ocultar todas las vistas previas')}
+            </span>
           </button>
         )}
         {(live || run.status === 'paused') && (
