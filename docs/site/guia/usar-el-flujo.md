@@ -80,7 +80,7 @@ Puedes decir en el mismo chat: «Ahora traduce esta guía al inglés». El agent
 **Continuar desde aquí**, al final del gráfico, te ayuda a preparar esa petición. **Copiar petición para el chat** es el camino habitual (copiar ≠ entregar). Pega la petición en el chat conectado; el envío automático requiere un conector de envío — MCP solo no despierta el chat (**Enviar** oculto en esta fase). El agente debe crear el recorrido enlazado. Si el proceso sigue abierto y necesitas cambiarlo, usa la revisión del plan; si falló una tarea, usa reintentar.
 
 ::: info Disponibilidad
-Los instaladores **2026.10.27.2127 UTC · Preview** incluyen artefactos (vista previa HTML/SVG aislada) y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
+Los instaladores **2026.10.28.0451 UTC · Preview** incluyen artefactos (vista previa HTML/SVG aislada) y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
 :::
 
 ## Mueve y ordena los nodos
@@ -93,4 +93,4 @@ Arrastra el asa de puntos sobre una tarjeta o símbolo. Con teclado, enfoca el n
 Las posiciones se conservan en este navegador por flujo, orientación y vista de pasos/trabajos, incluso al recibir actividad del agente. No cambian las dependencias ni el historial, y no se sincronizan con otros dispositivos.
 :::
 
-Disponible en los instaladores **2026.10.27.2127 UTC · Preview**. [Descargar](primeros-pasos.md).
+Disponible en los instaladores **2026.10.28.0451 UTC · Preview**. [Descargar](primeros-pasos.md).
