@@ -44,9 +44,10 @@ test('preview stage CSS keeps light page inside a dark matte well and P1 stage b
   assert.match(css, /color-scheme:\s*light/);
   assert.match(css, /\[data-theme='dark'\] \.artifact-preview-stage/);
   assert.match(css, /\[data-theme='dark'\] \.artifact-preview-disclaimer/);
-  assert.match(css, /\.preview-tile\s*\{[^}]*width:\s*480px/s);
-  assert.match(css, /\.preview-tile-body\s*\{[^}]*min-height:\s*280px/s);
+  assert.match(css, /\.preview-tile\s*\{[^}]*width:\s*280px/s);
+  assert.match(css, /\.preview-tile-body\s*\{[^}]*min-height:\s*180px/s);
   assert.match(css, /\.artifact-html-frame\s*\{[^}]*min-height:\s*280px/s);
+  assert.match(css, /\.preview-tile-resize/);
 });
 
 test('trace scope select forces readable ink on dark theme', () => {

@@ -1504,10 +1504,10 @@ export function App() {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
-      // Soft-cap: at most one mounted stage iframe (Arch Track G).
+      // Soft-cap: at most one mounted desktop iframe (Arch Track G / J3).
       const staged = candidates.find((candidate) => {
         const ui = readPreviewTileUiState(run.id, candidate.producerStepId);
-        return ui.size === 'stage' && !ui.collapsed;
+        return ui.size === 'desktop' && !ui.collapsed;
       });
       if (staged) candidates = [staged];
       for (const candidate of candidates) {
@@ -1843,6 +1843,27 @@ export function App() {
   const runTools = run && (
     <div className="canvas-tools">
       <div className="canvas-tools-group">
+        {!!run.jobs?.length && (
+          <button
+            type="button"
+            className="secondary"
+            data-testid="canvas-jobs-toggle"
+            aria-pressed={preferences.view === 'jobs'}
+            title={
+              preferences.view === 'jobs' ? t('Ver pasos') : t('Ver trabajos')
+            }
+            onClick={() => {
+              setFollowing(false);
+              setPreferences((p) => ({
+                ...p,
+                view: p.view === 'jobs' ? 'steps' : 'jobs',
+              }));
+            }}
+          >
+            <ListTree size={15} aria-hidden="true" />
+            <span>{t('Trabajos')}</span>
+          </button>
+        )}
         <button
           className="secondary"
           aria-haspopup="dialog"

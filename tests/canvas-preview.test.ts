@@ -35,12 +35,12 @@ test('tile breakpoint stays aligned with viewport export at 900', () => {
   assert.equal(previewTileBreakpoint, 900);
 });
 
-test('expanded tile layout sits in the sealed stage band, still a satellite', () => {
-  assert.equal(previewTileLayout.width, 480);
-  assert.equal(previewTileLayout.bodyHeight, 320);
-  assert.ok(previewTileLayout.width >= 420 && previewTileLayout.width <= 520);
+test('default tile layout hint matches mobile frame; still a satellite', () => {
+  assert.equal(previewTileLayout.width, 280);
+  assert.equal(previewTileLayout.bodyHeight, 180);
+  assert.ok(previewTileLayout.width >= 200 && previewTileLayout.width <= 320);
   assert.ok(
-    previewTileLayout.bodyHeight >= 280 && previewTileLayout.bodyHeight <= 360,
+    previewTileLayout.bodyHeight >= 120 && previewTileLayout.bodyHeight <= 240,
   );
   assert.equal(previewTileLayout.maxVisible, 5);
 });

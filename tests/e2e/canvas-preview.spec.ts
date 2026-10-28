@@ -76,9 +76,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     ),
   ).toBeVisible();
   expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
-  await tile.locator('.preview-tile-chrome').evaluate((el) => {
-    (el as HTMLButtonElement).click();
-  });
+  await tile.locator('.preview-tile-chrome-main').click();
   const resultado = page.getByTestId('resultado-stage');
   await expect(resultado).toBeVisible();
   await expect(
