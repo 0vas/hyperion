@@ -6,7 +6,7 @@ import { pickPreferredArtifact } from './resultado-evidence.js';
 /** Hide on-canvas preview tiles below this viewport width (Architect R2.4). */
 export const PREVIEW_TILE_BREAKPOINT = 900;
 
-/** Large/expanded stage ~480×320. Mini/compact default + collapse are Track E/F UI-only. */
+/** Medium band ~480×320. Mini default / Stage near-full / collapse are Track E–G UI-only. */
 export const previewTileLayout = {
   gap: 28,
   width: 480,

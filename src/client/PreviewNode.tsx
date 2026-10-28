@@ -1,17 +1,18 @@
-import {
-  ExternalLink,
-  Eye,
-  EyeOff,
-  GripVertical,
-  Maximize2,
-  Minimize2,
-} from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import type { Artifact } from '../domain/artifacts';
 import { ArtifactSandboxPreview } from './ArtifactSandboxPreview';
 import {
+  canOfferPreviewOpenInBrowser,
+  openPreviewInBrowser,
+} from './preview-open-browser';
+import {
+  PREVIEW_TILE_SIZE_OPTIONS,
   previewTileCompactLayout,
+  previewTileMediumLayout,
   previewTileMountsIframe,
+  previewTileStageLayout,
+  type PreviewTileSize,
   type PreviewTileUiState,
 } from './preview-tile-ui';
 import { t, useLocale } from './i18n';
@@ -28,26 +29,72 @@ export type PreviewNodeData = {
   emphasized: boolean;
   horizontal: boolean;
   tileUi: PreviewTileUiState;
+  /** React Flow pane size for stage geometry (Arch G4). */
+  paneSize: { width: number; height: number };
   onSelectProducer: (stepId: string) => void;
   onTileUiChange: (next: PreviewTileUiState) => void;
 };
+
+function sizeOptionLabel(size: PreviewTileSize): string {
+  if (size === 'medium') return t('Media');
+  if (size === 'stage') return t('Escenario');
+  return t('Mini');
+}
 
 /** Client-only RF citizen: inert preview satellite of a leaf producer. */
 export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   useLocale();
   const { tileUi } = data;
   const mountsPreview = previewTileMountsIframe(tileUi);
-  const compact = tileUi.size === 'compact';
-  const sizeLabel =
-    tileUi.size === 'expanded' ? t('Vista mini') : t('Ampliar vista');
-  const hideLabel = tileUi.collapsed ? t('Mostrar vista') : t('Ocultar vista');
+  const mini = tileUi.size === 'mini';
+  const stage = tileUi.size === 'stage';
+  const medium = tileUi.size === 'medium';
+  const stageLayout = previewTileStageLayout(data.paneSize);
+  const hideLabel = tileUi.collapsed
+    ? t('Mostrar artefacto')
+    : t('Ocultar artefacto');
+  const openLabel = t('Abrir en navegador');
+  const openTitle = data.remoteOnly
+    ? openLabel
+    : t(
+        'Abrir en navegador (instantánea local; sin JavaScript de red como en el lienzo)',
+      );
+  const offerOpen =
+    !tileUi.collapsed && canOfferPreviewOpenInBrowser(data.artifact);
+  const width = tileUi.collapsed
+    ? undefined
+    : stage
+      ? stageLayout.width
+      : medium
+        ? previewTileMediumLayout.width
+        : previewTileCompactLayout.width;
+  const bodyMin = stage
+    ? stageLayout.bodyHeight
+    : medium
+      ? previewTileMediumLayout.bodyHeight
+      : previewTileCompactLayout.bodyHeight;
+
   return (
     <div
       className={`preview-tile${data.emphasized ? ' emphasized' : ''}${
-        compact ? ' is-compact' : ''
-      }${tileUi.collapsed ? ' is-collapsed' : ''}`}
+        mini ? ' is-mini' : ''
+      }${medium ? ' is-medium' : ''}${stage ? ' is-stage' : ''}${
+        tileUi.collapsed ? ' is-collapsed' : ''
+      }`}
+      style={
+        width
+          ? {
+              width,
+              ...(stage ? { zIndex: 8 } : undefined),
+            }
+          : undefined
+      }
       role="group"
-      aria-label={t('Vista previa del paso {0}', { 0: data.producerTitle })}
+      aria-label={
+        stage
+          ? t('Vista previa a casi pantalla completa')
+          : t('Vista previa del paso {0}', { 0: data.producerTitle })
+      }
     >
       <Handle
         type="target"
@@ -79,29 +126,35 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
         </button>
         <div className="preview-tile-actions">
           {!tileUi.collapsed && (
-            <button
-              type="button"
-              className="secondary icon-button preview-tile-action"
-              aria-label={sizeLabel}
-              title={sizeLabel}
-              onClick={(event) => {
-                event.stopPropagation();
-                data.onTileUiChange({
-                  ...tileUi,
-                  size: tileUi.size === 'expanded' ? 'compact' : 'expanded',
-                });
-              }}
-            >
-              {tileUi.size === 'expanded' ? (
-                <Minimize2 size={15} aria-hidden="true" />
-              ) : (
-                <Maximize2 size={15} aria-hidden="true" />
-              )}
-            </button>
+            <label className="preview-tile-resolution">
+              <span className="preview-tile-resolution-label">
+                {t('Resolución')}
+              </span>
+              <select
+                className="preview-tile-resolution-select"
+                aria-label={t('Resolución')}
+                title={t('Resolución')}
+                value={tileUi.size}
+                onClick={(event) => event.stopPropagation()}
+                onChange={(event) => {
+                  event.stopPropagation();
+                  data.onTileUiChange({
+                    ...tileUi,
+                    size: event.target.value as PreviewTileSize,
+                  });
+                }}
+              >
+                {PREVIEW_TILE_SIZE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {sizeOptionLabel(option)}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
           <button
             type="button"
-            className="secondary icon-button preview-tile-action"
+            className="secondary preview-tile-action preview-tile-action-text"
             aria-label={hideLabel}
             title={hideLabel}
             onClick={(event) => {
@@ -117,22 +170,27 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
             ) : (
               <EyeOff size={15} aria-hidden="true" />
             )}
+            <span>{t('Artefactos')}</span>
           </button>
-          {data.remoteOnly && data.artifact.url && !tileUi.collapsed && (
-            <a
-              className="secondary icon-button preview-tile-action"
-              href={data.artifact.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t('Abrir en web')}
-              title={t('Abrir en web')}
+          {offerOpen && (
+            <button
+              type="button"
+              className="secondary preview-tile-action preview-tile-action-text"
+              aria-label={openLabel}
+              title={openTitle}
               onClick={(event) => {
                 event.stopPropagation();
                 data.onSelectProducer(data.producerStepId);
+                void openPreviewInBrowser(
+                  data.runId,
+                  data.artifact,
+                  data.siblings,
+                );
               }}
             >
               <ExternalLink size={15} aria-hidden="true" />
-            </a>
+              <span>{openLabel}</span>
+            </button>
           )}
         </div>
       </div>
@@ -150,17 +208,18 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
         ) : (
           <div
             className="preview-tile-body nodrag nopan"
+            style={{ minHeight: bodyMin, maxHeight: bodyMin + 40 }}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => data.onSelectProducer(data.producerStepId)}
           >
             <div
               className={
-                compact
+                mini
                   ? 'preview-tile-scale-wrap is-scaled'
                   : 'preview-tile-scale-wrap'
               }
               style={
-                compact
+                mini
                   ? {
                       transform: `scale(${previewTileCompactLayout.scale})`,
                       transformOrigin: 'top left',
@@ -173,7 +232,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
                 runId={data.runId}
                 artifact={data.artifact}
                 siblings={data.siblings}
-                compact
+                compact={mini || medium}
               />
             </div>
           </div>

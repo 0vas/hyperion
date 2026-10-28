@@ -1,11 +1,10 @@
 /** Client-only preview tile prefs — never written into run snapshots. */
 
-export type PreviewTileSize = 'expanded' | 'compact';
+export type PreviewTileSize = 'mini' | 'medium' | 'stage';
 
 export type PreviewTileUiState = {
   x?: number;
   y?: number;
-  /** mini ≡ compact (default); large ≡ expanded. */
   size: PreviewTileSize;
   collapsed: boolean;
 };
@@ -15,12 +14,14 @@ export type PreviewTileGlobalState = {
   hideAll: boolean;
 };
 
-export const PREVIEW_TILE_UI_VERSION = 'v1';
+export const PREVIEW_TILE_UI_VERSION = 'v2';
+/** Track E/F keys — read once for migration, cleared on layout reset. */
+export const PREVIEW_TILE_UI_LEGACY_VERSION = 'v1';
 export const PREVIEW_TILE_GLOBAL_VERSION = 'v1';
 
-/** New tiles default to mini/compact (Track F / Arch M3). */
+/** New tiles default to mini (Track G / Arch). */
 export const previewTileUiDefaults: PreviewTileUiState = {
-  size: 'compact',
+  size: 'mini',
   collapsed: false,
 };
 
@@ -28,18 +29,31 @@ export const previewTileGlobalDefaults: PreviewTileGlobalState = {
   hideAll: false,
 };
 
-/** Compact / mini body target (~280×180) — Architect match seal. */
+/** Mini body target (~280×180) — Architect match seal. */
 export const previewTileCompactLayout = {
   width: 280,
   bodyHeight: 180,
   scale: 0.8,
 } as const;
 
+/** Medium band (~480×320) — F large / 2047 stage. */
+export const previewTileMediumLayout = {
+  width: 480,
+  bodyHeight: 320,
+} as const;
+
+export const PREVIEW_TILE_SIZE_OPTIONS: PreviewTileSize[] = [
+  'mini',
+  'medium',
+  'stage',
+];
+
 export function previewTileUiStorageKey(
   runId: string,
   producerStepId: string,
+  version: string = PREVIEW_TILE_UI_VERSION,
 ): string {
-  return `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:${producerStepId}`;
+  return `hyperion.previewTile.${version}:${runId}:${producerStepId}`;
 }
 
 export function previewTileGlobalStorageKey(runId: string): string {
@@ -69,8 +83,11 @@ export function isPreviewTileUiDefault(state: PreviewTileUiState): boolean {
   );
 }
 
+/** v2 sizes + honest F/E migration: compact→mini, expanded→medium. */
 export function parsePreviewTileSize(value: unknown): PreviewTileSize {
-  if (value === 'expanded' || value === 'compact') return value;
+  if (value === 'mini' || value === 'medium' || value === 'stage') return value;
+  if (value === 'compact') return 'mini';
+  if (value === 'expanded') return 'medium';
   return previewTileUiDefaults.size;
 }
 
@@ -100,12 +117,27 @@ export function parsePreviewTileGlobalState(
 export function readPreviewTileUiState(
   runId: string,
   producerStepId: string,
-  storage: Pick<Storage, 'getItem'> = localStorage,
+  storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = localStorage,
 ): PreviewTileUiState {
   try {
-    const raw = storage.getItem(previewTileUiStorageKey(runId, producerStepId));
-    if (!raw) return { ...previewTileUiDefaults };
-    return parsePreviewTileUiState(JSON.parse(raw));
+    const key = previewTileUiStorageKey(runId, producerStepId);
+    const raw = storage.getItem(key);
+    if (raw) return parsePreviewTileUiState(JSON.parse(raw));
+    const legacyKey = previewTileUiStorageKey(
+      runId,
+      producerStepId,
+      PREVIEW_TILE_UI_LEGACY_VERSION,
+    );
+    const legacyRaw = storage.getItem(legacyKey);
+    if (!legacyRaw) return { ...previewTileUiDefaults };
+    const migrated = parsePreviewTileUiState(JSON.parse(legacyRaw));
+    writePreviewTileUiState(runId, producerStepId, migrated, storage);
+    try {
+      storage.removeItem(legacyKey);
+    } catch {
+      /* ignore */
+    }
+    return migrated;
   } catch {
     return { ...previewTileUiDefaults };
   }
@@ -168,30 +200,24 @@ export function writePreviewTileGlobalState(
   }
 }
 
-/** Drop all Track E/F size/collapse/position prefs for a run (layout reset). */
+/** Drop Track E/F/G size/collapse/position prefs for a run (layout reset). */
 export function clearPreviewTileUiForRun(
   runId: string,
   storage: Pick<Storage, 'length' | 'key' | 'removeItem'> = localStorage,
 ): void {
-  const prefix = `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:`;
+  const prefixes = [
+    `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:`,
+    `hyperion.previewTile.${PREVIEW_TILE_UI_LEGACY_VERSION}:${runId}:`,
+  ];
   const globalKey = previewTileGlobalStorageKey(runId);
   const toRemove: string[] = [];
   for (let i = 0; i < storage.length; i++) {
     const key = storage.key(i);
-    if (key?.startsWith(prefix) || key === globalKey) toRemove.push(key);
+    if (!key) continue;
+    if (key === globalKey || prefixes.some((prefix) => key.startsWith(prefix)))
+      toRemove.push(key);
   }
   for (const key of toRemove) storage.removeItem(key);
-}
-
-export function togglePreviewTileSize(
-  state: PreviewTileUiState,
-): PreviewTileUiState {
-  if (state.collapsed)
-    return { ...state, collapsed: false, size: state.size || 'compact' };
-  return {
-    ...state,
-    size: state.size === 'expanded' ? 'compact' : 'expanded',
-  };
 }
 
 export function collapsePreviewTile(
@@ -212,8 +238,29 @@ export function previewTileMountsIframe(state: PreviewTileUiState): boolean {
 }
 
 /**
+ * Near-full stage: ≥~85%×≥~75% of RF pane, clamped (Arch G4).
+ * Not free-resize; not an OS window.
+ */
+export function previewTileStageLayout(pane: {
+  width: number;
+  height: number;
+}): { width: number; bodyHeight: number } {
+  const paneW = Math.max(320, pane.width || 960);
+  const paneH = Math.max(240, pane.height || 640);
+  const width = Math.min(
+    Math.min(1200, paneW - 48),
+    Math.max(Math.floor(paneW * 0.85), previewTileMediumLayout.width),
+  );
+  const bodyHeight = Math.min(
+    Math.min(900, paneH - 72),
+    Math.max(Math.floor(paneH * 0.75), previewTileMediumLayout.bodyHeight),
+  );
+  return { width, bodyHeight };
+}
+
+/**
  * Resolve canvas position: live drag → stored UI coords → satellite default.
- * Compact/collapse must not fall back to satellite when x/y were stored (E1).
+ * Mini/collapse must not fall back to satellite when x/y were stored (E1).
  */
 export function resolvePreviewTilePosition(
   state: PreviewTileUiState,
