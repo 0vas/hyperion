@@ -629,6 +629,20 @@ function FitCanvas({ view }: { view: string }) {
   ]);
   return null;
 }
+
+/** Reports React Flow pane size for Track G stage geometry. */
+function PaneSizeReporter({
+  onSize,
+}: {
+  onSize: (size: { width: number; height: number }) => void;
+}) {
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
+  useEffect(() => {
+    if (width > 0 && height > 0) onSize({ width, height });
+  }, [width, height, onSize]);
+  return null;
+}
 async function api<T>(path: string, data?: unknown): Promise<T> {
   const res = await fetch(path, {
     ...(data
@@ -800,6 +814,20 @@ export function App() {
     useState<ResultadoSection>('evidence');
   const [viewportWidth, setViewportWidth] = useState(
     () => globalThis.innerWidth || 1280,
+  );
+  const [flowPaneSize, setFlowPaneSize] = useState({
+    width: 960,
+    height: 640,
+  });
+  const onFlowPaneSize = useCallback(
+    (size: { width: number; height: number }) => {
+      setFlowPaneSize((previous) =>
+        previous.width === size.width && previous.height === size.height
+          ? previous
+          : size,
+      );
+    },
+    [],
   );
   useEffect(() => {
     const onResize = () => setViewportWidth(globalThis.innerWidth || 1280);
@@ -1464,10 +1492,16 @@ export function App() {
     // Client-only preview satellites (not domain DAG). Steps view + ≥900px.
     const previewGlobal = readPreviewTileGlobalState(run.id);
     if (showPreviewTiles && !collapsed && !previewGlobal.hideAll) {
-      const candidates = selectCanvasPreviewCandidates(run.steps, {
+      let candidates = selectCanvasPreviewCandidates(run.steps, {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
+      // Soft-cap: at most one mounted stage iframe (Arch Track G).
+      const staged = candidates.find((candidate) => {
+        const ui = readPreviewTileUiState(run.id, candidate.producerStepId);
+        return ui.size === 'stage' && !ui.collapsed;
+      });
+      if (staged) candidates = [staged];
       for (const candidate of candidates) {
         const producerPos = positions[candidate.producerStepId];
         if (!producerPos) continue;
@@ -1514,6 +1548,7 @@ export function App() {
               (resultadoOpen && stepId === candidate.producerStepId),
             horizontal,
             tileUi,
+            paneSize: flowPaneSize,
             onSelectProducer: (producerId: string) => selectStep(producerId),
             onTileUiChange: (next: PreviewTileUiState) => {
               const current = readPreviewTileUiState(
@@ -1593,6 +1628,7 @@ export function App() {
     showPreviewTiles,
     previewTileUiTick,
     previewDragPositions,
+    flowPaneSize,
   ]);
   function requestRetry(id: string) {
     const target = run?.steps.find((item) => item.id === id);
@@ -1845,14 +1881,10 @@ export function App() {
             className="secondary"
             aria-pressed={previewHideAll}
             aria-label={
-              previewHideAll
-                ? t('Vistas previas ocultas')
-                : t('Ocultar todas las vistas previas')
+              previewHideAll ? t('Mostrar artefactos') : t('Ocultar artefactos')
             }
             title={
-              previewHideAll
-                ? t('Mostrar vistas previas')
-                : t('Ocultar todas las vistas previas')
+              previewHideAll ? t('Mostrar artefactos') : t('Ocultar artefactos')
             }
             onClick={() => {
               writePreviewTileGlobalState(run.id, {
@@ -1866,10 +1898,10 @@ export function App() {
             ) : (
               <EyeOff size={15} aria-hidden="true" />
             )}
-            <span className="options-only">
+            <span>
               {previewHideAll
-                ? t('Mostrar vistas previas')
-                : t('Ocultar todas las vistas previas')}
+                ? t('Mostrar artefactos')
+                : t('Ocultar artefactos')}
             </span>
           </button>
         )}
@@ -2159,6 +2191,7 @@ export function App() {
                   <FitCanvas
                     view={`${preferences.view}:${preferences.orientation}:${layoutReset}:${resultadoOpen ? 'resultado' : 'full'}`}
                   />
+                  <PaneSizeReporter onSize={onFlowPaneSize} />
                   <Background color="#c6c0b2" gap={28} size={0.8} />
                   <TaskNavigation
                     canReset={Object.keys(manualPositions).length > 0}

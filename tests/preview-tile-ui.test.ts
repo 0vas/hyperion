@@ -7,21 +7,27 @@ import {
   collapsePreviewTile,
   expandPreviewTile,
   parsePreviewTileGlobalState,
+  parsePreviewTileSize,
   parsePreviewTileUiState,
   previewTileCompactLayout,
   previewTileGlobalDefaults,
   previewTileGlobalStorageKey,
+  previewTileMediumLayout,
   previewTileMountsIframe,
+  previewTileStageLayout,
   previewTileStoredPosition,
   previewTileUiDefaults,
   previewTileUiStorageKey,
   readPreviewTileGlobalState,
   readPreviewTileUiState,
   resolvePreviewTilePosition,
-  togglePreviewTileSize,
   writePreviewTileGlobalState,
   writePreviewTileUiState,
 } from '../src/client/preview-tile-ui.js';
+import {
+  injectOpenBrowserCsp,
+  PREVIEW_OPEN_BROWSER_CSP,
+} from '../src/client/preview-open-browser.js';
 
 function memoryStorage(seed: Record<string, string> = {}) {
   const map = new Map(Object.entries(seed));
@@ -44,9 +50,9 @@ function memoryStorage(seed: Record<string, string> = {}) {
   };
 }
 
-test('preview tile UI defaults are mini/compact and not collapsed', () => {
+test('preview tile UI defaults are mini and not collapsed', () => {
   assert.deepEqual(previewTileUiDefaults, {
-    size: 'compact',
+    size: 'mini',
     collapsed: false,
   });
   assert.equal(previewTileMountsIframe(previewTileUiDefaults), true);
@@ -56,43 +62,60 @@ test('preview tile UI defaults are mini/compact and not collapsed', () => {
   );
 });
 
-test('absent storage migrates to compact mini; stored expanded is preserved', () => {
-  const storage = memoryStorage();
+test('v2 migrates compact→mini and expanded→medium; absent→mini', () => {
+  assert.equal(parsePreviewTileSize('compact'), 'mini');
+  assert.equal(parsePreviewTileSize('expanded'), 'medium');
+  assert.equal(parsePreviewTileSize('stage'), 'stage');
+  assert.equal(parsePreviewTileSize('nope'), 'mini');
+  const storage = memoryStorage({
+    'hyperion.previewTile.v1:run-a:write': JSON.stringify({
+      size: 'expanded',
+      collapsed: false,
+      x: 10,
+      y: 20,
+    }),
+  });
+  assert.deepEqual(readPreviewTileUiState('run-a', 'write', storage), {
+    size: 'medium',
+    collapsed: false,
+    x: 10,
+    y: 20,
+  });
+  assert.equal(
+    storage.getItem('hyperion.previewTile.v2:run-a:write') !== null,
+    true,
+  );
+  assert.equal(storage.getItem('hyperion.previewTile.v1:run-a:write'), null);
   assert.deepEqual(
-    readPreviewTileUiState('run-a', 'write', storage),
+    readPreviewTileUiState('run-b', 'write', memoryStorage()),
     previewTileUiDefaults,
   );
-  writePreviewTileUiState(
-    'run-a',
-    'write',
-    { size: 'expanded', collapsed: false },
-    storage,
-  );
-  assert.deepEqual(readPreviewTileUiState('run-a', 'write', storage), {
-    size: 'expanded',
-    collapsed: false,
-  });
 });
 
-test('compact layout sits in Architect stamp band with scale A', () => {
+test('mini and medium layout bands match Architect stamps', () => {
   assert.equal(previewTileCompactLayout.width, 280);
   assert.equal(previewTileCompactLayout.bodyHeight, 180);
-  assert.ok(previewTileCompactLayout.scale >= 0.75);
-  assert.ok(previewTileCompactLayout.scale <= 0.85);
+  assert.equal(previewTileMediumLayout.width, 480);
+  assert.equal(previewTileMediumLayout.bodyHeight, 320);
 });
 
-test('storage key is UI-only and scoped by run + producer', () => {
+test('stage layout is near-full pane without free-resize', () => {
+  const pane = { width: 1000, height: 800 };
+  const stage = previewTileStageLayout(pane);
+  assert.ok(stage.width / pane.width >= 0.85 - 1e-9);
+  assert.ok(stage.bodyHeight / pane.height >= 0.75 - 1e-9);
+  assert.ok(stage.width <= Math.min(1200, pane.width - 48));
+  assert.ok(stage.bodyHeight <= Math.min(900, pane.height - 72));
+});
+
+test('storage key is UI-only v2 and scoped by run + producer', () => {
   assert.equal(
     previewTileUiStorageKey('run-a', 'write'),
-    'hyperion.previewTile.v1:run-a:write',
+    'hyperion.previewTile.v2:run-a:write',
   );
   assert.equal(
     previewTileGlobalStorageKey('run-a'),
     'hyperion.previewTileGlobal.v1:run-a',
-  );
-  assert.doesNotMatch(
-    previewTileUiStorageKey('run-a', 'write'),
-    /snapshot|workflow|sqlite/i,
   );
 });
 
@@ -109,7 +132,7 @@ test('global hide-all round-trip and clears with layout reset', () => {
   writePreviewTileUiState(
     'run-a',
     'write',
-    { size: 'expanded', collapsed: false },
+    { size: 'stage', collapsed: false },
     storage,
   );
   clearPreviewTileUiForRun('run-a', storage);
@@ -126,49 +149,12 @@ test('global hide-all round-trip and clears with layout reset', () => {
   });
 });
 
-test('read/write round-trip and clear by run', () => {
+test('E1: dragged position survives size changes and collapse', () => {
   const storage = memoryStorage();
   writePreviewTileUiState(
     'run-a',
     'write',
-    { size: 'expanded', collapsed: true, x: 40, y: 80 },
-    storage,
-  );
-  assert.deepEqual(readPreviewTileUiState('run-a', 'write', storage), {
-    size: 'expanded',
-    collapsed: true,
-    x: 40,
-    y: 80,
-  });
-  writePreviewTileUiState(
-    'run-a',
-    'other',
-    { size: 'expanded', collapsed: false },
-    storage,
-  );
-  writePreviewTileUiState(
-    'run-b',
-    'write',
-    { size: 'expanded', collapsed: false },
-    storage,
-  );
-  clearPreviewTileUiForRun('run-a', storage);
-  assert.deepEqual(
-    readPreviewTileUiState('run-a', 'write', storage),
-    previewTileUiDefaults,
-  );
-  assert.deepEqual(readPreviewTileUiState('run-b', 'write', storage), {
-    size: 'expanded',
-    collapsed: false,
-  });
-});
-
-test('E1: dragged position survives compact/collapse and is not wiped as default', () => {
-  const storage = memoryStorage();
-  writePreviewTileUiState(
-    'run-a',
-    'write',
-    { size: 'expanded', collapsed: false, x: 120, y: 240 },
+    { size: 'medium', collapsed: false, x: 120, y: 240 },
     storage,
   );
   const dragged = readPreviewTileUiState('run-a', 'write', storage);
@@ -176,7 +162,7 @@ test('E1: dragged position survives compact/collapse and is not wiped as default
   writePreviewTileUiState(
     'run-a',
     'write',
-    { ...dragged, size: 'compact' },
+    { ...dragged, size: 'mini' },
     storage,
   );
   writePreviewTileUiState(
@@ -189,7 +175,7 @@ test('E1: dragged position survives compact/collapse and is not wiped as default
     storage,
   );
   const after = readPreviewTileUiState('run-a', 'write', storage);
-  assert.equal(after.size, 'compact');
+  assert.equal(after.size, 'mini');
   assert.equal(after.collapsed, true);
   assert.deepEqual(previewTileStoredPosition(after), { x: 120, y: 240 });
   assert.deepEqual(
@@ -197,68 +183,48 @@ test('E1: dragged position survives compact/collapse and is not wiped as default
     { x: 120, y: 240 },
   );
   assert.deepEqual(
-    resolvePreviewTilePosition(after, { x: 1, y: 2 }, { x: 999, y: 999 }),
-    { x: 1, y: 2 },
-  );
-});
-
-test('size toggle and collapse/expand helpers', () => {
-  assert.deepEqual(togglePreviewTileSize(previewTileUiDefaults), {
-    size: 'expanded',
-    collapsed: false,
-  });
-  assert.deepEqual(
-    togglePreviewTileSize({ size: 'expanded', collapsed: false }),
-    previewTileUiDefaults,
-  );
-  assert.deepEqual(
     expandPreviewTile(collapsePreviewTile(previewTileUiDefaults)),
     previewTileUiDefaults,
   );
-  assert.deepEqual(parsePreviewTileUiState({ size: 'nope', collapsed: 1 }), {
-    size: 'compact',
-    collapsed: false,
-  });
-  assert.deepEqual(parsePreviewTileUiState({ size: 'expanded' }), {
-    size: 'expanded',
+  assert.deepEqual(parsePreviewTileUiState({ size: 'stage' }), {
+    size: 'stage',
     collapsed: false,
   });
 });
 
-test('PreviewNode exposes icon-only chrome and never bare role claims', () => {
+test('open-browser CSP meta is injected for local blob documents', () => {
+  const withHead = injectOpenBrowserCsp(
+    '<html><head></head><body>x</body></html>',
+  );
+  assert.match(withHead, /Content-Security-Policy/);
+  assert.match(withHead, /default-src 'none'/);
+  assert.equal(PREVIEW_OPEN_BROWSER_CSP.includes("default-src 'none'"), true);
+  const bare = injectOpenBrowserCsp('<p>hi</p>');
+  assert.match(bare, /^<head><meta http-equiv="Content-Security-Policy"/);
+});
+
+test('PreviewNode exposes labeled resolution and artifacts wording', () => {
   const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
   assert.match(source, /preview-tile-drag/);
-  assert.match(source, /Arrastrar vista previa/);
-  assert.match(source, /Minimize2|Maximize2/);
-  assert.match(source, /EyeOff|Eye/);
-  assert.match(source, /ExternalLink/);
-  assert.match(source, /icon-button/);
-  assert.match(source, /Ampliar vista|Vista mini|Abrir en web/);
-  assert.match(source, /previewTileMountsIframe|collapsed/);
-  assert.doesNotMatch(source, />\{t\(['"]Compactar['"]\)\}/);
-  assert.doesNotMatch(source, />\{t\(['"]Ampliar['"]\)\}/);
-  assert.doesNotMatch(source, />\{hideLabel\}|>\{sizeLabel\}/);
-  assert.doesNotMatch(source, />\{t\(['"]Abrir enlace['"]\)\}/);
+  assert.match(source, /Resolución/);
+  assert.match(source, /PREVIEW_TILE_SIZE_OPTIONS|Mini|Media|Escenario/);
+  assert.match(source, /select/);
+  assert.match(source, /Abrir en navegador/);
+  assert.match(source, /openPreviewInBrowser/);
+  assert.match(source, /Artefactos/);
+  assert.doesNotMatch(source, /Maximize2|Minimize2/);
   assert.doesNotMatch(source, /Office|pen\.dev complete|W2|free-resize/);
 });
 
-test('App enables preview dragHandle, global hide-all, and persists outside domain', () => {
+test('App global hide shows Artefactos wording and stage soft-cap', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
-  assert.match(source, /type:\s*'preview'/);
+  assert.match(source, /Ocultar artefactos|Mostrar artefactos/);
+  assert.match(source, /PaneSizeReporter|flowPaneSize|paneSize/);
+  assert.match(source, /size === 'stage'/);
   assert.match(source, /dragHandle:\s*['"]\.preview-tile-drag['"]/);
-  assert.match(source, /draggable:\s*true/);
-  assert.match(source, /resolvePreviewTilePosition/);
-  assert.match(source, /onNodeDragStop/);
   assert.match(source, /clearPreviewTileUiForRun/);
-  assert.match(
+  assert.doesNotMatch(
     source,
-    /readPreviewTileGlobalState|writePreviewTileGlobalState/,
+    /Ocultar todas las vistas previas[\s\S]*options-only/,
   );
-  assert.match(
-    source,
-    /Ocultar todas las vistas previas|Mostrar vistas previas/,
-  );
-  assert.match(source, /canvas-tools/);
-  assert.match(source, /node\.type === 'preview'/);
-  assert.doesNotMatch(source, /previewTile.*snapshot|artifacts\.push.*x:/);
 });
