@@ -283,7 +283,7 @@ test('English artifacts and continuation are usable on narrow light and dark lay
     await page
       .getByRole('button', { name: 'Preview artifact', exact: true })
       .click();
-    await expect(page.locator('.artifact-text')).toHaveText('# My report');
+    await expect(page.locator('.preview-note-body')).toHaveText('# My report');
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
