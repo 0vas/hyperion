@@ -68,9 +68,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   const openLabel = t('Abrir');
   const openTitle = data.remoteOnly
     ? t('Abrir en navegador')
-    : t(
-        'Abrir (vista en Hyperion; sin JavaScript de red como en el lienzo)',
-      );
+    : t('Abrir (vista en Hyperion; sin JavaScript de red como en el lienzo)');
   const offerOpen =
     !tileUi.collapsed && canOfferPreviewOpenInBrowser(data.artifact);
   const width = tileUi.collapsed ? undefined : frame.width;

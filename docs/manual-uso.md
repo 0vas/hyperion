@@ -89,7 +89,7 @@ Si respondiste preguntas anteriores, comprueba que esas respuestas siguen en I/O
 ## Qué pasa después
 
 1. **Abre el enlace.** «Petición original» conserva lo que pediste.
-2. **Revisa el plan.** En **Ajustes → Vista del flujo** puedes elegir «Trabajos · resumen del plan» para contraer las fases. Pulsa un trabajo para desplegar los pasos en el canvas. Cada paso conserva su responsable, estado, datos y logs.
+2. **Revisa el plan.** Pulsa **Trabajos** en la barra inferior para alternar entre el resumen de fases y los pasos del canvas. También está disponible en **Ajustes → Vista del flujo**. Pulsa un trabajo para desplegar sus pasos. Cada paso conserva su responsable, estado, datos y logs.
 3. **Enfoca el trabajo.** Selecciona un paso en «Ir a tarea» y activa «Seguir actividad». La vista acompaña el avance; al arrastrar o cambiar el zoom puedes explorar libremente.
 4. **Decide cuando diga «Tu turno».** Al seleccionar el paso se abre **Resultado** junto al canvas: verás qué se te pregunta, por qué hace falta y qué sucederá después. Elige los valores y pulsa «Guardar elección», o revisa el resultado y aprueba/rechaza.
 5. **Confirma y sigue el avance.** Si ves «Agente conectado», tu respuesta se entrega al agente que está esperando y puede continuar en ese turno. Si el chat terminó, usa «Copiar continuación» para conectarlo de nuevo. No repitas la respuesta.

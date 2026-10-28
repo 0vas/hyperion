@@ -128,7 +128,10 @@ test('device content viewports and default frames are independent', () => {
   assert.equal(previewTileContentViewport('mobile').width, 390);
   assert.equal(previewTileContentViewport('tablet').width, 768);
   assert.equal(previewTileContentViewport('desktop').width, 1280);
-  assert.equal(previewTileDefaultFrame('mobile').width, previewTileMobileFrame.width);
+  assert.equal(
+    previewTileDefaultFrame('mobile').width,
+    previewTileMobileFrame.width,
+  );
   assert.equal(previewTileCompactLayout.width, 280);
   assert.equal(previewTileMediumLayout.width, 480);
   const scale = previewTileContainScale(
@@ -136,10 +139,7 @@ test('device content viewports and default frames are independent', () => {
     previewTileContentViewport('mobile'),
   );
   assert.ok(scale < 1);
-  assert.equal(
-    scale,
-    Math.min(280 / 390, 180 / 844),
-  );
+  assert.equal(scale, Math.min(280 / 390, 180 / 844));
 });
 
 test('mini contain helper remains for legacy callers', () => {
@@ -381,7 +381,6 @@ test('App hosts thin PreviewOpenShell Volver; Artefactos on toolbar', () => {
   assert.match(source, /PaneSizeReporter|flowPaneSize|paneSize/);
   assert.match(source, /dragHandle:\s*['"]\.preview-tile-drag['"]/);
   assert.match(source, /size === ['"]desktop['"]/);
-  assert.doesNotMatch(source, /Ver trabajos/);
   assert.doesNotMatch(source, /Layers3/);
   const shell = readFileSync(
     resolve('src/client/PreviewOpenShell.tsx'),
@@ -391,4 +390,11 @@ test('App hosts thin PreviewOpenShell Volver; Artefactos on toolbar', () => {
   assert.match(shell, /ArtifactSandboxPreview/);
   assert.doesNotMatch(shell, /Vista en Hyperion/);
   assert.doesNotMatch(shell, /Cerrar vista/);
+});
+
+test('canvas toolbar keeps the Jobs switch visible when the workflow has jobs', () => {
+  const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
+  assert.match(source, /data-testid="canvas-jobs-toggle"/);
+  assert.match(source, /\{t\('Trabajos'\)\}/);
+  assert.match(source, /view:\s*p\.view === 'jobs' \? 'steps' : 'jobs'/);
 });

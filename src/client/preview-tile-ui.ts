@@ -269,7 +269,10 @@ export function readPreviewTileUiState(
     const key = previewTileUiStorageKey(runId, producerStepId);
     const raw = storage.getItem(key);
     if (raw) return parsePreviewTileUiState(JSON.parse(raw));
-    for (const legacy of [PREVIEW_TILE_UI_LEGACY_V2, PREVIEW_TILE_UI_LEGACY_VERSION]) {
+    for (const legacy of [
+      PREVIEW_TILE_UI_LEGACY_V2,
+      PREVIEW_TILE_UI_LEGACY_VERSION,
+    ]) {
       const legacyKey = previewTileUiStorageKey(runId, producerStepId, legacy);
       const legacyRaw = storage.getItem(legacyKey);
       if (!legacyRaw) continue;

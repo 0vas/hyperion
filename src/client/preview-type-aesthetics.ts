@@ -5,12 +5,7 @@ export const PREVIEW_CSV_MAX_ROWS = 40;
 export const PREVIEW_CSV_MAX_COLS = 12;
 
 export type PreviewAestheticKind =
-  | 'markup'
-  | 'image'
-  | 'csv'
-  | 'note'
-  | 'office'
-  | 'text';
+  'markup' | 'image' | 'csv' | 'note' | 'office' | 'text';
 
 export type OfficeKind = 'docx' | 'xlsx' | 'pptx' | 'other';
 
@@ -94,10 +89,15 @@ export function parseDelimitedPreview(
   while (lines.length && lines[lines.length - 1] === '') lines.pop();
   const truncated =
     lines.length > PREVIEW_CSV_MAX_ROWS ||
-    lines.some((line) => splitDelimitedLine(line, delimiter).length > PREVIEW_CSV_MAX_COLS);
-  const rows = lines.slice(0, PREVIEW_CSV_MAX_ROWS).map((line) =>
-    splitDelimitedLine(line, delimiter).slice(0, PREVIEW_CSV_MAX_COLS),
-  );
+    lines.some(
+      (line) =>
+        splitDelimitedLine(line, delimiter).length > PREVIEW_CSV_MAX_COLS,
+    );
+  const rows = lines
+    .slice(0, PREVIEW_CSV_MAX_ROWS)
+    .map((line) =>
+      splitDelimitedLine(line, delimiter).slice(0, PREVIEW_CSV_MAX_COLS),
+    );
   return { rows, truncated, delimiter };
 }
 

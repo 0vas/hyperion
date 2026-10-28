@@ -202,7 +202,11 @@ export function ArtifactSandboxPreview({
 
   if (kind === 'office' && officeKind)
     return (
-      <div className={compact ? 'preview-office-card' : 'preview-office-card is-roomy'}>
+      <div
+        className={
+          compact ? 'preview-office-card' : 'preview-office-card is-roomy'
+        }
+      >
         <OfficeFileIcon kind={officeKind} />
         <div className="preview-office-meta">
           <strong>{artifact.name}</strong>
