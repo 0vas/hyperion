@@ -10,10 +10,14 @@ import {
   parsePreviewTileSize,
   parsePreviewTileUiState,
   previewTileCompactLayout,
+  previewTileContainScale,
+  previewTileContentViewport,
+  previewTileDefaultFrame,
   previewTileGlobalDefaults,
   previewTileGlobalStorageKey,
   previewTileMediumLayout,
   previewTileMiniContainScale,
+  previewTileMobileFrame,
   previewTileMountsIframe,
   previewTileStageLayout,
   previewTileStoredPosition,
@@ -21,10 +25,17 @@ import {
   previewTileUiStorageKey,
   readPreviewTileGlobalState,
   readPreviewTileUiState,
+  resizePreviewTileFrame,
+  resolvePreviewTileFrame,
   resolvePreviewTilePosition,
   writePreviewTileGlobalState,
   writePreviewTileUiState,
 } from '../src/client/preview-tile-ui.js';
+import {
+  officeKindForArtifact,
+  parseDelimitedPreview,
+  previewAestheticKind,
+} from '../src/client/preview-type-aesthetics.js';
 import {
   injectOpenBrowserCsp,
   PREVIEW_OPEN_BROWSER_CSP,
@@ -51,9 +62,9 @@ function memoryStorage(seed: Record<string, string> = {}) {
   };
 }
 
-test('preview tile UI defaults are mini and not collapsed', () => {
+test('preview tile UI defaults are mobile and not collapsed', () => {
   assert.deepEqual(previewTileUiDefaults, {
-    size: 'mini',
+    size: 'mobile',
     collapsed: false,
   });
   assert.equal(previewTileMountsIframe(previewTileUiDefaults), true);
@@ -63,11 +74,13 @@ test('preview tile UI defaults are mini and not collapsed', () => {
   );
 });
 
-test('v2 migrates compact→mini and expanded→medium; absent→mini', () => {
-  assert.equal(parsePreviewTileSize('compact'), 'mini');
-  assert.equal(parsePreviewTileSize('expanded'), 'medium');
-  assert.equal(parsePreviewTileSize('stage'), 'stage');
-  assert.equal(parsePreviewTileSize('nope'), 'mini');
+test('v3 migrates mini/medium/stage and legacy compact/expanded', () => {
+  assert.equal(parsePreviewTileSize('compact'), 'mobile');
+  assert.equal(parsePreviewTileSize('mini'), 'mobile');
+  assert.equal(parsePreviewTileSize('expanded'), 'tablet');
+  assert.equal(parsePreviewTileSize('medium'), 'tablet');
+  assert.equal(parsePreviewTileSize('stage'), 'desktop');
+  assert.equal(parsePreviewTileSize('nope'), 'mobile');
   const storage = memoryStorage({
     'hyperion.previewTile.v1:run-a:write': JSON.stringify({
       size: 'expanded',
@@ -77,13 +90,13 @@ test('v2 migrates compact→mini and expanded→medium; absent→mini', () => {
     }),
   });
   assert.deepEqual(readPreviewTileUiState('run-a', 'write', storage), {
-    size: 'medium',
+    size: 'tablet',
     collapsed: false,
     x: 10,
     y: 20,
   });
   assert.equal(
-    storage.getItem('hyperion.previewTile.v2:run-a:write') !== null,
+    storage.getItem('hyperion.previewTile.v3:run-a:write') !== null,
     true,
   );
   assert.equal(storage.getItem('hyperion.previewTile.v1:run-a:write'), null);
@@ -93,28 +106,49 @@ test('v2 migrates compact→mini and expanded→medium; absent→mini', () => {
   );
 });
 
-test('mini and medium layout bands match Architect stamps', () => {
-  assert.equal(previewTileCompactLayout.width, 280);
-  assert.equal(previewTileCompactLayout.bodyHeight, 180);
-  assert.equal(previewTileMediumLayout.width, 480);
-  assert.equal(previewTileMediumLayout.bodyHeight, 320);
+test('v2 storage migrates to v3 device presets', () => {
+  const storage = memoryStorage({
+    'hyperion.previewTile.v2:run-a:write': JSON.stringify({
+      size: 'mini',
+      collapsed: false,
+      x: 5,
+      y: 6,
+    }),
+  });
+  assert.deepEqual(readPreviewTileUiState('run-a', 'write', storage), {
+    size: 'mobile',
+    collapsed: false,
+    x: 5,
+    y: 6,
+  });
+  assert.equal(storage.getItem('hyperion.previewTile.v2:run-a:write'), null);
 });
 
-test('mini contain uses uniform letterbox scale, not fixed 0.8 crop', () => {
+test('device content viewports and default frames are independent', () => {
+  assert.equal(previewTileContentViewport('mobile').width, 390);
+  assert.equal(previewTileContentViewport('tablet').width, 768);
+  assert.equal(previewTileContentViewport('desktop').width, 1280);
+  assert.equal(previewTileDefaultFrame('mobile').width, previewTileMobileFrame.width);
+  assert.equal(previewTileCompactLayout.width, 280);
+  assert.equal(previewTileMediumLayout.width, 480);
+  const scale = previewTileContainScale(
+    previewTileDefaultFrame('mobile'),
+    previewTileContentViewport('mobile'),
+  );
+  assert.ok(scale < 1);
+  assert.equal(
+    scale,
+    Math.min(280 / 390, 180 / 844),
+  );
+});
+
+test('mini contain helper remains for legacy callers', () => {
   const scale = previewTileMiniContainScale();
   assert.equal(scale, Math.min(280 / 480, 180 / 320));
   assert.ok(scale < 0.8);
-  assert.doesNotMatch(
-    readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8'),
-    /scale\(0\.8\)|transformOrigin:\s*['"]top left['"]/,
-  );
-  assert.match(
-    readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8'),
-    /previewTileMiniContainScale|is-mini-contain/,
-  );
 });
 
-test('stage layout is near-full pane without free-resize', () => {
+test('stage soft-cap layout still near-full pane', () => {
   const pane = { width: 1000, height: 800 };
   const stage = previewTileStageLayout(pane);
   assert.ok(stage.width / pane.width >= 0.85 - 1e-9);
@@ -123,10 +157,28 @@ test('stage layout is near-full pane without free-resize', () => {
   assert.ok(stage.bodyHeight <= Math.min(900, pane.height - 72));
 });
 
-test('storage key is UI-only v2 and scoped by run + producer', () => {
+test('J5 frame resize never mutates resolution size', () => {
+  const base = {
+    size: 'tablet' as const,
+    collapsed: false,
+    x: 12,
+    y: 34,
+  };
+  const resized = resizePreviewTileFrame(base, { width: 500, bodyHeight: 400 });
+  assert.equal(resized.size, 'tablet');
+  assert.equal(resized.frameW, 500);
+  assert.equal(resized.frameH, 400);
+  assert.deepEqual(previewTileStoredPosition(resized), { x: 12, y: 34 });
+  const frame = resolvePreviewTileFrame(resized);
+  assert.equal(frame.width, 500);
+  assert.equal(frame.bodyHeight, 400);
+  assert.equal(previewTileContentViewport(resized.size).width, 768);
+});
+
+test('storage key is UI-only v3 and scoped by run + producer', () => {
   assert.equal(
     previewTileUiStorageKey('run-a', 'write'),
-    'hyperion.previewTile.v2:run-a:write',
+    'hyperion.previewTile.v3:run-a:write',
   );
   assert.equal(
     previewTileGlobalStorageKey('run-a'),
@@ -147,7 +199,7 @@ test('global hide-all round-trip and clears with layout reset', () => {
   writePreviewTileUiState(
     'run-a',
     'write',
-    { size: 'stage', collapsed: false },
+    { size: 'desktop', collapsed: false },
     storage,
   );
   clearPreviewTileUiForRun('run-a', storage);
@@ -169,7 +221,7 @@ test('E1: dragged position survives size changes and collapse', () => {
   writePreviewTileUiState(
     'run-a',
     'write',
-    { size: 'medium', collapsed: false, x: 120, y: 240 },
+    { size: 'tablet', collapsed: false, x: 120, y: 240 },
     storage,
   );
   const dragged = readPreviewTileUiState('run-a', 'write', storage);
@@ -177,7 +229,7 @@ test('E1: dragged position survives size changes and collapse', () => {
   writePreviewTileUiState(
     'run-a',
     'write',
-    { ...dragged, size: 'mini' },
+    { ...dragged, size: 'mobile' },
     storage,
   );
   writePreviewTileUiState(
@@ -190,7 +242,7 @@ test('E1: dragged position survives size changes and collapse', () => {
     storage,
   );
   const after = readPreviewTileUiState('run-a', 'write', storage);
-  assert.equal(after.size, 'mini');
+  assert.equal(after.size, 'mobile');
   assert.equal(after.collapsed, true);
   assert.deepEqual(previewTileStoredPosition(after), { x: 120, y: 240 });
   assert.deepEqual(
@@ -202,9 +254,50 @@ test('E1: dragged position survives size changes and collapse', () => {
     previewTileUiDefaults,
   );
   assert.deepEqual(parsePreviewTileUiState({ size: 'stage' }), {
-    size: 'stage',
+    size: 'desktop',
     collapsed: false,
   });
+});
+
+test('J4 type aesthetics: csv / note / office icons', () => {
+  assert.equal(
+    previewAestheticKind({
+      id: '1',
+      name: 'a.csv',
+      mediaType: 'text/csv',
+      createdAt: '',
+      attempt: 1,
+    }),
+    'csv',
+  );
+  assert.equal(
+    previewAestheticKind({
+      id: '1',
+      name: 'note.md',
+      mediaType: 'text/markdown',
+      createdAt: '',
+      attempt: 1,
+    }),
+    'note',
+  );
+  assert.equal(
+    officeKindForArtifact({
+      id: '1',
+      name: 'deck.pptx',
+      mediaType:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      createdAt: '',
+      attempt: 1,
+    }),
+    'pptx',
+  );
+  const parsed = parseDelimitedPreview('a,b\n1,2\n3,4');
+  assert.deepEqual(parsed.rows, [
+    ['a', 'b'],
+    ['1', '2'],
+    ['3', '4'],
+  ]);
+  assert.equal(parsed.truncated, false);
 });
 
 test('open-browser CSP meta is injected for composed documents', () => {
@@ -260,23 +353,26 @@ test('Abrir prefers in-app shell for local markup (Track I)', async () => {
   assert.equal(opened, 'https://example.com/p');
 });
 
-test('PreviewNode tile hide is icon-only; Abrir uses in-app shell hook', () => {
+test('PreviewNode Track J: device presets, Abrir, frame resize handles', () => {
   const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
   assert.match(source, /preview-tile-drag/);
   assert.match(source, /Resolución/);
-  assert.match(source, /PREVIEW_TILE_SIZE_OPTIONS|Mini|Media|Escenario/);
+  assert.match(source, /PREVIEW_TILE_SIZE_OPTIONS|Móvil|Tableta|Escritorio/);
   assert.match(source, /select/);
-  assert.match(source, /Abrir en navegador/);
+  assert.match(source, /Abrir/);
   assert.match(source, /openPreviewInBrowser/);
   assert.match(source, /onOpenInAppShell|in-app-shell/);
   assert.match(source, /Ocultar artefacto|Mostrar artefacto/);
   assert.match(source, /icon-button preview-tile-action/);
+  assert.match(source, /resizePreviewTileFrame|preview-tile-resize/);
+  assert.match(source, /previewTileContentViewport|previewTileContainScale/);
   assert.doesNotMatch(source, /\{t\(['"]Artefactos['"]\)\}/);
   assert.doesNotMatch(source, /Maximize2|Minimize2/);
-  assert.doesNotMatch(source, /Office|pen\.dev complete|W2|free-resize/);
+  assert.doesNotMatch(source, /Office WYSIWYG|pen\.dev complete|W2/);
+  assert.doesNotMatch(source, /size:\s*['"]mini['"]|size === ['"]mini['"]/);
 });
 
-test('App hosts PreviewOpenShell chrome; Jobs demoted; Artefactos on toolbar', () => {
+test('App hosts thin PreviewOpenShell Volver; Artefactos on toolbar', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
   assert.match(source, /Ocultar artefactos|Mostrar artefactos/);
   assert.match(source, /PreviewOpenShell/);
@@ -284,14 +380,15 @@ test('App hosts PreviewOpenShell chrome; Jobs demoted; Artefactos on toolbar', (
   assert.match(source, /previewOpenShell/);
   assert.match(source, /PaneSizeReporter|flowPaneSize|paneSize/);
   assert.match(source, /dragHandle:\s*['"]\.preview-tile-drag['"]/);
+  assert.match(source, /size === ['"]desktop['"]/);
   assert.doesNotMatch(source, /Ver trabajos/);
   assert.doesNotMatch(source, /Layers3/);
   const shell = readFileSync(
     resolve('src/client/PreviewOpenShell.tsx'),
     'utf8',
   );
-  assert.match(shell, /Volver al canvas/);
-  assert.match(shell, /Vista en Hyperion/);
-  assert.match(shell, /Cerrar vista/);
+  assert.match(shell, /Volver/);
   assert.match(shell, /ArtifactSandboxPreview/);
+  assert.doesNotMatch(shell, /Vista en Hyperion/);
+  assert.doesNotMatch(shell, /Cerrar vista/);
 });

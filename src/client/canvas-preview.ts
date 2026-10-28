@@ -6,15 +6,18 @@ import { pickPreferredArtifact } from './resultado-evidence.js';
 /** Hide on-canvas preview tiles below this viewport width (Architect R2.4). */
 export const PREVIEW_TILE_BREAKPOINT = 900;
 
-/** Medium band ~480×320. Mini default / Stage near-full / collapse are Track E–G UI-only. */
+/** Default outer frame hint; Track J device/frame prefs live in preview-tile-ui. */
 export const previewTileLayout = {
   gap: 28,
-  width: 480,
-  bodyHeight: 320,
+  width: 280,
+  bodyHeight: 180,
   maxVisible: 5,
 } as const;
 
 const previewBytes = 256 * 1024;
+
+const officeIconMime =
+  /^application\/(vnd\.(openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|ms-excel|ms-powerpoint)|msword)$/;
 
 /** Stored bytes eligible for on-canvas / Resultado inert preview (no remote url). */
 export function isStoredPreviewableArtifact(artifact: Artifact): boolean {
@@ -22,6 +25,9 @@ export function isStoredPreviewableArtifact(artifact: Artifact): boolean {
   if (isSandboxedMarkup(artifact.mediaType))
     return (artifact.size || 0) <= previewBytes;
   if (/^image\/(png|jpeg|gif|webp)$/.test(artifact.mediaType)) return true;
+  // Track J4: Office = SVG file-type icon only (no WYSIWYG / no byte fetch).
+  if (officeIconMime.test(artifact.mediaType)) return true;
+  if (/\.(docx?|xlsx?|pptx?)$/i.test(artifact.name)) return true;
   if (
     /^text\//.test(artifact.mediaType) ||
     artifact.mediaType === 'application/json'

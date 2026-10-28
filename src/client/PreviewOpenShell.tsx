@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Artifact } from '../domain/artifacts';
 import { ArtifactSandboxPreview } from './ArtifactSandboxPreview';
 import { t, useLocale } from './i18n';
@@ -12,7 +12,7 @@ export type PreviewOpenShellProps = {
 };
 
 /**
- * In-app Abrir surface (Track I): Hyperion chrome + inert body.
+ * In-app Abrir surface (Track I / J1): thin Hyperion chrome + Volver.
  * Never replaces the SPA document with raw blob HTML.
  */
 export function PreviewOpenShell({
@@ -38,26 +38,18 @@ export function PreviewOpenShell({
       aria-modal="true"
       aria-labelledby="preview-open-shell-title"
     >
-      <header className="preview-open-shell-chrome">
-        <div className="preview-open-shell-brand">
-          <span className="eyebrow">{t('Vista en Hyperion')}</span>
-          <h2 id="preview-open-shell-title">{artifact.name}</h2>
-        </div>
-        <div className="preview-open-shell-actions">
-          <button type="button" className="primary" onClick={onBack}>
-            <ArrowLeft size={16} aria-hidden="true" />
-            {t('Volver al canvas')}
-          </button>
-          <button
-            type="button"
-            className="secondary icon-button"
-            aria-label={t('Cerrar vista')}
-            title={t('Cerrar vista')}
-            onClick={onBack}
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </div>
+      <header className="preview-open-shell-chrome is-thin">
+        <h2 id="preview-open-shell-title" className="preview-open-shell-title">
+          {artifact.name}
+        </h2>
+        <button
+          type="button"
+          className="primary preview-open-shell-back"
+          onClick={onBack}
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          {t('Volver')}
+        </button>
       </header>
       <div className="preview-open-shell-body">
         {artifact.url ? (

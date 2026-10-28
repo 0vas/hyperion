@@ -1,3 +1,8 @@
+import {
+  useCallback,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { ExternalLink, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import type { Artifact } from '../domain/artifacts';
@@ -8,11 +13,11 @@ import {
 } from './preview-open-browser';
 import {
   PREVIEW_TILE_SIZE_OPTIONS,
-  previewTileCompactLayout,
-  previewTileMediumLayout,
-  previewTileMiniContainScale,
+  previewTileContainScale,
+  previewTileContentViewport,
   previewTileMountsIframe,
-  previewTileStageLayout,
+  resizePreviewTileFrame,
+  resolvePreviewTileFrame,
   type PreviewTileSize,
   type PreviewTileUiState,
 } from './preview-tile-ui';
@@ -30,74 +35,126 @@ export type PreviewNodeData = {
   emphasized: boolean;
   horizontal: boolean;
   tileUi: PreviewTileUiState;
-  /** React Flow pane size for stage geometry (Arch G4). */
+  /** React Flow pane size for soft-cap (Arch G4 / J5). */
   paneSize: { width: number; height: number };
   onSelectProducer: (stepId: string) => void;
   onTileUiChange: (next: PreviewTileUiState) => void;
-  /** Local Abrir → in-app Hyperion chrome shell (Track I). */
+  /** Local Abrir → in-app Hyperion chrome shell (Track I / J1). */
   onOpenInAppShell?: () => void;
   /** After remote Abrir in OS/tab — optional secondary toast. */
   onOpenedRemote?: () => void;
 };
 
 function sizeOptionLabel(size: PreviewTileSize): string {
-  if (size === 'medium') return t('Media');
-  if (size === 'stage') return t('Escenario');
-  return t('Mini');
+  if (size === 'tablet') return t('Tableta');
+  if (size === 'desktop') return t('Escritorio');
+  return t('Móvil');
 }
+
+type ResizeEdge = 'e' | 's' | 'se';
 
 /** Client-only RF citizen: inert preview satellite of a leaf producer. */
 export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   useLocale();
   const { tileUi } = data;
   const mountsPreview = previewTileMountsIframe(tileUi);
-  const mini = tileUi.size === 'mini';
-  const stage = tileUi.size === 'stage';
-  const medium = tileUi.size === 'medium';
-  const stageLayout = previewTileStageLayout(data.paneSize);
-  const miniScale = previewTileMiniContainScale();
+  const content = previewTileContentViewport(tileUi.size);
+  const frame = resolvePreviewTileFrame(tileUi, data.paneSize);
+  const containScale = previewTileContainScale(frame, content);
+  const desktop = tileUi.size === 'desktop';
   const hideLabel = tileUi.collapsed
     ? t('Mostrar artefacto')
     : t('Ocultar artefacto');
-  const openLabel = t('Abrir en navegador');
+  const openLabel = t('Abrir');
   const openTitle = data.remoteOnly
-    ? openLabel
+    ? t('Abrir en navegador')
     : t(
-        'Abrir en navegador (instantánea local; sin JavaScript de red como en el lienzo)',
+        'Abrir (vista en Hyperion; sin JavaScript de red como en el lienzo)',
       );
   const offerOpen =
     !tileUi.collapsed && canOfferPreviewOpenInBrowser(data.artifact);
-  const width = tileUi.collapsed
-    ? undefined
-    : stage
-      ? stageLayout.width
-      : medium
-        ? previewTileMediumLayout.width
-        : previewTileCompactLayout.width;
-  const bodyMin = stage
-    ? stageLayout.bodyHeight
-    : medium
-      ? previewTileMediumLayout.bodyHeight
-      : previewTileCompactLayout.bodyHeight;
+  const width = tileUi.collapsed ? undefined : frame.width;
+  const bodyMin = frame.bodyHeight;
+  const resizeStart = useRef<{
+    edge: ResizeEdge;
+    x: number;
+    y: number;
+    width: number;
+    bodyHeight: number;
+  } | null>(null);
+
+  const onResizePointerDown = useCallback(
+    (edge: ResizeEdge) => (event: ReactPointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const target = event.currentTarget;
+      target.setPointerCapture(event.pointerId);
+      resizeStart.current = {
+        edge,
+        x: event.clientX,
+        y: event.clientY,
+        width: frame.width,
+        bodyHeight: frame.bodyHeight,
+      };
+    },
+    [frame.bodyHeight, frame.width],
+  );
+
+  const onResizePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const start = resizeStart.current;
+      if (!start) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      let nextW = start.width;
+      let nextH = start.bodyHeight;
+      if (start.edge === 'e' || start.edge === 'se') nextW = start.width + dx;
+      if (start.edge === 's' || start.edge === 'se')
+        nextH = start.bodyHeight + dy;
+      // J5: frame only — never mutate resolution `size`.
+      data.onTileUiChange(
+        resizePreviewTileFrame(tileUi, {
+          width: nextW,
+          bodyHeight: nextH,
+        }),
+      );
+    },
+    [data, tileUi],
+  );
+
+  const onResizePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!resizeStart.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        /* already released */
+      }
+      resizeStart.current = null;
+    },
+    [],
+  );
 
   return (
     <div
       className={`preview-tile${data.emphasized ? ' emphasized' : ''}${
-        mini ? ' is-mini' : ''
-      }${medium ? ' is-medium' : ''}${stage ? ' is-stage' : ''}${
-        tileUi.collapsed ? ' is-collapsed' : ''
-      }`}
+        desktop ? ' is-desktop' : ''
+      } is-${tileUi.size}${tileUi.collapsed ? ' is-collapsed' : ''}`}
       style={
         width
           ? {
               width,
-              ...(stage ? { zIndex: 8 } : undefined),
+              ...(desktop ? { zIndex: 8 } : undefined),
             }
           : undefined
       }
       role="group"
       aria-label={
-        stage
+        desktop
           ? t('Vista previa a casi pantalla completa')
           : t('Vista previa del paso {0}', { 0: data.producerTitle })
       }
@@ -220,43 +277,63 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           </button>
         ) : (
           <div
-            className={`preview-tile-body nodrag nopan${
-              mini ? ' is-mini-contain' : ''
-            }`}
+            className="preview-tile-body nodrag nopan is-contain"
             style={{ minHeight: bodyMin, maxHeight: bodyMin + 40 }}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => data.onSelectProducer(data.producerStepId)}
           >
-            {mini ? (
-              <div className="preview-tile-contain-viewport">
-                <div
-                  className="preview-tile-contain-content"
-                  style={{
-                    width: previewTileMediumLayout.width,
-                    height: previewTileMediumLayout.bodyHeight,
-                    transform: `scale(${miniScale})`,
-                  }}
-                >
-                  <ArtifactSandboxPreview
-                    runId={data.runId}
-                    artifact={data.artifact}
-                    siblings={data.siblings}
-                    compact
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="preview-tile-scale-wrap">
+            <div className="preview-tile-contain-viewport">
+              <div
+                className="preview-tile-contain-content"
+                style={{
+                  width: content.width,
+                  height: content.bodyHeight,
+                  transform: `scale(${containScale})`,
+                }}
+              >
                 <ArtifactSandboxPreview
                   runId={data.runId}
                   artifact={data.artifact}
                   siblings={data.siblings}
-                  compact={medium}
+                  compact
                 />
               </div>
-            )}
+            </div>
           </div>
         ))}
+      {!tileUi.collapsed && (
+        <>
+          <div
+            className="preview-tile-resize preview-tile-resize-e nodrag nopan"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('Redimensionar ancho del marco')}
+            onPointerDown={onResizePointerDown('e')}
+            onPointerMove={onResizePointerMove}
+            onPointerUp={onResizePointerUp}
+            onPointerCancel={onResizePointerUp}
+          />
+          <div
+            className="preview-tile-resize preview-tile-resize-s nodrag nopan"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label={t('Redimensionar alto del marco')}
+            onPointerDown={onResizePointerDown('s')}
+            onPointerMove={onResizePointerMove}
+            onPointerUp={onResizePointerUp}
+            onPointerCancel={onResizePointerUp}
+          />
+          <div
+            className="preview-tile-resize preview-tile-resize-se nodrag nopan"
+            role="separator"
+            aria-label={t('Redimensionar marco')}
+            onPointerDown={onResizePointerDown('se')}
+            onPointerMove={onResizePointerMove}
+            onPointerUp={onResizePointerUp}
+            onPointerCancel={onResizePointerUp}
+          />
+        </>
+      )}
     </div>
   );
 }

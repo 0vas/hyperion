@@ -1504,10 +1504,10 @@ export function App() {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
-      // Soft-cap: at most one mounted stage iframe (Arch Track G).
+      // Soft-cap: at most one mounted desktop iframe (Arch Track G / J3).
       const staged = candidates.find((candidate) => {
         const ui = readPreviewTileUiState(run.id, candidate.producerStepId);
-        return ui.size === 'stage' && !ui.collapsed;
+        return ui.size === 'desktop' && !ui.collapsed;
       });
       if (staged) candidates = [staged];
       for (const candidate of candidates) {
