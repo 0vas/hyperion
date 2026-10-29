@@ -12,9 +12,9 @@ Instala Hyperion Desktop y elige **Codex**, **Cursor**, **Claude Desktop** o **C
 
 Hyperion incluye **español e inglés** en el canvas y en los menús y diálogos de Desktop. Abre **Ajustes → Idioma** para elegir **Automático (sistema)**, **Español** o **English**. En Desktop también puedes cambiarlo desde **Hyperion → Idioma**.
 
-La versión CalVer (p. ej. `2026.10.29.0417 UTC · preview`) aparece al abrir **Menú** (al pie), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
+La versión CalVer (p. ej. `2026.10.29.1446 UTC · preview`) aparece al abrir **Menú** (al pie), en la vista **Conexiones** y en **Acerca de Hyperion** / **Hyperion → Acerca de** (macOS).
 
-En Desktop, **Ver → Recargar** (⌘R) vuelve a montar el canvas contra el servicio local resuelto —incluido un puerto alterno recordado—; no es un refresco vacío del `BrowserWindow`. Si la carga falla, aparece el mismo diálogo de recuperación del arranque (Reintentar / Ver diagnóstico / …), no una ventana oscura en blanco. Esta corrección está incluida en el instalador **2026.10.29.0417**.
+En Desktop, **Ver → Recargar** (⌘R) vuelve a montar el canvas contra el servicio local resuelto —incluido un puerto alterno recordado—; no es un refresco vacío del `BrowserWindow`. Si la carga falla, aparece el mismo diálogo de recuperación del arranque (Reintentar / Ver diagnóstico / …), no una ventana oscura en blanco. Esta corrección está incluida en el instalador **2026.10.29.1446**.
 
 ## Conexiones e integraciones
 
@@ -39,7 +39,7 @@ El modo automático toma el idioma del sistema o del navegador; si no está sopo
 **Tu contenido conserva su idioma.**
 Cambiar la interfaz no traduce nombres de tareas, preguntas del agente, respuestas, resultados ni logs. Tampoco reinicia el flujo ni descarta un formulario sin enviar. En las fuentes de desarrollo, las explicaciones conocidas de Hyperion sobre conflictos, lectura y configuración de conexiones, y sus avisos de éxito, siguen el idioma elegido incluso si ya están abiertos. Las rutas y los diagnósticos no reconocidos de herramientas o del servicio mantienen su texto original para poder investigarlos; no se traducen mensajes arbitrarios ni se deducen causas nuevas.
 
-Incluido en el instalador **2026.10.29.0417 UTC · Preview**, junto con los artefactos por paso, el interruptor **Trabajos** y los recorridos enlazados.
+Incluido en el instalador **2026.10.29.1446 UTC · Preview**, junto con los artefactos por paso, el interruptor **Trabajos** y los recorridos enlazados.
 
 ## Invocarlo desde una conversación
 
@@ -214,9 +214,7 @@ Esta espera adjunta corresponde al runtime **0.4.2** y a su skill actualizada. L
 
 Al seleccionar un paso, **Resultado** se acopla a la derecha del canvas (≥960px: canvas ~60% / Resultado ~38%, mín. 320px máx. 480px). En pantallas más estrechas aparece una hoja inferior con **Volver al canvas**. Muestra primero la evidencia registrada: artefacto (reutiliza la vista previa aislada), si no hay salidas tipadas, si no un resumen público de log; si aún no hay nada, lo dice con claridad. Si el paso espera tu respuesta, el formulario aparece primero. **Detalle**, **I/O**, **Logs** y **Actividad** (del paso) quedan como revelación progresiva en el mismo panel; la Actividad del flujo completo sigue en el menú. Escape o el lienzo vacío cierran Resultado y devuelven el foco al nodo. El icono de paquete abre artefactos. Conexiones, Ajustes y el resto del menú siguen en diálogos modales.
 
-En pantallas ≥900px, cuando un paso de agente o humano tiene un artefacto previsualizable registrado, el canvas muestra un **mosaico de vista previa estándar** junto al productor (ciudadano de layout, no un segundo grafo). Notas se presentan como papel y CSV/TSV como tabla (con tope de filas/columnas). El botón **Ampliar** abre esa vista a pantalla completa dentro de Hyperion y cubre canvas y Resultado; **Volver** devuelve al flujo. DOCX/XLSX/PPTX y formatos Office similares aparecen como una **burbuja SVG** que descarga el archivo al pulsarla, sin WYSIWYG Office. Ocultar usa **icono** solo; enlaces remotos pueden salir al navegador del sistema. Preferencias solo de cliente. En **canvas-tools**, **Ocultar artefactos** / **Mostrar artefactos** oculta mosaicos sin borrar archivos. Bajo 900px los mosaicos se ocultan y la vista previa queda en Resultado. Sandbox inerte HTML/SVG sin cambios. HOLD: WYSIWYG Office, W2, pen.dev-complete. Este diseño está incluido en la Preview **2026.10.29.0417**.
-
-La siguiente Preview, aún sin publicar al editar esta guía, hará que **Ampliar** use el alto y ancho disponibles de la ventana. Al ocultar un mosaico, queda una burbuja compacta: se puede restaurar desde ella y moverla mediante su agarre. Cada burbuja mantiene una conexión visual independiente hacia su paso productor; moverla actualiza solo esa conexión y no cambia el workflow.
+En pantallas ≥900px, cuando un paso de agente o humano tiene un artefacto previsualizable registrado, el canvas muestra un **mosaico de vista previa estándar** junto al productor (ciudadano de layout, no un segundo grafo). Notas se presentan como papel y CSV/TSV como tabla (con tope de filas/columnas). El botón **Ampliar** abre esa vista a pantalla completa dentro de Hyperion, ocupa el alto y ancho disponibles y cubre canvas y Resultado; **Volver** devuelve al flujo. DOCX/XLSX/PPTX y formatos Office similares aparecen como una **burbuja SVG** que descarga el archivo al pulsarla, sin WYSIWYG Office. Al ocultar cualquier mosaico queda una burbuja compacta, restaurable y movible mediante su agarre; cada burbuja mantiene una conexión visual independiente hacia su paso productor y moverla actualiza solo esa conexión, sin cambiar el workflow. Enlaces remotos pueden salir al navegador del sistema. Preferencias solo de cliente. En **canvas-tools**, **Ocultar artefactos** / **Mostrar artefactos** oculta mosaicos sin borrar archivos. Bajo 900px los mosaicos se ocultan y la vista previa queda en Resultado. Sandbox inerte HTML/SVG sin cambios. HOLD: WYSIWYG Office, W2, pen.dev-complete. Este diseño está incluido en la Preview **2026.10.29.1446**.
 
 En **Artefactos** puedes ver el nombre, fecha y tipo de cada archivo, abrir enlaces y descargar. Los textos pequeños e imágenes compatibles tienen vista previa. **HTML** (y SVG) se muestran en un `iframe` con `sandbox=""` vacío; puedes alternar **Vista previa** y **Código fuente**. En Vista previa verás el aviso: vista previa inerte, sin JavaScript ni red (el aspecto puede diferir del navegador completo). Si el mismo paso registra hojas `text/css` hermanas, Hyperion las incorpora en la vista previa inerte (sin abrir la red desde el iframe); si faltan archivos o el tamaño supera el tope, lo indica con honestidad. Notas, CSV y documentos Office usan la estética descrita arriba (icono de tipo, no render Office). No es un navegador completo ni un escudo antimalware. Los demás formatos se descargan. La lista se actualiza cuando el agente registra el resultado; no explora automáticamente tu disco.
 
@@ -228,7 +226,7 @@ Después de completar el flujo puedes continuar la conversación, por ejemplo: �
 
 También puedes usar **Continuar desde aquí** al final del gráfico para preparar la nueva petición. **Copiar petición para el chat** siempre está disponible: pégala en el chat conectado. Copiar no notifica al agente ni crea el recorrido enlazado. El envío automático al chat requiere un conector de envío; MCP solo no despierta el chat (en esta fase **Enviar** no se muestra). Una continuación nueva no sirve para saltar una aprobación pendiente ni para recuperar una tarea atascada; esas situaciones usan los controles existentes.
 
-La base de artefactos, el interruptor **Trabajos**, el marco estándar y los recorridos enlazados están incluidos en el instalador **2026.10.29.0417 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
+La base de artefactos, el interruptor **Trabajos**, el marco estándar y los recorridos enlazados están incluidos en el instalador **2026.10.29.1446 UTC · Preview**. Actualiza desde [la página de descarga](conexion.md) o desde **Hyperion → Buscar actualizaciones…** en Desktop (**Actualizar y reiniciar** aplica el instalador verificado y reinicia; también puedes solo descargarlo).
 
 ## Organizar el canvas
 
@@ -238,4 +236,4 @@ Arrastra el asa de puntos de cualquier tarea, evento, compuerta, trabajo o enlac
 
 Las posiciones se guardan localmente por flujo, orientación y vista de pasos/trabajos. Las actualizaciones del agente no las borran. Mover un nodo no cambia dependencias, ejecución, decisiones ni historial; tampoco mueve el mismo flujo en otro navegador o dispositivo.
 
-Disponible en los instaladores **2026.10.29.0417 UTC · Preview**.
+Disponible en los instaladores **2026.10.29.1446 UTC · Preview**.

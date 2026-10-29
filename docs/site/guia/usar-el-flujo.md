@@ -65,9 +65,7 @@ Las integraciones MCP reciben la siguiente acción y los argumentos de espera en
 
 En **Artefactos** (dentro de **Resultado**) encontrarás los archivos y enlaces que el agente haya registrado. El icono de paquete del nodo abre Resultado centrado en esa lista. Puedes ver textos pequeños e imágenes compatibles, descargar archivos o abrir el enlace de un documento. Los resultados de intentos anteriores permanecen identificados.
 
-En pantallas ≥900px, un artefacto previsualizable también aparece como **mosaico estándar junto al paso productor** en el canvas (vista previa inerte). Notas se ven como papel y CSV como tabla sencilla. **Ampliar** abre la vista a pantalla completa dentro de Hyperion, cubriendo canvas y Resultado, y **Volver** devuelve al flujo; lo remoto puede salir al navegador del sistema. DOCX/XLSX/PPTX y documentos Office similares aparecen como una burbuja SVG que descarga el archivo al pulsarla, sin WYSIWYG Office. La barra inferior muestra **Trabajos**, para alternar entre fases y pasos, además de **Ocultar artefactos** / **Mostrar artefactos**. La misma vista está en **Ajustes**. Un clic en el título selecciona el productor y abre Resultado. Bajo 900px esos mosaicos se ocultan y la vista previa queda en Resultado. No son nodos del proceso ni un editor de diseño. La vista previa HTML/SVG usa un marco mate alrededor del iframe (página en claro; sin invertir el CSS del documento). Este rediseño está incluido en la Preview **2026.10.29.0417**.
-
-La siguiente Preview, aún sin publicar al editar esta guía, hará que **Ampliar** use el alto y ancho disponibles. Al ocultar un mosaico quedará una burbuja compacta: se puede restaurar desde ella y moverla con su agarre. Cada burbuja conserva una conexión visual independiente hacia su paso productor; moverla actualiza solo esa conexión y no cambia el flujo.
+En pantallas ≥900px, un artefacto previsualizable también aparece como **mosaico estándar junto al paso productor** en el canvas (vista previa inerte). Notas se ven como papel y CSV como tabla sencilla. **Ampliar** abre la vista a pantalla completa dentro de Hyperion, ocupa el alto y ancho disponibles y cubre canvas y Resultado; **Volver** devuelve al flujo; lo remoto puede salir al navegador del sistema. DOCX/XLSX/PPTX y documentos Office similares aparecen como una burbuja SVG que descarga el archivo al pulsarla, sin WYSIWYG Office. Al ocultar un mosaico queda una burbuja compacta, restaurable y movible mediante su agarre. Cada burbuja conserva una conexión visual independiente hacia su paso productor; moverla actualiza solo esa conexión y no cambia el flujo. La barra inferior muestra **Trabajos**, para alternar entre fases y pasos, además de **Ocultar artefactos** / **Mostrar artefactos**. La misma vista está en **Ajustes**. Un clic en el título selecciona el productor y abre Resultado. Bajo 900px esos mosaicos se ocultan y la vista previa queda en Resultado. No son nodos del proceso ni un editor de diseño. La vista previa HTML/SVG usa un marco mate alrededor del iframe (página en claro; sin invertir el CSS del documento). Este rediseño está incluido en la Preview **2026.10.29.1446**.
 
 ::: tip Entregables a mano
 Por ejemplo, el paso «Preparar guía» puede contener `bienvenida.md`, una ilustración y el enlace al documento compartido. **I/O** conserva sus datos y **Logs** explica las acciones; **Artefactos** te permite acceder al resultado.
@@ -82,7 +80,7 @@ Puedes decir en el mismo chat: «Ahora traduce esta guía al inglés». El agent
 **Continuar desde aquí**, al final del gráfico, te ayuda a preparar esa petición. **Copiar petición para el chat** es el camino habitual (copiar ≠ entregar). Pega la petición en el chat conectado; el envío automático requiere un conector de envío — MCP solo no despierta el chat (**Enviar** oculto en esta fase). El agente debe crear el recorrido enlazado. Si el proceso sigue abierto y necesitas cambiarlo, usa la revisión del plan; si falló una tarea, usa reintentar.
 
 ::: info Disponibilidad
-Los instaladores **2026.10.29.0417 UTC · Preview** incluyen artefactos (vista previa HTML/SVG aislada), el interruptor **Trabajos**, el marco estándar y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
+Los instaladores **2026.10.29.1446 UTC · Preview** incluyen artefactos (vista previa HTML/SVG aislada), el interruptor **Trabajos**, el marco estándar y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
 :::
 
 ## Mueve y ordena los nodos
@@ -95,4 +93,4 @@ Arrastra el asa de puntos sobre una tarjeta o símbolo. Con teclado, enfoca el n
 Las posiciones se conservan en este navegador por flujo, orientación y vista de pasos/trabajos, incluso al recibir actividad del agente. No cambian las dependencias ni el historial, y no se sincronizan con otros dispositivos.
 :::
 
-Disponible en los instaladores **2026.10.29.0417 UTC · Preview**. [Descargar](primeros-pasos.md).
+Disponible en los instaladores **2026.10.29.1446 UTC · Preview**. [Descargar](primeros-pasos.md).

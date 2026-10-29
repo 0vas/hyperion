@@ -25,7 +25,7 @@ Cuando el trabajo toca **archivos, carpetas o la terminal del proyecto**, **Clau
 
 Durante pasos agente, Code puede usar shell y archivos locales; debe reflejar progreso en Logs de Hyperion (latidos en trabajo largo) y `fail` ante permiso denegado o timeout—no dejar el paso «En curso» huérfano.
 
-**[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.29.0417)**: elige el `.dmg` de Apple Silicon o el `.exe` de Windows x64. No necesitas una cuenta de GitHub para descargar la versión preliminar. El instalador de Apple Silicon está firmado con Developer ID y notarizado por Apple; Windows no tiene firma de editor. Intel macOS no se publica en esta release. La release estable sigue pendiente.
+**[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.10.29.1446)**: elige el `.dmg` de Apple Silicon o el `.exe` de Windows x64. No necesitas una cuenta de GitHub para descargar la versión preliminar. El instalador de Apple Silicon está firmado con Developer ID y notarizado por Apple; Windows no tiene firma de editor. Intel macOS no se publica en esta release. La release estable sigue pendiente.
 
 | Aplicación     | Qué prepara el asistente                                                             |
 | -------------- | ------------------------------------------------------------------------------------ |
