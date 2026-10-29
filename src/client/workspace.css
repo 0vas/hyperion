@@ -871,6 +871,10 @@ a.preview-tile-action.icon-button {
 .artifact-preview-bubble .artifact-bubble-action {
   font-size: 10px;
 }
+.artifact-preview-bubble .preview-artifact-icon {
+  flex-shrink: 0;
+  color: var(--ink);
+}
 .preview-tile-remote-body {
   display: block;
   width: 100%;

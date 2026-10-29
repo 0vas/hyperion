@@ -6,6 +6,7 @@ export const PREVIEW_CSV_MAX_COLS = 12;
 
 export type PreviewAestheticKind =
   'markup' | 'image' | 'csv' | 'note' | 'office' | 'text';
+export type PreviewBubbleIconKind = Exclude<PreviewAestheticKind, 'office'>;
 
 export type OfficeKind = 'docx' | 'xlsx' | 'pptx' | 'other';
 
@@ -71,6 +72,17 @@ export function previewAestheticKind(
     return 'note';
   if (media.startsWith('text/')) return 'text';
   return 'text';
+}
+
+/** Compact canvas bubbles use the same honest type classification as previews. */
+export function previewBubbleIconKind(
+  artifact: Artifact,
+): PreviewBubbleIconKind {
+  const markup =
+    artifact.mediaType === 'text/html' ||
+    artifact.mediaType === 'image/svg+xml';
+  const kind = previewAestheticKind(artifact, { isSandboxedMarkup: markup });
+  return kind === 'office' ? 'text' : kind;
 }
 
 /** Minimal CSV/TSV split — not a spreadsheet engine (Track J4). */

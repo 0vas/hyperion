@@ -11,8 +11,9 @@ export type PreviewTileGlobalState = {
   hideAll: boolean;
 };
 
-/** v4 removes device presets and free frame resizing for one calm canvas frame. */
-export const PREVIEW_TILE_UI_VERSION = 'v4';
+/** v5 starts new canvas artifacts as compact bubbles. */
+export const PREVIEW_TILE_UI_VERSION = 'v5';
+export const PREVIEW_TILE_UI_LEGACY_V4 = 'v4';
 export const PREVIEW_TILE_UI_LEGACY_V3 = 'v3';
 export const PREVIEW_TILE_UI_LEGACY_V2 = 'v2';
 export const PREVIEW_TILE_UI_LEGACY_VERSION = 'v1';
@@ -25,7 +26,7 @@ export const previewTileStandardFrame = {
 } as const;
 
 export const previewTileUiDefaults: PreviewTileUiState = {
-  collapsed: false,
+  collapsed: true,
 };
 
 export const previewTileGlobalDefaults: PreviewTileGlobalState = {
@@ -66,14 +67,14 @@ export function isPreviewTileUiDefault(state: PreviewTileUiState): boolean {
   );
 }
 
-/** Reads v4 prefs, or keeps only placement/collapse from earlier layouts. */
+/** Reads v5 prefs, or keeps only placement/collapse from earlier layouts. */
 export function parsePreviewTileUiState(raw: unknown): PreviewTileUiState {
   if (!raw || typeof raw !== 'object') return { ...previewTileUiDefaults };
   const value = raw as Record<string, unknown>;
   const x = finiteNumber(value.x);
   const y = finiteNumber(value.y);
   return {
-    collapsed: value.collapsed === true,
+    collapsed: value.collapsed !== false,
     ...(x !== undefined ? { x } : {}),
     ...(y !== undefined ? { y } : {}),
   };
@@ -97,6 +98,7 @@ export function readPreviewTileUiState(
     const raw = storage.getItem(key);
     if (raw) return parsePreviewTileUiState(JSON.parse(raw));
     for (const legacy of [
+      PREVIEW_TILE_UI_LEGACY_V4,
       PREVIEW_TILE_UI_LEGACY_V3,
       PREVIEW_TILE_UI_LEGACY_V2,
       PREVIEW_TILE_UI_LEGACY_VERSION,
@@ -177,6 +179,7 @@ export function clearPreviewTileUiForRun(
 ): void {
   const prefixes = [
     `hyperion.previewTile.${PREVIEW_TILE_UI_VERSION}:${runId}:`,
+    `hyperion.previewTile.${PREVIEW_TILE_UI_LEGACY_V4}:${runId}:`,
     `hyperion.previewTile.${PREVIEW_TILE_UI_LEGACY_V3}:${runId}:`,
     `hyperion.previewTile.${PREVIEW_TILE_UI_LEGACY_V2}:${runId}:`,
     `hyperion.previewTile.${PREVIEW_TILE_UI_LEGACY_VERSION}:${runId}:`,

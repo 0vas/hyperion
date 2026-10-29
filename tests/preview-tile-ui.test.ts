@@ -25,6 +25,7 @@ import {
   officeKindForArtifact,
   parseDelimitedPreview,
   previewAestheticKind,
+  previewBubbleIconKind,
 } from '../src/client/preview-type-aesthetics.js';
 import {
   injectOpenBrowserCsp,
@@ -52,19 +53,19 @@ function memoryStorage(seed: Record<string, string> = {}) {
   };
 }
 
-test('preview tiles use one fixed standard frame', () => {
-  assert.deepEqual(previewTileUiDefaults, { collapsed: false });
+test('new preview tiles start as compact bubbles', () => {
+  assert.deepEqual(previewTileUiDefaults, { collapsed: true });
   assert.deepEqual(previewTileStandardFrame, { width: 480, bodyHeight: 300 });
-  assert.equal(previewTileMountsIframe(previewTileUiDefaults), true);
+  assert.equal(previewTileMountsIframe(previewTileUiDefaults), false);
   assert.equal(
-    previewTileMountsIframe(collapsePreviewTile(previewTileUiDefaults)),
-    false,
+    previewTileMountsIframe(expandPreviewTile(previewTileUiDefaults)),
+    true,
   );
 });
 
-test('v4 migration drops legacy resolution and resize choices but preserves placement', () => {
+test('v5 migration keeps an explicit expanded or moved legacy tile', () => {
   const storage = memoryStorage({
-    'hyperion.previewTile.v3:run-a:write': JSON.stringify({
+    'hyperion.previewTile.v4:run-a:write': JSON.stringify({
       size: 'desktop',
       frameW: 1100,
       frameH: 800,
@@ -79,19 +80,19 @@ test('v4 migration drops legacy resolution and resize choices but preserves plac
     y: 20,
   });
   assert.equal(
-    storage.getItem('hyperion.previewTile.v4:run-a:write') !== null,
+    storage.getItem('hyperion.previewTile.v5:run-a:write') !== null,
     true,
   );
-  assert.equal(storage.getItem('hyperion.previewTile.v3:run-a:write'), null);
+  assert.equal(storage.getItem('hyperion.previewTile.v4:run-a:write'), null);
   assert.deepEqual(parsePreviewTileUiState({ size: 'mobile' }), {
-    collapsed: false,
+    collapsed: true,
   });
 });
 
-test('storage key is UI-only v4 and scoped by run + producer', () => {
+test('storage key is UI-only v5 and scoped by run + producer', () => {
   assert.equal(
     previewTileUiStorageKey('run-a', 'write'),
-    'hyperion.previewTile.v4:run-a:write',
+    'hyperion.previewTile.v5:run-a:write',
   );
   assert.equal(
     previewTileGlobalStorageKey('run-a'),
@@ -115,7 +116,7 @@ test('global hide-all and placement round-trip', () => {
   );
   assert.deepEqual(
     expandPreviewTile(collapsePreviewTile(previewTileUiDefaults)),
-    previewTileUiDefaults,
+    { collapsed: false },
   );
   writePreviewTileGlobalState('run-a', { hideAll: true }, storage);
   assert.deepEqual(readPreviewTileGlobalState('run-a', storage), {
@@ -133,7 +134,37 @@ test('global hide-all and placement round-trip', () => {
 
 test('type aesthetics keep Office as an icon/download, never a rendered document', () => {
   assert.equal(
+    previewBubbleIconKind({
+      id: '1',
+      name: 'page.html',
+      mediaType: 'text/html',
+      createdAt: '',
+      attempt: 1,
+    }),
+    'markup',
+  );
+  assert.equal(
+    previewBubbleIconKind({
+      id: '1',
+      name: 'note.md',
+      mediaType: 'text/markdown',
+      createdAt: '',
+      attempt: 1,
+    }),
+    'note',
+  );
+  assert.equal(
     previewAestheticKind({
+      id: '1',
+      name: 'a.csv',
+      mediaType: 'text/csv',
+      createdAt: '',
+      attempt: 1,
+    }),
+    'csv',
+  );
+  assert.equal(
+    previewBubbleIconKind({
       id: '1',
       name: 'a.csv',
       mediaType: 'text/csv',
@@ -174,6 +205,8 @@ test('PreviewNode has one frame, full-screen expansion, and connected movable bu
   assert.match(source, /artifact-download-bubble/);
   assert.match(source, /artifact-preview-bubble/);
   assert.match(source, /artifact-bubble-drag/);
+  assert.match(source, /PreviewArtifactIcon/);
+  assert.match(source, /previewBubbleIconKind/);
   assert.match(source, /Mostrar artefacto/);
   assert.match(source, /artifactFileUrl/);
   assert.doesNotMatch(source, /PREVIEW_TILE_SIZE_OPTIONS/);
