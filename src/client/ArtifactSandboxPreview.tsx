@@ -25,7 +25,7 @@ export const INERT_PREVIEW_DISCLAIMER_ES =
 export const STYLES_INCLUDED_LABEL_ES = 'Estilos incluidos (inerte)';
 export const STYLES_PARTIAL_LABEL_ES = 'Estilos parciales · faltan archivos';
 
-function OfficeFileIcon({ kind }: { kind: OfficeKind }) {
+export function OfficeFileIcon({ kind }: { kind: OfficeKind }) {
   const label =
     kind === 'docx'
       ? 'DOCX'

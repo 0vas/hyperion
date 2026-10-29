@@ -631,19 +631,6 @@ function FitCanvas({ view }: { view: string }) {
   return null;
 }
 
-/** Reports React Flow pane size for Track G stage geometry. */
-function PaneSizeReporter({
-  onSize,
-}: {
-  onSize: (size: { width: number; height: number }) => void;
-}) {
-  const width = useStore((state) => state.width);
-  const height = useStore((state) => state.height);
-  useEffect(() => {
-    if (width > 0 && height > 0) onSize({ width, height });
-  }, [width, height, onSize]);
-  return null;
-}
 async function api<T>(path: string, data?: unknown): Promise<T> {
   const res = await fetch(path, {
     ...(data
@@ -815,20 +802,6 @@ export function App() {
     useState<ResultadoSection>('evidence');
   const [viewportWidth, setViewportWidth] = useState(
     () => globalThis.innerWidth || 1280,
-  );
-  const [flowPaneSize, setFlowPaneSize] = useState({
-    width: 960,
-    height: 640,
-  });
-  const onFlowPaneSize = useCallback(
-    (size: { width: number; height: number }) => {
-      setFlowPaneSize((previous) =>
-        previous.width === size.width && previous.height === size.height
-          ? previous
-          : size,
-      );
-    },
-    [],
   );
   useEffect(() => {
     const onResize = () => setViewportWidth(globalThis.innerWidth || 1280);
@@ -1504,12 +1477,6 @@ export function App() {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
-      // Soft-cap: at most one mounted desktop iframe (Arch Track G / J3).
-      const staged = candidates.find((candidate) => {
-        const ui = readPreviewTileUiState(run.id, candidate.producerStepId);
-        return ui.size === 'desktop' && !ui.collapsed;
-      });
-      if (staged) candidates = [staged];
       for (const candidate of candidates) {
         const producerPos = positions[candidate.producerStepId];
         if (!producerPos) continue;
@@ -1521,16 +1488,29 @@ export function App() {
           width: producerMeasured?.width || (horizontal ? 220 : 280),
           height: producerMeasured?.height || (horizontal ? 140 : 180),
         };
-        const id = previewNodeId(candidate.producerStepId);
+        const id = previewNodeId(
+          candidate.producerStepId,
+          candidate.downloadOnly ? candidate.artifact.id : undefined,
+        );
         const producer = run.steps.find(
           (s) => s.id === candidate.producerStepId,
         );
         const tileUi = readPreviewTileUiState(run.id, candidate.producerStepId);
-        const satellite = previewTilePosition(
+        const baseSatellite = previewTilePosition(
           producerPos,
           producerSize,
           horizontal,
         );
+        const satellite = candidate.downloadOnly
+          ? {
+              x: baseSatellite.x,
+              y:
+                baseSatellite.y +
+                previewTileLayout.bodyHeight +
+                16 +
+                candidate.bubbleIndex * 86,
+            }
+          : baseSatellite;
         nodes.push({
           id,
           type: 'preview',
@@ -1551,12 +1531,12 @@ export function App() {
             siblings: producer?.artifacts || [],
             remoteOnly: candidate.remoteOnly,
             extraCount: candidate.extraCount,
+            downloadOnly: candidate.downloadOnly,
             emphasized:
               focusedStepId === candidate.producerStepId ||
               (resultadoOpen && stepId === candidate.producerStepId),
             horizontal,
             tileUi,
-            paneSize: flowPaneSize,
             onSelectProducer: (producerId: string) => selectStep(producerId),
             onTileUiChange: (next: PreviewTileUiState) => {
               const current = readPreviewTileUiState(
@@ -1584,28 +1564,30 @@ export function App() {
                 t('La vista previa sigue en Hyperion — vuelve a esta ventana'),
               ),
           },
-          draggable: true,
-          dragHandle: '.preview-tile-drag',
+          draggable: !candidate.downloadOnly,
+          dragHandle: candidate.downloadOnly ? undefined : '.preview-tile-drag',
           selectable: false,
           connectable: false,
           focusable: true,
         });
-        edges.push({
-          id: `preview-tether:${candidate.producerStepId}`,
-          source: candidate.producerStepId,
-          target: id,
-          type: 'smoothstep',
-          className: 'preview-tether',
-          animated: false,
-          selectable: false,
-          focusable: false,
-          interactionWidth: 0,
-          style: {
-            stroke: 'var(--muted)',
-            strokeDasharray: '4 6',
-            strokeWidth: 1.25,
-          },
-        });
+        if (!candidate.downloadOnly) {
+          edges.push({
+            id: `preview-tether:${candidate.producerStepId}:${candidate.artifact.id}`,
+            source: candidate.producerStepId,
+            target: id,
+            type: 'smoothstep',
+            className: 'preview-tether',
+            animated: false,
+            selectable: false,
+            focusable: false,
+            interactionWidth: 0,
+            style: {
+              stroke: 'var(--muted)',
+              strokeDasharray: '4 6',
+              strokeWidth: 1.25,
+            },
+          });
+        }
       }
     }
     return {
@@ -1647,7 +1629,6 @@ export function App() {
     showPreviewTiles,
     previewTileUiTick,
     previewDragPositions,
-    flowPaneSize,
   ]);
   function requestRetry(id: string) {
     const target = run?.steps.find((item) => item.id === id);
@@ -2217,7 +2198,6 @@ export function App() {
                   <FitCanvas
                     view={`${preferences.view}:${preferences.orientation}:${layoutReset}:${resultadoOpen ? 'resultado' : 'full'}`}
                   />
-                  <PaneSizeReporter onSize={onFlowPaneSize} />
                   <Background color="#c6c0b2" gap={28} size={0.8} />
                   <TaskNavigation
                     canReset={Object.keys(manualPositions).length > 0}

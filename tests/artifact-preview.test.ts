@@ -38,16 +38,17 @@ test('shared ArtifactSandboxPreview keeps empty sandbox, Preview/Source, and ine
   assert.doesNotMatch(source, /allow-same-origin/);
 });
 
-test('preview stage CSS keeps light page inside a dark matte well and P1 stage band', () => {
+test('preview CSS keeps light page inside a dark matte well and one standard tile', () => {
   const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
   assert.match(css, /\.artifact-preview-stage/);
   assert.match(css, /color-scheme:\s*light/);
   assert.match(css, /\[data-theme='dark'\] \.artifact-preview-stage/);
   assert.match(css, /\[data-theme='dark'\] \.artifact-preview-disclaimer/);
-  assert.match(css, /\.preview-tile\s*\{[^}]*width:\s*280px/s);
-  assert.match(css, /\.preview-tile-body\s*\{[^}]*min-height:\s*180px/s);
+  assert.match(css, /\.preview-tile\s*\{[^}]*width:\s*480px/s);
+  assert.match(css, /\.preview-tile-body\s*\{[^}]*min-height:\s*300px/s);
   assert.match(css, /\.artifact-html-frame\s*\{[^}]*min-height:\s*280px/s);
-  assert.match(css, /\.preview-tile-resize/);
+  assert.match(css, /\.artifact-download-bubble/);
+  assert.doesNotMatch(css, /\.preview-tile-resize/);
 });
 
 test('trace scope select forces readable ink on dark theme', () => {

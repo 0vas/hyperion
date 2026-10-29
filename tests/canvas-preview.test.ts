@@ -35,13 +35,9 @@ test('tile breakpoint stays aligned with viewport export at 900', () => {
   assert.equal(previewTileBreakpoint, 900);
 });
 
-test('default tile layout hint matches mobile frame; still a satellite', () => {
-  assert.equal(previewTileLayout.width, 280);
-  assert.equal(previewTileLayout.bodyHeight, 180);
-  assert.ok(previewTileLayout.width >= 200 && previewTileLayout.width <= 320);
-  assert.ok(
-    previewTileLayout.bodyHeight >= 120 && previewTileLayout.bodyHeight <= 240,
-  );
+test('default tile layout is a single standard frame; still a satellite', () => {
+  assert.equal(previewTileLayout.width, 480);
+  assert.equal(previewTileLayout.bodyHeight, 300);
   assert.equal(previewTileLayout.maxVisible, 5);
 });
 
@@ -114,6 +110,7 @@ test('selectCanvasPreviewCandidates prefers leaf producers with previewable arti
   assert.equal(selected[0]!.producerStepId, 'write');
   assert.equal(selected[0]!.artifact.id, 'a1');
   assert.equal(selected[0]!.remoteOnly, false);
+  assert.equal(selected[0]!.downloadOnly, false);
   assert.equal(selected[1]!.producerStepId, 'link');
   assert.equal(selected[1]!.remoteOnly, true);
 });
@@ -170,5 +167,40 @@ test('soft cap prefers selected then attention over older completed', () => {
   assert.deepEqual(
     capped.map((c) => c.producerStepId),
     ['pick', 'wait'],
+  );
+});
+
+test('Office artifacts are compact download bubbles, not preview panels', () => {
+  const selected = selectCanvasPreviewCandidates(
+    [
+      step({
+        id: 'files',
+        title: 'Archivos',
+        kind: 'agent',
+        status: 'completed',
+        artifacts: [
+          artifact({
+            id: 'page',
+            name: 'page.html',
+            mediaType: 'text/html',
+          }),
+          artifact({
+            id: 'deck',
+            name: 'deck.pptx',
+            mediaType:
+              'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          }),
+        ],
+      }),
+    ],
+    { maxVisible: 5 },
+  );
+  assert.equal(selected.length, 2);
+  assert.deepEqual(
+    selected.map((item) => [item.artifact.id, item.downloadOnly]),
+    [
+      ['page', false],
+      ['deck', true],
+    ],
   );
 });

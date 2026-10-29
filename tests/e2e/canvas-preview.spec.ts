@@ -58,6 +58,19 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     },
   });
   expect(uploaded.ok()).toBe(true);
+  const officeUploaded = await request.post(`/api/runs/${run.id}/artifacts`, {
+    headers,
+    data: {
+      commandId: 'upload-canvas-preview-presentation',
+      stepId: 'write',
+      attempt: 1,
+      name: 'guia.pptx',
+      mediaType:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      contentBase64: Buffer.from('presentation bytes').toString('base64'),
+    },
+  });
+  expect(officeUploaded.ok()).toBe(true);
   await command('complete');
   await page.goto(`/?run=${run.id}`);
   const tile = page.getByTestId('rf__node-preview:write');
@@ -66,6 +79,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     tile.getByRole('group', { name: 'Vista previa del paso Preparar guía' }),
   ).toBeVisible();
   await expect(tile.locator('.artifact-preview-stage')).toBeVisible();
+  await expect(tile).toHaveCSS('width', '480px');
   const frame = tile.locator('iframe.preview-tile-html-frame');
   await expect(frame).toBeVisible();
   await expect(frame).toHaveAttribute('sandbox', '');
@@ -76,6 +90,16 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     ),
   ).toBeVisible();
   expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
+  const officeBubble = page.locator(
+    '.artifact-download-bubble[download="guia.pptx"]',
+  );
+  await expect(officeBubble).toBeVisible();
+  await expect(officeBubble.locator('.preview-office-icon')).toBeVisible();
+  await expect(officeBubble).toHaveAttribute('download', 'guia.pptx');
+  await expect(officeBubble).toHaveAttribute(
+    'href',
+    new RegExp(`/api/runs/${run.id}/artifacts/`),
+  );
   await tile.locator('.preview-tile-chrome-main').click();
   const resultado = page.getByTestId('resultado-stage');
   await expect(resultado).toBeVisible();
@@ -87,15 +111,27 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     .click();
   await expect(resultado).toHaveCount(0);
   await expect(tile).toBeVisible();
+  await tile
+    .getByRole('button', { name: 'Ampliar vista', exact: true })
+    .click();
+  const shell = page.locator('.preview-open-shell');
+  await expect(shell).toBeVisible();
+  await expect(shell).toHaveCSS('position', 'fixed');
+  const box = await shell.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThanOrEqual(1280);
+  expect(box!.height).toBeGreaterThanOrEqual(800);
+  await shell.getByRole('button', { name: 'Volver', exact: true }).click();
+  await expect(shell).toHaveCount(0);
+  await expect(resultado).toBeVisible();
   await page.setViewportSize({ width: 880, height: 800 });
   await expect
     .poll(async () => page.evaluate(() => window.innerWidth))
     .toBeLessThan(900);
   await expect(page.getByTestId('rf__node-preview:write')).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Ver artefactos: Preparar guía', exact: true })
+  await resultado
+    .getByRole('button', { name: 'Artefactos', exact: true })
     .click();
-  await expect(resultado).toBeVisible();
   await resultado
     .getByRole('button', { name: 'Ver artefacto', exact: true })
     .click();

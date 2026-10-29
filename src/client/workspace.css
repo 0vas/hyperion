@@ -455,7 +455,7 @@
 }
 .preview-tile {
   position: relative;
-  width: 280px;
+  width: 480px;
   display: grid;
   gap: 0;
   background: color-mix(in srgb, var(--glass) 92%, var(--bg));
@@ -470,11 +470,8 @@
     box-shadow 120ms ease,
     border-color 120ms ease;
 }
-.preview-tile.is-desktop {
-  max-width: calc(100vw - 48px);
-}
 .preview-tile.is-collapsed {
-  width: min(320px, 480px);
+  width: min(480px, calc(100vw - 48px));
 }
 .preview-tile.is-collapsed .preview-tile-chrome {
   border-bottom: 0;
@@ -499,32 +496,6 @@
   border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
   background: color-mix(in srgb, var(--glass) 70%, transparent);
   color: var(--ink);
-}
-.preview-tile-resize {
-  position: absolute;
-  z-index: 3;
-  touch-action: none;
-}
-.preview-tile-resize-e {
-  top: 12px;
-  right: 0;
-  bottom: 12px;
-  width: 8px;
-  cursor: ew-resize;
-}
-.preview-tile-resize-s {
-  left: 12px;
-  right: 12px;
-  bottom: 0;
-  height: 8px;
-  cursor: ns-resize;
-}
-.preview-tile-resize-se {
-  right: 0;
-  bottom: 0;
-  width: 14px;
-  height: 14px;
-  cursor: nwse-resize;
 }
 .preview-tile-drag {
   display: inline-flex;
@@ -577,27 +548,6 @@
   align-items: center;
   max-width: 22rem;
 }
-.preview-tile-resolution {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 6.5rem;
-  font-size: 10px;
-  color: var(--muted);
-}
-.preview-tile-resolution-label {
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-.preview-tile-resolution-select {
-  min-height: 28px;
-  padding: 2px 6px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--glass);
-  color: var(--ink);
-  font-size: 12px;
-}
 .preview-tile-action.icon-button {
   min-width: 34px;
   min-height: 34px;
@@ -624,47 +574,10 @@ a.preview-tile-action.icon-button {
 }
 .preview-tile-body {
   padding: 6px 8px 8px;
-  min-height: 180px;
-  max-height: 360px;
+  min-height: 300px;
+  max-height: 300px;
   overflow: hidden;
   background: color-mix(in srgb, var(--bg) 55%, transparent);
-}
-.preview-tile.is-desktop .preview-tile-body {
-  max-height: none;
-}
-.preview-tile-scale-wrap {
-  min-width: 0;
-}
-.preview-tile-body.is-contain {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 6px 8px;
-}
-.preview-tile-contain-viewport {
-  width: 100%;
-  height: 100%;
-  min-height: 168px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.preview-tile-contain-content {
-  flex-shrink: 0;
-  transform-origin: center center;
-  overflow: hidden;
-  background: #fff;
-  color-scheme: light;
-  border-radius: 4px;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
-}
-.preview-tile-contain-content img,
-.preview-tile-contain-content .preview-tile-image {
-  object-fit: contain;
-  max-width: 100%;
-  max-height: 100%;
 }
 .preview-tile-stage {
   padding: 6px;
@@ -678,9 +591,9 @@ a.preview-tile-action.icon-button {
   width: fit-content;
 }
 .preview-open-shell {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 100;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   background: var(--bg, #f4f1ea);
@@ -815,6 +728,35 @@ a.preview-tile-action.icon-button {
 .preview-office-icon {
   flex-shrink: 0;
   color: var(--ink);
+}
+.artifact-download-bubble {
+  width: 82px;
+  min-height: 82px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--glass) 92%, var(--bg));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 9%, transparent);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: center;
+}
+.artifact-download-bubble:hover {
+  border-color: var(--gold);
+}
+.artifact-download-bubble .preview-office-icon {
+  width: 30px;
+  height: 38px;
+}
+.artifact-download-bubble span {
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
 }
 .preview-tile-remote-body {
   display: block;
