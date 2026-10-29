@@ -61,7 +61,7 @@ The 0.4.1 runtime added active-agent presence and event delivery. The 0.4.2 skil
 
 **Artifacts** (inside **Result**) lists files and links registered by the agent. The node's package icon opens Result focused on that list. Preview small text files and supported images, download files, or open a document link. Results from earlier attempts remain labeled.
 
-On viewports ≥900px, a previewable artifact also appears as a **standard tile next to the producing step** on the canvas (inert preview). Notes render as paper and CSV as a simple table. **Expand** opens a full-screen in-Hyperion view over both canvas and Result, while **Back** returns to the workflow; remote URLs may use the system browser. DOCX/XLSX/PPTX and similar Office documents appear as an SVG bubble that downloads the file on click, with no Office WYSIWYG. The bottom toolbar shows **Jobs** to switch between phase summary and steps, plus **Hide artifacts** / **Show artifacts**. The same view choice remains in **Settings**. A click on the title selects the producer and opens Result. Below 900px those tiles hide and preview stays in Result. They are not process nodes and not a design editor. HTML/SVG preview sits in a matte stage around the iframe (page stays light; document CSS is not inverted). This redesign is in the development sources for the next Preview; 2026.10.28.2302 retains the previous controls.
+On viewports ≥900px, a previewable artifact also appears as a **standard tile next to the producing step** on the canvas (inert preview). Notes render as paper and CSV as a simple table. **Expand** opens a full-screen in-Hyperion view over both canvas and Result, while **Back** returns to the workflow; remote URLs may use the system browser. DOCX/XLSX/PPTX and similar Office documents appear as an SVG bubble that downloads the file on click, with no Office WYSIWYG. The bottom toolbar shows **Jobs** to switch between phase summary and steps, plus **Hide artifacts** / **Show artifacts**. The same view choice remains in **Settings**. A click on the title selects the producer and opens Result. Below 900px those tiles hide and preview stays in Result. They are not process nodes and not a design editor. HTML/SVG preview sits in a matte stage around the iframe (page stays light; document CSS is not inverted). This redesign is included in the **2026.10.29.0417 Preview**.
 
 ::: tip Deliverables within reach
 For example, “Prepare guide” can contain `welcome.md`, an illustration and a shared document link. **I/O** retains its data, **Logs** explains the actions, and **Artifacts** provides access to the result.
@@ -76,7 +76,7 @@ Say in the same chat: “Now translate this guide into English.” The agent cre
 **Continue from here**, at the end of the graph, helps you draft that request. **Copy request for chat** is the usual path (copy ≠ delivery). Paste into the connected chat; automatic send needs a send connector — MCP alone cannot wake the chat (**Send** hidden in this phase). The agent must create the linked run. Use plan revision for changes to unfinished work, or retry for a failed task.
 
 ::: info Availability
-The **2026.10.28.2302 UTC · Preview** installers include artifacts (sandboxed HTML/SVG preview), the **Jobs** switch, and linked runs. The tile redesign will arrive in a later Preview. [Download the new version](primeros-pasos.md) if you are using an older one.
+The **2026.10.29.0417 UTC · Preview** installers include artifacts (sandboxed HTML/SVG preview), the **Jobs** switch, the standard frame, and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
 :::
 
 ## Move and arrange nodes
@@ -89,4 +89,4 @@ Drag the dotted grip above a card or symbol. With a keyboard, focus the node, pr
 Positions are saved in this browser per workflow, orientation and steps/jobs view, including when agent activity arrives. They do not change dependencies or history, and do not sync across devices.
 :::
 
-Available in **2026.10.28.2302 UTC · Preview** installers. [Download](primeros-pasos.md).
+Available in **2026.10.29.0417 UTC · Preview** installers. [Download](primeros-pasos.md).

@@ -2,7 +2,7 @@
 
 Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local autenticado. El proceso del chat conserva la ejecución: Desktop presenta decisiones y resultados. El usuario elige split/escritorio en la conversación; el adaptador `open RUN_ID desktop` lanza la instalación registrada en su primer arranque.
 
-La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.10.28.2302) incluye instaladores para macOS Apple Silicon (notarizado) y Windows x64.
+La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.10.29.0417) incluye instaladores para macOS Apple Silicon (notarizado) y Windows x64.
 
 ## Desarrollo y distribución
 
@@ -60,9 +60,9 @@ Para publicar archivos ya probados sin volver a compilarlos, crear primero una r
 
 La web usa `docs/site/.vitepress/release.json` como registro de la última release **publicada**. Actualizarlo solo después de subir y verificar los instaladores; no anunciar un enlace antes de que exista su asset. El campo `macNotarized` solo puede ser verdadero con evidencia de notarización y validación de Gatekeeper.
 
-## Entregables, Trabajos y recorridos enlazados (2026.10.28.2302)
+## Entregables, Trabajos y recorridos enlazados (2026.10.29.0417)
 
-Esta preview incluye español e inglés, artefactos por paso (vista previa HTML/SVG en `iframe` con `sandbox=""`, aviso inerte y toggle a código; descarga autenticada), el interruptor visible **Trabajos** en el canvas y vínculos entre un flujo completado y un nuevo recorrido. El marco estándar, **Ampliar** a pantalla completa con **Volver**, las notas como papel, CSV/TSV como tabla sencilla y las burbujas SVG descargables para Office pertenecen a las fuentes de desarrollo para la próxima Preview; no se atribuyen al instalador publicado 2026.10.28.2302. No renderizan Office. **Copiar petición para el chat** es el camino de Phase 0; **Enviar** permanece oculto sin conector de envío. Los archivos permanecen asociados a su intento; la continuación conserva el historial anterior. La publicación no añade notarización.
+Esta preview incluye español e inglés, artefactos por paso (vista previa HTML/SVG en `iframe` con `sandbox=""`, aviso inerte y toggle a código; descarga autenticada), el interruptor visible **Trabajos** en el canvas y vínculos entre un flujo completado y un nuevo recorrido. Usa un marco estándar, **Ampliar** a pantalla completa con **Volver**, notas como papel, CSV/TSV como tabla sencilla y burbujas SVG descargables para Office. No renderiza Office ni afirma WYSIWYG. **Copiar petición para el chat** es el camino de Phase 0; **Enviar** permanece oculto sin conector de envío. Los archivos permanecen asociados a su intento; la continuación conserva el historial anterior. La publicación no añade notarización.
 
 ## Interface language
 
