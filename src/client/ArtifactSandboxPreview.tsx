@@ -90,6 +90,7 @@ export function ArtifactSandboxPreview({
   siblings = [],
   compact = false,
   fillAvailable = false,
+  immersive = false,
 }: {
   runId: string;
   artifact: Artifact;
@@ -99,6 +100,8 @@ export function ArtifactSandboxPreview({
   compact?: boolean;
   /** In the in-app full-screen shell, let the artifact use the available pane. */
   fillAvailable?: boolean;
+  /** Shell mode: content only; its parent owns the floating return control. */
+  immersive?: boolean;
 }) {
   useLocale();
   const [text, setText] = useState<string>();
@@ -290,53 +293,58 @@ export function ArtifactSandboxPreview({
       </div>
     );
 
-  if (markup)
+  if (markup) {
+    const showPreview = immersive || mode === 'preview';
     return (
       <div
         className={
           compact
             ? 'preview-tile-markup'
-            : `artifact-markup${fillAvailable ? ' artifact-markup-expanded' : ''}`
+            : `artifact-markup${fillAvailable ? ' artifact-markup-expanded' : ''}${
+                immersive ? ' is-immersive' : ''
+              }`
         }
       >
-        <div
-          className="artifact-view-toggle"
-          role="group"
-          aria-label={t('Modo de visualización')}
-        >
-          <button
-            type="button"
-            className={mode === 'preview' ? 'secondary active' : 'secondary'}
-            aria-pressed={mode === 'preview'}
-            onClick={() => setMode('preview')}
+        {!immersive && (
+          <div
+            className="artifact-view-toggle"
+            role="group"
+            aria-label={t('Modo de visualización')}
           >
-            {t('Vista previa')}
-          </button>
-          <button
-            type="button"
-            className={mode === 'source' ? 'secondary active' : 'secondary'}
-            aria-pressed={mode === 'source'}
-            onClick={() => setMode('source')}
-          >
-            {t('Código fuente')}
-          </button>
-        </div>
-        {mode === 'preview' && (
+            <button
+              type="button"
+              className={mode === 'preview' ? 'secondary active' : 'secondary'}
+              aria-pressed={mode === 'preview'}
+              onClick={() => setMode('preview')}
+            >
+              {t('Vista previa')}
+            </button>
+            <button
+              type="button"
+              className={mode === 'source' ? 'secondary active' : 'secondary'}
+              aria-pressed={mode === 'source'}
+              onClick={() => setMode('source')}
+            >
+              {t('Código fuente')}
+            </button>
+          </div>
+        )}
+        {!immersive && showPreview && (
           <p className="artifact-preview-disclaimer">
             {t(INERT_PREVIEW_DISCLAIMER_ES)}
           </p>
         )}
-        {mode === 'preview' && styleStatus === 'included' && (
+        {!immersive && showPreview && styleStatus === 'included' && (
           <p className="artifact-preview-style-status muted">
             {t(STYLES_INCLUDED_LABEL_ES)}
           </p>
         )}
-        {mode === 'preview' && styleStatus === 'partial' && (
+        {!immersive && showPreview && styleStatus === 'partial' && (
           <p className="artifact-preview-style-status muted">
             {t(STYLES_PARTIAL_LABEL_ES)}
           </p>
         )}
-        {mode === 'preview' ? (
+        {showPreview ? (
           <div
             className={
               compact
@@ -365,6 +373,7 @@ export function ArtifactSandboxPreview({
         )}
       </div>
     );
+  }
 
   return <pre className="artifact-text">{text}</pre>;
 }

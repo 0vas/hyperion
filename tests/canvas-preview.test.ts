@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PREVIEW_TILE_BREAKPOINT,
+  placePreviewTiles,
   previewNodeId,
   previewTileLayout,
   previewTilePosition,
@@ -49,6 +50,91 @@ test('satellite position sits to the right of the producer box', () => {
   assert.deepEqual(
     previewTilePosition({ x: 100, y: 40 }, { width: 280, height: 160 }, false),
     { x: 100 + 280 + previewTileLayout.gap, y: 40 },
+  );
+});
+
+test('four automatic previews use deterministic non-overlapping lanes', () => {
+  const placements = placePreviewTiles(
+    ['html', 'note', 'csv', 'image'].map((id) => ({
+      id,
+      position: { x: 420, y: 80 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+    })),
+  );
+  const values = Object.values(placements);
+  assert.equal(values.length, 4);
+  assert.deepEqual(placements.csv, { x: 420, y: 80 });
+  for (let index = 1; index < values.length; index++)
+    assert.ok(
+      values[index]!.y >=
+        values[index - 1]!.y + previewTileLayout.height + previewTileLayout.gap,
+    );
+});
+
+test('stored or live bubble positions are fixed obstacles, not rewritten', () => {
+  const placements = placePreviewTiles([
+    {
+      id: 'manual',
+      position: { x: 420, y: 80 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+      fixed: true,
+    },
+    {
+      id: 'automatic',
+      position: { x: 420, y: 80 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+    },
+  ]);
+  assert.deepEqual(placements.manual, { x: 420, y: 80 });
+  assert.ok(
+    placements.automatic!.y >=
+      80 + previewTileLayout.height + previewTileLayout.gap,
+  );
+});
+
+test('consecutive horizontal producers keep their automatic HTML previews clear', () => {
+  const placements = placePreviewTiles([
+    {
+      id: 'node:write',
+      position: { x: 0, y: 0 },
+      width: 220,
+      height: 140,
+      fixed: true,
+    },
+    {
+      id: 'node:review',
+      position: { x: 300, y: 0 },
+      width: 220,
+      height: 140,
+      fixed: true,
+    },
+    {
+      id: 'preview:write',
+      position: { x: 248, y: 0 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+    },
+    {
+      id: 'preview:review',
+      position: { x: 548, y: 0 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+    },
+  ]);
+  assert.deepEqual(placements['node:review'], { x: 300, y: 0 });
+  assert.ok(
+    placements['preview:write']!.y >= 140 + previewTileLayout.gap,
+    'the first preview moves below the next producer instead of covering it',
+  );
+  assert.ok(
+    placements['preview:review']!.y >=
+      placements['preview:write']!.y +
+        previewTileLayout.height +
+        previewTileLayout.gap,
+    'the second preview remains clear of the first preview tethered to its producer',
   );
 });
 

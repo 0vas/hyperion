@@ -12,7 +12,8 @@ export type PreviewOpenShellProps = {
 };
 
 /**
- * In-app Abrir surface (Track I / J1): thin Hyperion chrome + Volver.
+ * In-app Abrir surface: the artifact owns the complete usable pane while a
+ * floating, always-available return control preserves the Hyperion exit.
  * Never replaces the SPA document with raw blob HTML.
  */
 export function PreviewOpenShell({
@@ -36,21 +37,8 @@ export function PreviewOpenShell({
       className="preview-open-shell"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="preview-open-shell-title"
+      aria-label={t('Vista ampliada de {0}', { 0: artifact.name })}
     >
-      <header className="preview-open-shell-chrome is-thin">
-        <h2 id="preview-open-shell-title" className="preview-open-shell-title">
-          {artifact.name}
-        </h2>
-        <button
-          type="button"
-          className="primary preview-open-shell-back"
-          onClick={onBack}
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          {t('Volver')}
-        </button>
-      </header>
       <div className="preview-open-shell-body">
         {artifact.url ? (
           <p className="muted">{t('Enlace remoto — ábrelo desde el cromo')}</p>
@@ -60,9 +48,18 @@ export function PreviewOpenShell({
             artifact={artifact}
             siblings={siblings}
             fillAvailable
+            immersive
           />
         )}
       </div>
+      <button
+        type="button"
+        className="primary preview-open-shell-back"
+        onClick={onBack}
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+        {t('Volver')}
+      </button>
     </div>
   );
 }

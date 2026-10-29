@@ -31,7 +31,8 @@ test('shared ArtifactSandboxPreview keeps empty sandbox, Preview/Source, and ine
   assert.match(source, /selectCssSiblingArtifacts/);
   assert.match(source, /Estilos incluidos \(inerte\)/);
   assert.match(source, /Estilos parciales · faltan archivos/);
-  assert.match(source, /mode === 'preview' &&/);
+  assert.match(source, /immersive \|\| mode === 'preview'/);
+  assert.match(source, /immersive\?: boolean/);
   assert.match(source, /isSandboxedMarkup/);
   assert.match(source, /artifact-preview-stage/);
   assert.doesNotMatch(source, /allow-scripts/);
