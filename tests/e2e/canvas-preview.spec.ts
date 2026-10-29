@@ -75,6 +75,16 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   await page.goto(`/?run=${run.id}`);
   const tile = page.getByTestId('rf__node-preview:write');
   await expect(tile).toBeVisible();
+  const initialBubble = tile.locator('.artifact-preview-bubble');
+  await expect(initialBubble).toBeVisible();
+  await expect(initialBubble.locator('.preview-artifact-icon')).toHaveAttribute(
+    'data-kind',
+    'markup',
+  );
+  await expect(tile.locator('.preview-tile')).toHaveCount(0);
+  await initialBubble
+    .getByRole('button', { name: 'Mostrar artefacto', exact: true })
+    .click();
   await expect(
     tile.getByRole('group', { name: 'Vista previa del paso Preparar guía' }),
   ).toBeVisible();

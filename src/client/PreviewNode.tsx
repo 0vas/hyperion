@@ -11,9 +11,13 @@ import type { Artifact } from '../domain/artifacts';
 import {
   ArtifactSandboxPreview,
   OfficeFileIcon,
+  PreviewArtifactIcon,
   artifactFileUrl,
 } from './ArtifactSandboxPreview';
-import { officeKindForArtifact } from './preview-type-aesthetics';
+import {
+  officeKindForArtifact,
+  previewBubbleIconKind,
+} from './preview-type-aesthetics';
 import {
   previewTileMountsIframe,
   type PreviewTileUiState,
@@ -46,6 +50,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   useLocale();
   const { tileUi } = data;
   const officeKind = officeKindForArtifact(data.artifact);
+  const bubbleIconKind = previewBubbleIconKind(data.artifact);
   const mountsPreview = previewTileMountsIframe(tileUi);
   const hideLabel = tileUi.collapsed
     ? t('Mostrar artefacto')
@@ -121,7 +126,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           title={t('Mostrar artefacto')}
           onClick={() => data.onTileUiChange({ ...tileUi, collapsed: false })}
         >
-          <Eye size={22} aria-hidden="true" />
+          <PreviewArtifactIcon kind={bubbleIconKind} />
           <span>{data.artifact.name}</span>
         </button>
       </div>

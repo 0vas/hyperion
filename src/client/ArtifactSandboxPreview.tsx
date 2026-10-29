@@ -10,6 +10,7 @@ import {
 import {
   officeKindForArtifact,
   parseDelimitedPreview,
+  type PreviewBubbleIconKind,
   previewAestheticKind,
   type OfficeKind,
 } from './preview-type-aesthetics';
@@ -74,6 +75,62 @@ export function OfficeFileIcon({ kind }: { kind: OfficeKind }) {
       >
         {label}
       </text>
+    </svg>
+  );
+}
+
+/** Semantic SVG for a compact canvas artifact bubble; never renders the file. */
+export function PreviewArtifactIcon({ kind }: { kind: PreviewBubbleIconKind }) {
+  const common = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+  return (
+    <svg
+      className="preview-artifact-icon"
+      data-kind={kind}
+      viewBox="0 0 32 32"
+      width="32"
+      height="32"
+      aria-hidden="true"
+    >
+      {kind === 'markup' && (
+        <>
+          <circle cx="16" cy="16" r="11" {...common} />
+          <path
+            d="M5 16h22M16 5c3 3 4.5 7 4.5 11S19 24 16 27c-3-3-4.5-7-4.5-11S13 8 16 5z"
+            {...common}
+          />
+        </>
+      )}
+      {kind === 'note' && (
+        <>
+          <path d="M8 4h12l4 4v20H8z" {...common} />
+          <path d="M20 4v5h5M12 14h8M12 19h8M12 24h5" {...common} />
+        </>
+      )}
+      {kind === 'csv' && (
+        <>
+          <rect x="5" y="6" width="22" height="20" rx="2" {...common} />
+          <path d="M5 12h22M12 6v20M20 6v20" {...common} />
+        </>
+      )}
+      {kind === 'image' && (
+        <>
+          <rect x="5" y="6" width="22" height="20" rx="2" {...common} />
+          <circle cx="12" cy="12" r="2" {...common} />
+          <path d="m7 23 6-6 4 4 3-3 5 5" {...common} />
+        </>
+      )}
+      {kind === 'text' && (
+        <>
+          <path d="M8 4h12l4 4v20H8z" {...common} />
+          <path d="M20 4v5h5M12 14h8M12 19h8M12 24h8" {...common} />
+        </>
+      )}
     </svg>
   );
 }
