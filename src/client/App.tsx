@@ -112,7 +112,7 @@ import {
   writePreviewTileUiState,
   type PreviewTileUiState,
 } from './preview-tile-ui';
-import { PreviewNode } from './PreviewNode';
+import { PreviewNode, type PreviewNodeData } from './PreviewNode';
 import { PreviewOpenShell } from './PreviewOpenShell';
 import type { Artifact } from '../domain/artifacts';
 import { FlowLegend } from './FlowLegend';
@@ -1477,6 +1477,11 @@ export function App() {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
+      const producersWithPanel = new Set(
+        candidates
+          .filter((candidate) => !candidate.downloadOnly)
+          .map((candidate) => candidate.producerStepId),
+      );
       for (const candidate of candidates) {
         const producerPos = positions[candidate.producerStepId];
         if (!producerPos) continue;
@@ -1492,24 +1497,32 @@ export function App() {
           candidate.producerStepId,
           candidate.downloadOnly ? candidate.artifact.id : undefined,
         );
+        const uiKey = candidate.downloadOnly
+          ? `${candidate.producerStepId}:${candidate.artifact.id}`
+          : candidate.producerStepId;
         const producer = run.steps.find(
           (s) => s.id === candidate.producerStepId,
         );
-        const tileUi = readPreviewTileUiState(run.id, candidate.producerStepId);
+        const tileUi = readPreviewTileUiState(run.id, uiKey);
         const baseSatellite = previewTilePosition(
           producerPos,
           producerSize,
           horizontal,
         );
         const satellite = candidate.downloadOnly
-          ? {
-              x: baseSatellite.x,
-              y:
-                baseSatellite.y +
-                previewTileLayout.bodyHeight +
-                16 +
-                candidate.bubbleIndex * 86,
-            }
+          ? producersWithPanel.has(candidate.producerStepId)
+            ? {
+                x: baseSatellite.x,
+                y:
+                  baseSatellite.y +
+                  previewTileLayout.bodyHeight +
+                  16 +
+                  candidate.bubbleIndex * 96,
+              }
+            : {
+                x: baseSatellite.x,
+                y: baseSatellite.y + candidate.bubbleIndex * 96,
+              }
           : baseSatellite;
         nodes.push({
           id,
@@ -1525,6 +1538,7 @@ export function App() {
               : undefined,
           data: {
             producerStepId: candidate.producerStepId,
+            uiKey,
             producerTitle: producer?.title || candidate.producerStepId,
             runId: run.id,
             artifact: candidate.artifact,
@@ -1539,11 +1553,8 @@ export function App() {
             tileUi,
             onSelectProducer: (producerId: string) => selectStep(producerId),
             onTileUiChange: (next: PreviewTileUiState) => {
-              const current = readPreviewTileUiState(
-                run.id,
-                candidate.producerStepId,
-              );
-              writePreviewTileUiState(run.id, candidate.producerStepId, {
+              const current = readPreviewTileUiState(run.id, uiKey);
+              writePreviewTileUiState(run.id, uiKey, {
                 ...current,
                 ...next,
                 // Keep drag coords across compact/collapse (Architect E1).
@@ -1564,30 +1575,31 @@ export function App() {
                 t('La vista previa sigue en Hyperion — vuelve a esta ventana'),
               ),
           },
-          draggable: !candidate.downloadOnly,
-          dragHandle: candidate.downloadOnly ? undefined : '.preview-tile-drag',
+          draggable: true,
+          dragHandle:
+            candidate.downloadOnly || tileUi.collapsed
+              ? '.artifact-bubble-drag'
+              : '.preview-tile-drag',
           selectable: false,
           connectable: false,
           focusable: true,
         });
-        if (!candidate.downloadOnly) {
-          edges.push({
-            id: `preview-tether:${candidate.producerStepId}:${candidate.artifact.id}`,
-            source: candidate.producerStepId,
-            target: id,
-            type: 'smoothstep',
-            className: 'preview-tether',
-            animated: false,
-            selectable: false,
-            focusable: false,
-            interactionWidth: 0,
-            style: {
-              stroke: 'var(--muted)',
-              strokeDasharray: '4 6',
-              strokeWidth: 1.25,
-            },
-          });
-        }
+        edges.push({
+          id: `preview-tether:${candidate.producerStepId}:${candidate.artifact.id}`,
+          source: candidate.producerStepId,
+          target: id,
+          type: 'smoothstep',
+          className: 'preview-tether',
+          animated: false,
+          selectable: false,
+          focusable: false,
+          interactionWidth: 0,
+          style: {
+            stroke: 'var(--muted)',
+            strokeDasharray: '4 6',
+            strokeWidth: 1.25,
+          },
+        });
       }
     }
     return {
@@ -2168,15 +2180,12 @@ export function App() {
                   }}
                   onNodeDragStop={(_event, node) => {
                     if (node.type !== 'preview' || !run) return;
-                    const producerStepId = node.id.startsWith('preview:')
-                      ? node.id.slice('preview:'.length)
-                      : '';
-                    if (!producerStepId) return;
-                    const current = readPreviewTileUiState(
-                      run.id,
-                      producerStepId,
-                    );
-                    writePreviewTileUiState(run.id, producerStepId, {
+                    const data = node.data as Partial<PreviewNodeData>;
+                    const producerStepId = data.producerStepId;
+                    const uiKey = data.uiKey || producerStepId;
+                    if (!producerStepId || !uiKey) return;
+                    const current = readPreviewTileUiState(run.id, uiKey);
+                    writePreviewTileUiState(run.id, uiKey, {
                       ...current,
                       x: node.position.x,
                       y: node.position.y,

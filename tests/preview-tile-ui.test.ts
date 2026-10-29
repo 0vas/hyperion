@@ -167,11 +167,14 @@ test('open-browser CSP remains inert for composed documents', () => {
   assert.equal(PREVIEW_OPEN_BROWSER_CSP.includes("default-src 'none'"), true);
 });
 
-test('PreviewNode has one frame, full-screen expansion, and Office bubbles', () => {
+test('PreviewNode has one frame, full-screen expansion, and connected movable bubbles', () => {
   const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
   assert.match(source, /Ampliar vista/);
   assert.match(source, /Maximize2/);
   assert.match(source, /artifact-download-bubble/);
+  assert.match(source, /artifact-preview-bubble/);
+  assert.match(source, /artifact-bubble-drag/);
+  assert.match(source, /Mostrar artefacto/);
   assert.match(source, /artifactFileUrl/);
   assert.doesNotMatch(source, /PREVIEW_TILE_SIZE_OPTIONS/);
   assert.doesNotMatch(source, /preview-tile-resolution/);
@@ -193,4 +196,6 @@ test('App opens the full-screen shell and keeps the Jobs switch', () => {
   const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
   assert.match(css, /\.preview-open-shell\s*\{[^}]*position:\s*fixed/s);
   assert.match(css, /\.artifact-download-bubble/);
+  assert.match(css, /\.artifact-preview-bubble/);
+  assert.match(css, /\.artifact-html-frame-expanded/);
 });

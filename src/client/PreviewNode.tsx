@@ -22,6 +22,8 @@ import { t, useLocale } from './i18n';
 
 export type PreviewNodeData = {
   producerStepId: string;
+  /** UI-only storage identity; Office bubbles are independent per artifact. */
+  uiKey: string;
   producerTitle: string;
   runId: string;
   artifact: Artifact;
@@ -54,28 +56,80 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
     const href =
       data.artifact.url || artifactFileUrl(data.runId, data.artifact);
     return (
-      <a
-        className="artifact-download-bubble nodrag nopan"
-        href={href}
-        aria-label={t('Descargar')}
-        title={t('Descargar')}
-        onClick={(event) => event.stopPropagation()}
-        {...(data.artifact.url
-          ? { target: '_blank', rel: 'noopener noreferrer' }
-          : { download: data.artifact.name })}
+      <div
+        className="artifact-bubble artifact-download-bubble"
+        role="group"
+        aria-label={t('Artefacto {0}', { 0: data.artifact.name })}
       >
-        <OfficeFileIcon kind={officeKind} />
-        <span>{data.artifact.name}</span>
-        <Download size={14} aria-hidden="true" />
-      </a>
+        <Handle
+          type="target"
+          position={data.horizontal ? Position.Left : Position.Top}
+          className="artifact-bubble-handle"
+          isConnectable={false}
+        />
+        <button
+          type="button"
+          className="artifact-bubble-drag"
+          aria-label={t('Arrastrar artefacto')}
+          title={t('Arrastrar artefacto')}
+        >
+          <GripVertical size={13} aria-hidden="true" />
+        </button>
+        <a
+          className="artifact-bubble-action nodrag nopan"
+          href={href}
+          aria-label={t('Descargar {0}', { 0: data.artifact.name })}
+          title={t('Descargar')}
+          onClick={(event) => event.stopPropagation()}
+          {...(data.artifact.url
+            ? { target: '_blank', rel: 'noopener noreferrer' }
+            : { download: data.artifact.name })}
+        >
+          <OfficeFileIcon kind={officeKind} />
+          <span>{data.artifact.name}</span>
+          <Download size={14} aria-hidden="true" />
+        </a>
+      </div>
     );
   }
 
+  if (tileUi.collapsed)
+    return (
+      <div
+        className="artifact-bubble artifact-preview-bubble"
+        role="group"
+        aria-label={t('Vista previa oculta de {0}', { 0: data.artifact.name })}
+      >
+        <Handle
+          type="target"
+          position={data.horizontal ? Position.Left : Position.Top}
+          className="artifact-bubble-handle"
+          isConnectable={false}
+        />
+        <button
+          type="button"
+          className="artifact-bubble-drag"
+          aria-label={t('Arrastrar artefacto')}
+          title={t('Arrastrar artefacto')}
+        >
+          <GripVertical size={13} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="artifact-bubble-action nodrag nopan"
+          aria-label={t('Mostrar artefacto')}
+          title={t('Mostrar artefacto')}
+          onClick={() => data.onTileUiChange({ ...tileUi, collapsed: false })}
+        >
+          <Eye size={22} aria-hidden="true" />
+          <span>{data.artifact.name}</span>
+        </button>
+      </div>
+    );
+
   return (
     <div
-      className={`preview-tile${data.emphasized ? ' emphasized' : ''}${
-        tileUi.collapsed ? ' is-collapsed' : ''
-      }`}
+      className={`preview-tile${data.emphasized ? ' emphasized' : ''}`}
       role="group"
       aria-label={t('Vista previa del paso {0}', { 0: data.producerTitle })}
     >

@@ -91,7 +91,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   ).toBeVisible();
   expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
   const officeBubble = page.locator(
-    '.artifact-download-bubble[download="guia.pptx"]',
+    '.artifact-download-bubble .artifact-bubble-action[download="guia.pptx"]',
   );
   await expect(officeBubble).toBeVisible();
   await expect(officeBubble.locator('.preview-office-icon')).toBeVisible();
@@ -100,6 +100,61 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     'href',
     new RegExp(`/api/runs/${run.id}/artifacts/`),
   );
+  await expect(
+    page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
+  ).toHaveCount(2);
+  const officeNode = page.locator('.react-flow__node').filter({
+    has: officeBubble,
+  });
+  const officeDrag = officeNode.locator('.artifact-bubble-drag');
+  await expect(officeDrag).toBeVisible();
+  const officeTransform = () => officeNode.evaluate((el) => el.style.transform);
+  const initialOfficeTransform = await officeTransform();
+  const officeDragBox = (await officeDrag.boundingBox())!;
+  await page.mouse.move(
+    officeDragBox.x + officeDragBox.width / 2,
+    officeDragBox.y + officeDragBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    officeDragBox.x + officeDragBox.width / 2 + 48,
+    officeDragBox.y + officeDragBox.height / 2 + 36,
+    { steps: 6 },
+  );
+  await page.mouse.up();
+  await expect.poll(officeTransform).not.toBe(initialOfficeTransform);
+  await tile
+    .getByRole('button', { name: 'Ocultar artefacto', exact: true })
+    .click();
+  const hiddenBubble = page.locator('.artifact-preview-bubble');
+  await expect(hiddenBubble).toBeVisible();
+  await expect(tile.locator('.preview-tile')).toHaveCount(0);
+  const hiddenNode = page.locator('.react-flow__node').filter({
+    has: hiddenBubble,
+  });
+  const hiddenTransform = () => hiddenNode.evaluate((el) => el.style.transform);
+  const initialHiddenTransform = await hiddenTransform();
+  const hiddenDrag = hiddenNode.locator('.artifact-bubble-drag');
+  const hiddenDragBox = (await hiddenDrag.boundingBox())!;
+  await page.mouse.move(
+    hiddenDragBox.x + hiddenDragBox.width / 2,
+    hiddenDragBox.y + hiddenDragBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    hiddenDragBox.x + hiddenDragBox.width / 2 + 36,
+    hiddenDragBox.y + hiddenDragBox.height / 2 + 28,
+    { steps: 5 },
+  );
+  await page.mouse.up();
+  await expect.poll(hiddenTransform).not.toBe(initialHiddenTransform);
+  await expect(
+    page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
+  ).toHaveCount(2);
+  await hiddenBubble
+    .getByRole('button', { name: 'Mostrar artefacto', exact: true })
+    .click();
+  await expect(tile.locator('.preview-tile')).toBeVisible();
   await tile.locator('.preview-tile-chrome-main').click();
   const resultado = page.getByTestId('resultado-stage');
   await expect(resultado).toBeVisible();
@@ -121,6 +176,11 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   expect(box).not.toBeNull();
   expect(box!.width).toBeGreaterThanOrEqual(1280);
   expect(box!.height).toBeGreaterThanOrEqual(800);
+  const expandedFrame = shell.locator('iframe.artifact-html-frame');
+  await expect(expandedFrame).toBeVisible();
+  await expect
+    .poll(async () => (await expandedFrame.boundingBox())!.height)
+    .toBeGreaterThan(500);
   await shell.getByRole('button', { name: 'Volver', exact: true }).click();
   await expect(shell).toHaveCount(0);
   await expect(resultado).toBeVisible();
