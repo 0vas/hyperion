@@ -63,6 +63,8 @@ The 0.4.1 runtime added active-agent presence and event delivery. The 0.4.2 skil
 
 On viewports ≥900px, a previewable artifact also appears as a **standard tile next to the producing step** on the canvas (inert preview). Notes render as paper and CSV as a simple table. **Expand** opens a full-screen in-Hyperion view over both canvas and Result, while **Back** returns to the workflow; remote URLs may use the system browser. DOCX/XLSX/PPTX and similar Office documents appear as an SVG bubble that downloads the file on click, with no Office WYSIWYG. The bottom toolbar shows **Jobs** to switch between phase summary and steps, plus **Hide artifacts** / **Show artifacts**. The same view choice remains in **Settings**. A click on the title selects the producer and opens Result. Below 900px those tiles hide and preview stays in Result. They are not process nodes and not a design editor. HTML/SVG preview sits in a matte stage around the iframe (page stays light; document CSS is not inverted). This redesign is included in the **2026.10.29.0417 Preview**.
 
+The next Preview, not yet published when this guide was edited, will make **Expand** use the available height and width. Hiding a tile leaves a compact bubble: it can restore the tile and move through its grip. Each bubble keeps its own visual connection to the producing step; moving it updates only that connection and does not change the workflow.
+
 ::: tip Deliverables within reach
 For example, “Prepare guide” can contain `welcome.md`, an illustration and a shared document link. **I/O** retains its data, **Logs** explains the actions, and **Artifacts** provides access to the result.
 :::

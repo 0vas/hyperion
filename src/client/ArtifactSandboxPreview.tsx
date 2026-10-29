@@ -89,6 +89,7 @@ export function ArtifactSandboxPreview({
   artifact,
   siblings = [],
   compact = false,
+  fillAvailable = false,
 }: {
   runId: string;
   artifact: Artifact;
@@ -96,6 +97,8 @@ export function ArtifactSandboxPreview({
   siblings?: Artifact[];
   /** Tile chrome: smaller frame, still full disclaimer when Preview is shown. */
   compact?: boolean;
+  /** In the in-app full-screen shell, let the artifact use the available pane. */
+  fillAvailable?: boolean;
 }) {
   useLocale();
   const [text, setText] = useState<string>();
@@ -220,7 +223,11 @@ export function ArtifactSandboxPreview({
   if (image)
     return (
       <img
-        className={compact ? 'preview-tile-image' : 'artifact-image'}
+        className={
+          compact
+            ? 'preview-tile-image'
+            : `artifact-image${fillAvailable ? ' artifact-image-expanded' : ''}`
+        }
         src={`${url}?preview=1`}
         alt={artifact.name}
         onError={() => setError(true)}
@@ -239,7 +246,13 @@ export function ArtifactSandboxPreview({
         : undefined,
     );
     return (
-      <div className={compact ? 'preview-csv' : 'preview-csv is-roomy'}>
+      <div
+        className={
+          compact
+            ? 'preview-csv'
+            : `preview-csv is-roomy${fillAvailable ? ' is-expanded' : ''}`
+        }
+      >
         <div className="preview-csv-scroll">
           <table className="preview-csv-table">
             <tbody>
@@ -264,7 +277,13 @@ export function ArtifactSandboxPreview({
 
   if (kind === 'note')
     return (
-      <div className={compact ? 'preview-note' : 'preview-note is-roomy'}>
+      <div
+        className={
+          compact
+            ? 'preview-note'
+            : `preview-note is-roomy${fillAvailable ? ' is-expanded' : ''}`
+        }
+      >
         <div className="preview-note-paper">
           <pre className="preview-note-body">{text}</pre>
         </div>
@@ -273,7 +292,13 @@ export function ArtifactSandboxPreview({
 
   if (markup)
     return (
-      <div className={compact ? 'preview-tile-markup' : 'artifact-markup'}>
+      <div
+        className={
+          compact
+            ? 'preview-tile-markup'
+            : `artifact-markup${fillAvailable ? ' artifact-markup-expanded' : ''}`
+        }
+      >
         <div
           className="artifact-view-toggle"
           role="group"
@@ -316,12 +341,18 @@ export function ArtifactSandboxPreview({
             className={
               compact
                 ? 'artifact-preview-stage preview-tile-stage'
-                : 'artifact-preview-stage'
+                : `artifact-preview-stage${
+                    fillAvailable ? ' artifact-preview-stage-expanded' : ''
+                  }`
             }
           >
             <iframe
               className={
-                compact ? 'preview-tile-html-frame' : 'artifact-html-frame'
+                compact
+                  ? 'preview-tile-html-frame'
+                  : `artifact-html-frame${
+                      fillAvailable ? ' artifact-html-frame-expanded' : ''
+                    }`
               }
               title={t('Vista previa de {0}', { 0: artifact.name })}
               srcDoc={srcDoc}

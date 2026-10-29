@@ -59,6 +59,7 @@ export function PreviewOpenShell({
             runId={runId}
             artifact={artifact}
             siblings={siblings}
+            fillAvailable
           />
         )}
       </div>
