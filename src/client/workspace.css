@@ -594,8 +594,6 @@ a.preview-tile-action.icon-button {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
   background: var(--bg, #f4f1ea);
   color: var(--ink);
 }
@@ -628,13 +626,16 @@ a.preview-tile-action.icon-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  position: absolute;
+  z-index: 2;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--ink) 20%, transparent);
 }
 .preview-open-shell-body {
-  display: flex;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  padding: 16px;
 }
 .preview-open-shell-body > .artifact-markup-expanded,
 .preview-open-shell-body > .preview-csv.is-expanded,
@@ -649,6 +650,22 @@ a.preview-tile-action.icon-button {
   min-height: 0;
   grid-template-rows: auto auto minmax(0, 1fr);
   margin-top: 0;
+}
+.artifact-markup-expanded.is-immersive {
+  display: block;
+  height: 100%;
+  margin: 0;
+}
+.artifact-markup-expanded.is-immersive .artifact-preview-stage {
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.artifact-markup-expanded.is-immersive .artifact-html-frame-expanded {
+  border: 0;
+  border-radius: 0;
 }
 .artifact-preview-stage-expanded {
   min-height: 0;

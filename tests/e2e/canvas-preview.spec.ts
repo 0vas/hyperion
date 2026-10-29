@@ -178,9 +178,16 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   expect(box!.height).toBeGreaterThanOrEqual(800);
   const expandedFrame = shell.locator('iframe.artifact-html-frame');
   await expect(expandedFrame).toBeVisible();
+  await expect(shell.locator('.preview-open-shell-chrome')).toHaveCount(0);
+  await expect(
+    shell.getByRole('button', { name: 'Volver', exact: true }),
+  ).toBeVisible();
   await expect
     .poll(async () => (await expandedFrame.boundingBox())!.height)
-    .toBeGreaterThan(500);
+    .toBeGreaterThan(760);
+  await expect
+    .poll(async () => (await expandedFrame.boundingBox())!.width)
+    .toBeGreaterThan(1240);
   await shell.getByRole('button', { name: 'Volver', exact: true }).click();
   await expect(shell).toHaveCount(0);
   await expect(resultado).toBeVisible();

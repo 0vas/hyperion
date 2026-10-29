@@ -12,6 +12,8 @@ export const previewTileLayout = {
   gap: 28,
   width: 480,
   bodyHeight: 300,
+  /** Chrome + body approximation used only for collision-free initial placement. */
+  height: 360,
   maxVisible: 5,
 } as const;
 
@@ -145,4 +147,70 @@ export function previewTilePosition(
     x: producer.x + producerSize.width + previewTileLayout.gap,
     y: producer.y,
   };
+}
+
+export type PreviewTilePlacementInput = {
+  id: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+  /** Stored or in-progress user placement: seed collision checks, never move it. */
+  fixed?: boolean;
+};
+
+type PreviewTileRect = PreviewTilePlacementInput & {
+  position: { x: number; y: number };
+};
+
+function tilesOverlap(
+  a: PreviewTileRect,
+  b: PreviewTileRect,
+  gap: number,
+): boolean {
+  return !(
+    a.position.x + a.width + gap <= b.position.x ||
+    b.position.x + b.width + gap <= a.position.x ||
+    a.position.y + a.height + gap <= b.position.y ||
+    b.position.y + b.height + gap <= a.position.y
+  );
+}
+
+/**
+ * Lay out automatically placed preview satellites in stable vertical lanes.
+ * Every tile stays to the producer's right; only the initial client layout is
+ * adjusted. Stored and live drag positions are fixed obstacles, never rewritten.
+ */
+export function placePreviewTiles(
+  inputs: PreviewTilePlacementInput[],
+  gap: number = previewTileLayout.gap,
+): Record<string, { x: number; y: number }> {
+  const sorted = [...inputs].sort((a, b) => {
+    if (a.fixed !== b.fixed) return a.fixed ? -1 : 1;
+    if (a.position.x !== b.position.x) return a.position.x - b.position.x;
+    if (a.position.y !== b.position.y) return a.position.y - b.position.y;
+    return a.id.localeCompare(b.id);
+  });
+  const placed: PreviewTileRect[] = [];
+  const positions: Record<string, { x: number; y: number }> = {};
+
+  for (const input of sorted) {
+    const tile: PreviewTileRect = {
+      ...input,
+      position: { ...input.position },
+    };
+    if (!input.fixed) {
+      for (;;) {
+        const blockers = placed.filter((other) =>
+          tilesOverlap(tile, other, gap),
+        );
+        if (!blockers.length) break;
+        tile.position.y = Math.max(
+          ...blockers.map((other) => other.position.y + other.height + gap),
+        );
+      }
+    }
+    placed.push(tile);
+    positions[tile.id] = tile.position;
+  }
+  return positions;
 }

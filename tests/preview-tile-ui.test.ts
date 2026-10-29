@@ -182,7 +182,7 @@ test('PreviewNode has one frame, full-screen expansion, and connected movable bu
   assert.doesNotMatch(source, /frameW|frameH|previewTileContainScale/);
 });
 
-test('App opens the full-screen shell and keeps the Jobs switch', () => {
+test('App opens an immersive full-screen shell and keeps the Jobs switch', () => {
   const source = readFileSync(resolve('src/client/App.tsx'), 'utf8');
   assert.match(source, /data-testid="canvas-jobs-toggle"/);
   assert.match(source, /downloadOnly/);
@@ -193,8 +193,12 @@ test('App opens the full-screen shell and keeps the Jobs switch', () => {
     'utf8',
   );
   assert.match(shell, /Volver/);
+  assert.match(shell, /immersive/);
+  assert.doesNotMatch(shell, /preview-open-shell-chrome/);
   const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
   assert.match(css, /\.preview-open-shell\s*\{[^}]*position:\s*fixed/s);
+  assert.match(css, /\.preview-open-shell-back\s*\{[^}]*position:\s*absolute/s);
+  assert.match(css, /\.artifact-markup-expanded\.is-immersive/);
   assert.match(css, /\.artifact-download-bubble/);
   assert.match(css, /\.artifact-preview-bubble/);
   assert.match(css, /\.artifact-html-frame-expanded/);

@@ -99,6 +99,7 @@ import { parseField } from './decision-form';
 import { canvasInsets, previewTileBreakpoint, resultadoDock } from './viewport';
 import {
   previewNodeId,
+  placePreviewTiles,
   previewTileLayout,
   previewTilePosition,
   selectCanvasPreviewCandidates,
@@ -108,6 +109,7 @@ import {
   readPreviewTileGlobalState,
   readPreviewTileUiState,
   resolvePreviewTilePosition,
+  previewTileStoredPosition,
   writePreviewTileGlobalState,
   writePreviewTileUiState,
   type PreviewTileUiState,
@@ -1482,17 +1484,62 @@ export function App() {
           .filter((candidate) => !candidate.downloadOnly)
           .map((candidate) => candidate.producerStepId),
       );
+      const initialPreviewPositions = placePreviewTiles(
+        candidates.flatMap((candidate) => {
+          const producerPos = positions[candidate.producerStepId];
+          if (!producerPos) return [];
+          const producerMeasured =
+            measurements.key === measurementKey
+              ? measurements.nodes[candidate.producerStepId]
+              : undefined;
+          const producerSize = {
+            width: producerMeasured?.width || (horizontal ? 220 : 280),
+            height: producerMeasured?.height || (horizontal ? 140 : 180),
+          };
+          const id = previewNodeId(
+            candidate.producerStepId,
+            candidate.downloadOnly ? candidate.artifact.id : undefined,
+          );
+          const uiKey = candidate.downloadOnly
+            ? `${candidate.producerStepId}:${candidate.artifact.id}`
+            : candidate.producerStepId;
+          const tileUi = readPreviewTileUiState(run.id, uiKey);
+          const baseSatellite = previewTilePosition(
+            producerPos,
+            producerSize,
+            horizontal,
+          );
+          const satellite = candidate.downloadOnly
+            ? producersWithPanel.has(candidate.producerStepId)
+              ? {
+                  x: baseSatellite.x,
+                  y:
+                    baseSatellite.y +
+                    previewTileLayout.bodyHeight +
+                    16 +
+                    candidate.bubbleIndex * 96,
+                }
+              : {
+                  x: baseSatellite.x,
+                  y: baseSatellite.y + candidate.bubbleIndex * 96,
+                }
+            : baseSatellite;
+          const fixed =
+            previewDragPositions[id] ?? previewTileStoredPosition(tileUi);
+          return [
+            {
+              id,
+              position: fixed ?? satellite,
+              width: candidate.downloadOnly ? 280 : previewTileLayout.width,
+              height: candidate.downloadOnly ? 72 : previewTileLayout.height,
+              fixed: Boolean(fixed),
+            },
+          ];
+        }),
+      );
       for (const candidate of candidates) {
         const producerPos = positions[candidate.producerStepId];
         if (!producerPos) continue;
-        const producerMeasured =
-          measurements.key === measurementKey
-            ? measurements.nodes[candidate.producerStepId]
-            : undefined;
-        const producerSize = {
-          width: producerMeasured?.width || (horizontal ? 220 : 280),
-          height: producerMeasured?.height || (horizontal ? 140 : 180),
-        };
         const id = previewNodeId(
           candidate.producerStepId,
           candidate.downloadOnly ? candidate.artifact.id : undefined,
@@ -1504,26 +1551,7 @@ export function App() {
           (s) => s.id === candidate.producerStepId,
         );
         const tileUi = readPreviewTileUiState(run.id, uiKey);
-        const baseSatellite = previewTilePosition(
-          producerPos,
-          producerSize,
-          horizontal,
-        );
-        const satellite = candidate.downloadOnly
-          ? producersWithPanel.has(candidate.producerStepId)
-            ? {
-                x: baseSatellite.x,
-                y:
-                  baseSatellite.y +
-                  previewTileLayout.bodyHeight +
-                  16 +
-                  candidate.bubbleIndex * 96,
-              }
-            : {
-                x: baseSatellite.x,
-                y: baseSatellite.y + candidate.bubbleIndex * 96,
-              }
-          : baseSatellite;
+        const satellite = initialPreviewPositions[id]!;
         nodes.push({
           id,
           type: 'preview',
