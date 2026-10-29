@@ -95,6 +95,49 @@ test('stored or live bubble positions are fixed obstacles, not rewritten', () =>
   );
 });
 
+test('consecutive horizontal producers keep their automatic HTML previews clear', () => {
+  const placements = placePreviewTiles([
+    {
+      id: 'node:write',
+      position: { x: 0, y: 0 },
+      width: 220,
+      height: 140,
+      fixed: true,
+    },
+    {
+      id: 'node:review',
+      position: { x: 300, y: 0 },
+      width: 220,
+      height: 140,
+      fixed: true,
+    },
+    {
+      id: 'preview:write',
+      position: { x: 248, y: 0 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+    },
+    {
+      id: 'preview:review',
+      position: { x: 548, y: 0 },
+      width: previewTileLayout.width,
+      height: previewTileLayout.height,
+    },
+  ]);
+  assert.deepEqual(placements['node:review'], { x: 300, y: 0 });
+  assert.ok(
+    placements['preview:write']!.y >= 140 + previewTileLayout.gap,
+    'the first preview moves below the next producer instead of covering it',
+  );
+  assert.ok(
+    placements['preview:review']!.y >=
+      placements['preview:write']!.y +
+        previewTileLayout.height +
+        previewTileLayout.gap,
+    'the second preview remains clear of the first preview tethered to its producer',
+  );
+});
+
 test('selectCanvasPreviewCandidates prefers leaf producers with previewable artifacts', () => {
   const html = artifact({
     id: 'a1',

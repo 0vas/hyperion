@@ -1484,8 +1484,26 @@ export function App() {
           .filter((candidate) => !candidate.downloadOnly)
           .map((candidate) => candidate.producerStepId),
       );
-      const initialPreviewPositions = placePreviewTiles(
-        candidates.flatMap((candidate) => {
+      // Process nodes are fixed obstacles for the client-only satellites. This
+      // protects consecutive horizontal producers without changing their saved
+      // positions or the workflow layout.
+      const visibleNodeObstacles = nodes.map((node) => {
+        const measured =
+          measurements.key === measurementKey
+            ? measurements.nodes[node.id]
+            : undefined;
+        const lineage = node.type === 'lineage';
+        return {
+          id: `node:${node.id}`,
+          position: node.position,
+          width: measured?.width || (horizontal ? 220 : 280),
+          height: measured?.height || (lineage ? 100 : horizontal ? 140 : 180),
+          fixed: true,
+        };
+      });
+      const initialPreviewPositions = placePreviewTiles([
+        ...visibleNodeObstacles,
+        ...candidates.flatMap((candidate) => {
           const producerPos = positions[candidate.producerStepId];
           if (!producerPos) return [];
           const producerMeasured =
@@ -1536,7 +1554,7 @@ export function App() {
             },
           ];
         }),
-      );
+      ]);
       for (const candidate of candidates) {
         const producerPos = positions[candidate.producerStepId];
         if (!producerPos) continue;
