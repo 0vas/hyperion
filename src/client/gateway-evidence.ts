@@ -2,13 +2,16 @@ import type { Step } from '../domain/workflow.js';
 
 export type GatewayEvidenceRoute = {
   id: string;
-  title: string;
+  /** Omitted when the snapshot target is unavailable in this projection. */
+  title?: string;
 };
+
+export type GatewaySafeValue = boolean | number | null;
 
 export type GatewayObservedValue = {
   stepTitle: string;
-  output: string;
-  value: unknown;
+  /** Present only for a primitive that is safe to show in the summary. */
+  value?: GatewaySafeValue;
 };
 
 export type GatewayEvidence = {
@@ -23,7 +26,23 @@ export type GatewayEvidence = {
 };
 
 function routeTitle(steps: Step[], id: string): GatewayEvidenceRoute {
-  return { id, title: steps.find((step) => step.id === id)?.title || id };
+  return { id, title: steps.find((step) => step.id === id)?.title };
+}
+
+/** Keep internal route ids out of human-facing evidence when a target vanished. */
+export function gatewayRouteDisplayTitle(
+  route: GatewayEvidenceRoute,
+  unavailableTitle: string,
+): string {
+  return route.title || unavailableTitle;
+}
+
+/** Do not turn arbitrary agent output into a public gateway-summary value. */
+function safeSummaryValue(value: unknown): GatewaySafeValue | undefined {
+  if (typeof value === 'boolean' || value === null) return value;
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 /**
@@ -42,14 +61,16 @@ export function gatewayEvidenceForStep(
       const source = steps.find((candidate) => candidate.id === id);
       return source
         ? { id: source.id, title: source.title, status: source.status }
-        : { id, title: id, status: undefined };
+        : { id, title: undefined, status: undefined };
     });
     return {
       type: gateway.type,
       direction: gateway.direction,
-      decisionKnown: incoming.every((route) =>
-        ['completed', 'skipped'].includes(route.status || ''),
-      ),
+      decisionKnown:
+        incoming.length > 0 &&
+        incoming.every((route) =>
+          ['completed', 'skipped'].includes(route.status || ''),
+        ),
       activeRoutes: incoming
         .filter((route) => route.status === 'completed')
         .map(({ id, title }) => ({ id, title })),
@@ -72,10 +93,10 @@ export function gatewayEvidenceForStep(
       source?.outputValues &&
       Object.hasOwn(source.outputValues, condition.output)
     ) {
+      const value = safeSummaryValue(source.outputValues[condition.output]);
       observedValues.push({
         stepTitle: source.title,
-        output: condition.output,
-        value: source.outputValues[condition.output],
+        ...(value === undefined ? {} : { value }),
       });
     }
   }

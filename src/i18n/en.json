@@ -673,6 +673,7 @@
   "Ámbar · Tu turno": "Amber · Your turn",
   "Datos observados": "Observed data",
   "Decisión registrada": "Decision recorded",
+  "Destino no disponible": "Destination unavailable",
   "División de rutas": "Route split",
   "La decisión todavía no está registrada.": "The decision has not been recorded yet.",
   "Operación": "Operation",
@@ -680,6 +681,8 @@
   "Rutas activadas": "Activated routes",
   "Rutas no tomadas": "Routes not taken",
   "Rutas recibidas": "Received routes",
+  "Salida registrada": "Recorded output",
+  "Sin decisión de ruta registrada": "No route decision has been recorded",
   "Unión de rutas": "Route join",
   "Mostrar artefacto: {0}": "Show artifact: {0}"
 }

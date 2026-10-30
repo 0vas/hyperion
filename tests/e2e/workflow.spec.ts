@@ -1223,6 +1223,13 @@ test('human checklist, waiting motion, SVG gateways and horizontal layout form o
   await expect(gatewayEvidence).toContainText('Rutas no tomadas');
   await expect(gatewayEvidence).toContainText('Registrar exclusión documental');
   await expect(gatewayEvidence).toContainText('Datos observados');
+  const observedGatewayOutput = gatewayEvidence.locator(
+    '.gateway-evidence-observed',
+  );
+  await expect(observedGatewayOutput).toContainText('Salida registrada');
+  await expect(observedGatewayOutput).toContainText('Sí');
+  await expect(observedGatewayOutput).not.toContainText('docs');
+  await expect(observedGatewayOutput).not.toContainText('code');
   await page.screenshot({ path: 'test-results/gateway-evidence.png' });
   await gatewayEvidence
     .getByRole('button', { name: 'Revisar documentación', exact: true })

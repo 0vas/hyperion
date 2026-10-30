@@ -13,7 +13,10 @@ import { Artifacts } from './Artifacts';
 import { HarnessIcon } from './HarnessIcon';
 import { t, useLocale } from './i18n';
 import { resolveStepEvidence } from './resultado-evidence';
-import { gatewayEvidenceForStep } from './gateway-evidence';
+import {
+  gatewayEvidenceForStep,
+  gatewayRouteDisplayTitle,
+} from './gateway-evidence';
 
 export type ResultadoSection =
   'evidence' | 'detalle' | 'io' | 'logs' | 'artifacts' | 'actividad';
@@ -111,7 +114,11 @@ function EvidenceBody({
             </p>
           ) : (
             <p className="muted gateway-evidence-outcome">
-              {t('La decisión todavía no está registrada.')}
+              {t(
+                gateway.direction === 'join'
+                  ? 'Sin decisión de ruta registrada'
+                  : 'La decisión todavía no está registrada.',
+              )}
             </p>
           )}
           {!!gateway.activeRoutes.length && (
@@ -133,11 +140,13 @@ function EvidenceBody({
             <section className="gateway-evidence-observed">
               <h4>{t('Datos observados')}</h4>
               <ul>
-                {gateway.observedValues.map((value) => (
-                  <li key={`${value.stepTitle}:${value.output}`}>
+                {gateway.observedValues.map((value, index) => (
+                  <li key={`${value.stepTitle}:${index}`}>
                     <strong>{value.stepTitle}</strong>
-                    <code>{value.output}</code>
-                    <pre>{JSON.stringify(value.value, null, 2)}</pre>
+                    <span>{t('Salida registrada')}</span>
+                    {value.value !== undefined && (
+                      <pre>{formatGatewayObservedValue(value.value)}</pre>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -209,6 +218,12 @@ function EvidenceBody({
   );
 }
 
+function formatGatewayObservedValue(value: boolean | number | null): string {
+  if (value === true) return t('Sí');
+  if (value === false) return t('No');
+  return value === null ? '—' : String(value);
+}
+
 function GatewayRouteList({
   heading,
   routes,
@@ -216,7 +231,7 @@ function GatewayRouteList({
   muted = false,
 }: {
   heading: string;
-  routes: { id: string; title: string }[];
+  routes: { id: string; title?: string }[];
   onSelectStep?: (id: string) => void;
   muted?: boolean;
 }) {
@@ -226,12 +241,14 @@ function GatewayRouteList({
       <ul>
         {routes.map((route) => (
           <li key={route.id}>
-            {onSelectStep ? (
+            {onSelectStep && route.title ? (
               <button type="button" onClick={() => onSelectStep(route.id)}>
                 {route.title}
               </button>
             ) : (
-              <span>{route.title}</span>
+              <span>
+                {gatewayRouteDisplayTitle(route, t('Destino no disponible'))}
+              </span>
             )}
           </li>
         ))}
