@@ -101,6 +101,15 @@
   justify-content: space-between;
   font-size: 11px;
 }
+.flow-node .node-owner-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.canvas-workspace .flow-node .node-status-footer {
+  margin-left: auto;
+}
 .canvas-workspace .flow-node .node-tools {
   border: 0;
   margin: 4px 0 0;

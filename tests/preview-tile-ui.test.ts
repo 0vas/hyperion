@@ -220,6 +220,7 @@ test('App opens an immersive full-screen shell and keeps the Jobs switch', () =>
   assert.match(source, /data-testid="canvas-jobs-toggle"/);
   assert.match(source, /downloadOnly/);
   assert.match(source, /PreviewOpenShell/);
+  assert.match(source, /node-status-footer/);
   assert.doesNotMatch(source, /size === ['"]desktop['"]/);
   const shell = readFileSync(
     resolve('src/client/PreviewOpenShell.tsx'),

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   PREVIEW_TILE_BREAKPOINT,
   placePreviewTiles,
+  previewBubbleLayout,
+  previewBubblePositions,
   previewNodeId,
   previewTileLayout,
   previewTilePosition,
@@ -40,6 +42,12 @@ test('default tile layout is a single standard frame; still a satellite', () => 
   assert.equal(previewTileLayout.width, 480);
   assert.equal(previewTileLayout.bodyHeight, 300);
   assert.equal(previewTileLayout.maxVisible, 5);
+});
+
+test('compact bubble footprint stays accessible and includes its own clearance', () => {
+  assert.equal(previewBubbleLayout.width, previewBubbleLayout.height);
+  assert.ok(previewBubbleLayout.width >= 44);
+  assert.equal(previewBubbleLayout.gap, 16);
 });
 
 test('preview node ids are client-only satellites of the producer', () => {
@@ -136,6 +144,129 @@ test('consecutive horizontal producers keep their automatic HTML previews clear'
         previewTileLayout.gap,
     'the second preview remains clear of the first preview tethered to its producer',
   );
+});
+
+test('compact bubbles use upper-right producer chrome for nearby horizontal producers', () => {
+  const write = { x: 0, y: 0 };
+  const review = { x: 300, y: 0 };
+  const producerSize = { width: 220, height: 140 };
+  const writeSlots = previewBubblePositions(write, producerSize);
+  const reviewSlots = previewBubblePositions(review, producerSize);
+  const placements = placePreviewTiles([
+    {
+      id: 'node:write',
+      position: write,
+      ...producerSize,
+      fixed: true,
+    },
+    {
+      id: 'node:review',
+      position: review,
+      ...producerSize,
+      fixed: true,
+    },
+    {
+      id: 'preview:write',
+      position: writeSlots[0]!,
+      localPositions: writeSlots.slice(1),
+      clearance: previewBubbleLayout.gap,
+      ...previewBubbleLayout,
+    },
+    {
+      id: 'preview:review',
+      position: reviewSlots[0]!,
+      localPositions: reviewSlots.slice(1),
+      clearance: previewBubbleLayout.gap,
+      ...previewBubbleLayout,
+    },
+  ]);
+  assert.deepEqual(
+    placements['preview:write'],
+    writeSlots[0],
+    'the first placement uses its producer upper-right chrome',
+  );
+  assert.deepEqual(
+    placements['preview:review'],
+    reviewSlots[0],
+    'the next producer also keeps the upper-right placement',
+  );
+  for (const previewId of ['preview:write', 'preview:review']) {
+    const preview = placements[previewId]!;
+    const producer = previewId.endsWith('write') ? write : review;
+    assert.ok(
+      Math.hypot(preview.x - producer.x, preview.y - producer.y) < 280,
+      'each compact bubble remains local to its producer',
+    );
+  }
+});
+
+test('a blocked upper-right bubble falls back locally without covering another node', () => {
+  const producer = { x: 0, y: 0 };
+  const producerSize = { width: 220, height: 140 };
+  const slots = previewBubblePositions(producer, producerSize);
+  const placements = placePreviewTiles([
+    {
+      id: 'node:producer',
+      position: producer,
+      ...producerSize,
+      fixed: true,
+    },
+    {
+      id: 'node:neighbor',
+      position: { x: 180, y: -90 },
+      width: 220,
+      height: 140,
+      fixed: true,
+    },
+    {
+      id: 'preview:producer',
+      position: slots[0]!,
+      localPositions: slots.slice(1),
+      clearance: previewBubbleLayout.gap,
+      ...previewBubbleLayout,
+    },
+  ]);
+  assert.deepEqual(
+    placements['preview:producer'],
+    slots[2],
+    'the blocked corner and side slots fall to the lower local slot',
+  );
+});
+
+test('compact fallback remains clear and never rewrites a manual obstacle', () => {
+  const producer = { x: 0, y: 0 };
+  const producerSize = { width: 220, height: 140 };
+  const slots = previewBubblePositions(producer, producerSize);
+  const placements = placePreviewTiles([
+    {
+      id: 'node:producer',
+      position: producer,
+      ...producerSize,
+      fixed: true,
+    },
+    ...slots.map((position, index) => ({
+      id: `manual:${index}`,
+      position,
+      ...previewBubbleLayout,
+      clearance: previewBubbleLayout.gap,
+      fixed: true,
+    })),
+    {
+      id: 'preview:auto',
+      position: slots[0]!,
+      localPositions: slots.slice(1),
+      clearance: previewBubbleLayout.gap,
+      ...previewBubbleLayout,
+    },
+  ]);
+  assert.deepEqual(placements['manual:0'], slots[0]);
+  assert.notDeepEqual(
+    placements['preview:auto'],
+    slots[0],
+    'when the local ring is occupied, the normal safe fallback applies',
+  );
+  for (const index of slots.keys())
+    assert.notDeepEqual(placements['preview:auto'], slots[index]);
 });
 
 test('selectCanvasPreviewCandidates prefers leaf producers with previewable artifacts', () => {

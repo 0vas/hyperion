@@ -22,7 +22,9 @@ import {
   previewTileMountsIframe,
   type PreviewTileUiState,
 } from './preview-tile-ui';
+import { previewBubbleLayout } from './canvas-preview';
 import { t, useLocale } from './i18n';
+import type { CSSProperties } from 'react';
 
 export type PreviewNodeData = {
   producerStepId: string;
@@ -56,6 +58,9 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
     ? t('Mostrar artefacto')
     : t('Ocultar artefacto');
   const expandLabel = t('Ampliar vista');
+  const bubbleStyle = {
+    '--artifact-bubble-size': `${previewBubbleLayout.width}px`,
+  } as CSSProperties;
 
   if (data.downloadOnly && officeKind) {
     const href =
@@ -63,6 +68,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
     return (
       <div
         className="artifact-bubble artifact-download-bubble"
+        style={bubbleStyle}
         role="group"
         aria-label={t('Artefacto {0}', { 0: data.artifact.name })}
       >
@@ -102,6 +108,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
     return (
       <div
         className="artifact-bubble artifact-preview-bubble"
+        style={bubbleStyle}
         role="group"
         aria-label={t('Vista previa oculta de {0}', { 0: data.artifact.name })}
       >

@@ -98,6 +98,8 @@ import { HumanForm } from './HumanForm';
 import { parseField } from './decision-form';
 import { canvasInsets, previewTileBreakpoint, resultadoDock } from './viewport';
 import {
+  previewBubbleLayout,
+  previewBubblePositions,
   previewNodeId,
   placePreviewTiles,
   previewTileLayout,
@@ -366,7 +368,21 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
                   {String(data.index + 1).padStart(2, '0')}
                 </span>
               </span>
-              <span className={`status-tag ${step.status}`}>
+            </div>
+            {(data.jobTitle || step.phase) && (
+              <span className="node-phase">{data.jobTitle || step.phase}</span>
+            )}
+            <strong>{step.title}</strong>
+            <div className="node-owner">
+              <span className="node-owner-role">
+                {step.kind === 'agent' ? (
+                  <span className="muted">{t('Agente')}</span>
+                ) : (
+                  t('Tú')
+                )}
+                <ArrowUpRight size={13} />
+              </span>
+              <span className={`status-tag node-status-footer ${step.status}`}>
                 {data.flowState === 'paused' ? (
                   <Pause size={13} />
                 ) : data.flowState === 'stopped' ? (
@@ -378,18 +394,6 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
                   ? labels[step.status]
                   : flowLabels[data.flowState]}
               </span>
-            </div>
-            {(data.jobTitle || step.phase) && (
-              <span className="node-phase">{data.jobTitle || step.phase}</span>
-            )}
-            <strong>{step.title}</strong>
-            <div className="node-owner">
-              {step.kind === 'agent' ? (
-                <span className="muted">{t('Agente')}</span>
-              ) : (
-                t('Tú')
-              )}
-              <ArrowUpRight size={13} />
             </div>
           </button>
           {tools}
@@ -1479,11 +1483,6 @@ export function App() {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
-      const producersWithPanel = new Set(
-        candidates
-          .filter((candidate) => !candidate.downloadOnly)
-          .map((candidate) => candidate.producerStepId),
-      );
       // Process nodes are fixed obstacles for the client-only satellites. This
       // protects consecutive horizontal producers without changing their saved
       // positions or the workflow layout.
@@ -1522,35 +1521,28 @@ export function App() {
             ? `${candidate.producerStepId}:${candidate.artifact.id}`
             : candidate.producerStepId;
           const tileUi = readPreviewTileUiState(run.id, uiKey);
-          const baseSatellite = previewTilePosition(
-            producerPos,
-            producerSize,
-            horizontal,
-          );
-          const satellite = candidate.downloadOnly
-            ? producersWithPanel.has(candidate.producerStepId)
-              ? {
-                  x: baseSatellite.x,
-                  y:
-                    baseSatellite.y +
-                    previewTileLayout.bodyHeight +
-                    16 +
-                    candidate.bubbleIndex * 96,
-                }
-              : {
-                  x: baseSatellite.x,
-                  y: baseSatellite.y + candidate.bubbleIndex * 96,
-                }
-            : baseSatellite;
+          const compactBubble = candidate.downloadOnly || tileUi.collapsed;
+          const bubbleSlots = compactBubble
+            ? previewBubblePositions(producerPos, producerSize)
+            : [];
+          const satellite = compactBubble
+            ? bubbleSlots[0]!
+            : previewTilePosition(producerPos, producerSize, horizontal);
           const fixed =
             previewDragPositions[id] ?? previewTileStoredPosition(tileUi);
           return [
             {
               id,
               position: fixed ?? satellite,
-              width: candidate.downloadOnly ? 280 : previewTileLayout.width,
-              height: candidate.downloadOnly ? 72 : previewTileLayout.height,
+              width: compactBubble
+                ? previewBubbleLayout.width
+                : previewTileLayout.width,
+              height: compactBubble
+                ? previewBubbleLayout.height
+                : previewTileLayout.height,
               fixed: Boolean(fixed),
+              localPositions: compactBubble ? bubbleSlots.slice(1) : undefined,
+              clearance: compactBubble ? previewBubbleLayout.gap : undefined,
             },
           ];
         }),
@@ -1621,6 +1613,9 @@ export function App() {
                 t('La vista previa sigue en Hyperion — vuelve a esta ventana'),
               ),
           },
+          // A temporarily expanded tile must keep its own chrome actionable
+          // above sibling compact bubbles from the same producer.
+          zIndex: candidate.downloadOnly || tileUi.collapsed ? 0 : 1,
           draggable: true,
           dragHandle:
             candidate.downloadOnly || tileUi.collapsed
