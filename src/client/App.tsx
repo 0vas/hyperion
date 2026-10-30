@@ -98,6 +98,8 @@ import { HumanForm } from './HumanForm';
 import { parseField } from './decision-form';
 import { canvasInsets, previewTileBreakpoint, resultadoDock } from './viewport';
 import {
+  previewBubbleLayout,
+  previewBubblePositions,
   previewNodeId,
   placePreviewTiles,
   previewTileLayout,
@@ -1479,11 +1481,6 @@ export function App() {
         selectedStepId: stepId || focusedStepId,
         maxVisible: previewTileLayout.maxVisible,
       });
-      const producersWithPanel = new Set(
-        candidates
-          .filter((candidate) => !candidate.downloadOnly)
-          .map((candidate) => candidate.producerStepId),
-      );
       // Process nodes are fixed obstacles for the client-only satellites. This
       // protects consecutive horizontal producers without changing their saved
       // positions or the workflow layout.
@@ -1522,35 +1519,27 @@ export function App() {
             ? `${candidate.producerStepId}:${candidate.artifact.id}`
             : candidate.producerStepId;
           const tileUi = readPreviewTileUiState(run.id, uiKey);
-          const baseSatellite = previewTilePosition(
-            producerPos,
-            producerSize,
-            horizontal,
-          );
-          const satellite = candidate.downloadOnly
-            ? producersWithPanel.has(candidate.producerStepId)
-              ? {
-                  x: baseSatellite.x,
-                  y:
-                    baseSatellite.y +
-                    previewTileLayout.bodyHeight +
-                    16 +
-                    candidate.bubbleIndex * 96,
-                }
-              : {
-                  x: baseSatellite.x,
-                  y: baseSatellite.y + candidate.bubbleIndex * 96,
-                }
-            : baseSatellite;
+          const compactBubble = candidate.downloadOnly || tileUi.collapsed;
+          const bubbleSlots = compactBubble
+            ? previewBubblePositions(producerPos, producerSize)
+            : [];
+          const satellite = compactBubble
+            ? bubbleSlots[0]!
+            : previewTilePosition(producerPos, producerSize, horizontal);
           const fixed =
             previewDragPositions[id] ?? previewTileStoredPosition(tileUi);
           return [
             {
               id,
               position: fixed ?? satellite,
-              width: candidate.downloadOnly ? 280 : previewTileLayout.width,
-              height: candidate.downloadOnly ? 72 : previewTileLayout.height,
+              width: compactBubble
+                ? previewBubbleLayout.width
+                : previewTileLayout.width,
+              height: compactBubble
+                ? previewBubbleLayout.height
+                : previewTileLayout.height,
               fixed: Boolean(fixed),
+              localPositions: compactBubble ? bubbleSlots.slice(1) : undefined,
             },
           ];
         }),

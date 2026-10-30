@@ -17,6 +17,12 @@ export const previewTileLayout = {
   maxVisible: 5,
 } as const;
 
+/** The rendered size of a compact artifact bubble (not an expanded tile). */
+export const previewBubbleLayout = {
+  width: 92,
+  height: 92,
+} as const;
+
 const previewBytes = 256 * 1024;
 
 /** Stored bytes eligible for on-canvas / Resultado inert preview (no remote url). */
@@ -149,6 +155,39 @@ export function previewTilePosition(
   };
 }
 
+/**
+ * Deterministic close-range slots for a compact satellite. The first choice
+ * stays on the producer's right, matching the expanded-tile affordance. When
+ * a nearby producer blocks it, the packer tries the remaining local ring
+ * before it spills into a distant lane.
+ */
+export function previewBubblePositions(
+  producer: { x: number; y: number },
+  producerSize: { width: number; height: number },
+  bubbleSize: { width: number; height: number } = previewBubbleLayout,
+  gap: number = previewTileLayout.gap,
+): { x: number; y: number }[] {
+  const centeredX = producer.x + (producerSize.width - bubbleSize.width) / 2;
+  const centeredY = producer.y + (producerSize.height - bubbleSize.height) / 2;
+  const right = {
+    x: producer.x + producerSize.width + gap,
+    y: centeredY,
+  };
+  const below = {
+    x: centeredX,
+    y: producer.y + producerSize.height + gap,
+  };
+  const above = {
+    x: centeredX,
+    y: producer.y - bubbleSize.height - gap,
+  };
+  const left = {
+    x: producer.x - bubbleSize.width - gap,
+    y: centeredY,
+  };
+  return [right, below, above, left];
+}
+
 export type PreviewTilePlacementInput = {
   id: string;
   position: { x: number; y: number };
@@ -156,6 +195,8 @@ export type PreviewTilePlacementInput = {
   height: number;
   /** Stored or in-progress user placement: seed collision checks, never move it. */
   fixed?: boolean;
+  /** Nearby positions considered before the distant collision fallback. */
+  localPositions?: { x: number; y: number }[];
 };
 
 type PreviewTileRect = PreviewTilePlacementInput & {
@@ -176,9 +217,10 @@ function tilesOverlap(
 }
 
 /**
- * Lay out automatically placed preview satellites in stable vertical lanes.
- * Every tile stays to the producer's right; only the initial client layout is
- * adjusted. Stored and live drag positions are fixed obstacles, never rewritten.
+ * Lay out automatically placed preview satellites in stable lanes. Compact
+ * bubbles first try their producer-local slots; only the initial client layout
+ * is adjusted. Stored and live drag positions are fixed obstacles, never
+ * rewritten.
  */
 export function placePreviewTiles(
   inputs: PreviewTilePlacementInput[],
@@ -199,6 +241,14 @@ export function placePreviewTiles(
       position: { ...input.position },
     };
     if (!input.fixed) {
+      const localPosition = [
+        tile.position,
+        ...(input.localPositions || []),
+      ].find((position) => {
+        const candidate = { ...tile, position };
+        return !placed.some((other) => tilesOverlap(candidate, other, gap));
+      });
+      if (localPosition) tile.position = { ...localPosition };
       for (;;) {
         const blockers = placed.filter((other) =>
           tilesOverlap(tile, other, gap),

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   PREVIEW_TILE_BREAKPOINT,
   placePreviewTiles,
+  previewBubbleLayout,
+  previewBubblePositions,
   previewNodeId,
   previewTileLayout,
   previewTilePosition,
@@ -136,6 +138,92 @@ test('consecutive horizontal producers keep their automatic HTML previews clear'
         previewTileLayout.gap,
     'the second preview remains clear of the first preview tethered to its producer',
   );
+});
+
+test('compact bubbles first use nearby producer slots without covering horizontal nodes', () => {
+  const write = { x: 0, y: 0 };
+  const review = { x: 300, y: 0 };
+  const producerSize = { width: 220, height: 140 };
+  const writeSlots = previewBubblePositions(write, producerSize);
+  const reviewSlots = previewBubblePositions(review, producerSize);
+  const placements = placePreviewTiles([
+    {
+      id: 'node:write',
+      position: write,
+      ...producerSize,
+      fixed: true,
+    },
+    {
+      id: 'node:review',
+      position: review,
+      ...producerSize,
+      fixed: true,
+    },
+    {
+      id: 'preview:write',
+      position: writeSlots[0]!,
+      localPositions: writeSlots.slice(1),
+      ...previewBubbleLayout,
+    },
+    {
+      id: 'preview:review',
+      position: reviewSlots[0]!,
+      localPositions: reviewSlots.slice(1),
+      ...previewBubbleLayout,
+    },
+  ]);
+  assert.deepEqual(
+    placements['preview:write'],
+    writeSlots[1],
+    'the blocked right slot falls to the producer-local below slot',
+  );
+  assert.deepEqual(
+    placements['preview:review'],
+    reviewSlots[0],
+    'the next producer keeps its right-hand bubble close',
+  );
+  for (const previewId of ['preview:write', 'preview:review']) {
+    const preview = placements[previewId]!;
+    const producer = previewId.endsWith('write') ? write : review;
+    assert.ok(
+      Math.hypot(preview.x - producer.x, preview.y - producer.y) < 280,
+      'each compact bubble remains local to its producer',
+    );
+  }
+});
+
+test('compact fallback remains clear and never rewrites a manual obstacle', () => {
+  const producer = { x: 0, y: 0 };
+  const producerSize = { width: 220, height: 140 };
+  const slots = previewBubblePositions(producer, producerSize);
+  const placements = placePreviewTiles([
+    {
+      id: 'node:producer',
+      position: producer,
+      ...producerSize,
+      fixed: true,
+    },
+    ...slots.map((position, index) => ({
+      id: `manual:${index}`,
+      position,
+      ...previewBubbleLayout,
+      fixed: true,
+    })),
+    {
+      id: 'preview:auto',
+      position: slots[0]!,
+      localPositions: slots.slice(1),
+      ...previewBubbleLayout,
+    },
+  ]);
+  assert.deepEqual(placements['manual:0'], slots[0]);
+  assert.notDeepEqual(
+    placements['preview:auto'],
+    slots[0],
+    'when the local ring is occupied, the normal safe fallback applies',
+  );
+  for (const index of slots.keys())
+    assert.notDeepEqual(placements['preview:auto'], slots[index]);
 });
 
 test('selectCanvasPreviewCandidates prefers leaf producers with previewable artifacts', () => {
