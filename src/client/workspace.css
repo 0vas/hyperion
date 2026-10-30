@@ -799,8 +799,8 @@ a.preview-tile-action.icon-button {
 }
 .artifact-bubble {
   position: relative;
-  width: 92px;
-  height: 92px;
+  width: var(--artifact-bubble-size);
+  height: var(--artifact-bubble-size);
   display: grid;
   place-items: stretch;
   border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
@@ -862,7 +862,7 @@ a.preview-tile-action.icon-button {
   height: 38px;
 }
 .artifact-bubble span {
-  max-width: 64px;
+  max-width: calc(var(--artifact-bubble-size) - 20px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

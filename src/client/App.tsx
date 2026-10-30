@@ -1540,6 +1540,7 @@ export function App() {
                 : previewTileLayout.height,
               fixed: Boolean(fixed),
               localPositions: compactBubble ? bubbleSlots.slice(1) : undefined,
+              clearance: compactBubble ? previewBubbleLayout.gap : undefined,
             },
           ];
         }),

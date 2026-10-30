@@ -44,6 +44,12 @@ test('default tile layout is a single standard frame; still a satellite', () => 
   assert.equal(previewTileLayout.maxVisible, 5);
 });
 
+test('compact bubble footprint stays accessible and includes its own clearance', () => {
+  assert.equal(previewBubbleLayout.width, previewBubbleLayout.height);
+  assert.ok(previewBubbleLayout.width >= 44);
+  assert.equal(previewBubbleLayout.gap, 16);
+});
+
 test('preview node ids are client-only satellites of the producer', () => {
   assert.equal(previewNodeId('write'), 'preview:write');
 });
@@ -140,7 +146,7 @@ test('consecutive horizontal producers keep their automatic HTML previews clear'
   );
 });
 
-test('compact bubbles first use nearby producer slots without covering horizontal nodes', () => {
+test('compact bubbles use centered lower slots for nearby horizontal producers', () => {
   const write = { x: 0, y: 0 };
   const review = { x: 300, y: 0 };
   const producerSize = { width: 220, height: 140 };
@@ -163,24 +169,26 @@ test('compact bubbles first use nearby producer slots without covering horizonta
       id: 'preview:write',
       position: writeSlots[0]!,
       localPositions: writeSlots.slice(1),
+      clearance: previewBubbleLayout.gap,
       ...previewBubbleLayout,
     },
     {
       id: 'preview:review',
       position: reviewSlots[0]!,
       localPositions: reviewSlots.slice(1),
+      clearance: previewBubbleLayout.gap,
       ...previewBubbleLayout,
     },
   ]);
   assert.deepEqual(
     placements['preview:write'],
-    writeSlots[1],
-    'the blocked right slot falls to the producer-local below slot',
+    writeSlots[0],
+    'the first placement is centered below its own producer',
   );
   assert.deepEqual(
     placements['preview:review'],
     reviewSlots[0],
-    'the next producer keeps its right-hand bubble close',
+    'the next producer also keeps the centered lower placement',
   );
   for (const previewId of ['preview:write', 'preview:review']) {
     const preview = placements[previewId]!;
@@ -207,12 +215,14 @@ test('compact fallback remains clear and never rewrites a manual obstacle', () =
       id: `manual:${index}`,
       position,
       ...previewBubbleLayout,
+      clearance: previewBubbleLayout.gap,
       fixed: true,
     })),
     {
       id: 'preview:auto',
       position: slots[0]!,
       localPositions: slots.slice(1),
+      clearance: previewBubbleLayout.gap,
       ...previewBubbleLayout,
     },
   ]);

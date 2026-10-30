@@ -17,10 +17,12 @@ export const previewTileLayout = {
   maxVisible: 5,
 } as const;
 
-/** The rendered size of a compact artifact bubble (not an expanded tile). */
+/** Shared rendered footprint and clearance for a compact artifact bubble. */
 export const previewBubbleLayout = {
-  width: 92,
-  height: 92,
+  /** Above the 44px minimum interactive target. */
+  width: 72,
+  height: 72,
+  gap: 16,
 } as const;
 
 const previewBytes = 256 * 1024;
@@ -157,25 +159,25 @@ export function previewTilePosition(
 
 /**
  * Deterministic close-range slots for a compact satellite. The first choice
- * stays on the producer's right, matching the expanded-tile affordance. When
- * a nearby producer blocks it, the packer tries the remaining local ring
+ * sits centered below the producer. When that slot is blocked, the packer tries
+ * the remaining local ring
  * before it spills into a distant lane.
  */
 export function previewBubblePositions(
   producer: { x: number; y: number },
   producerSize: { width: number; height: number },
   bubbleSize: { width: number; height: number } = previewBubbleLayout,
-  gap: number = previewTileLayout.gap,
+  gap: number = previewBubbleLayout.gap,
 ): { x: number; y: number }[] {
   const centeredX = producer.x + (producerSize.width - bubbleSize.width) / 2;
   const centeredY = producer.y + (producerSize.height - bubbleSize.height) / 2;
-  const right = {
-    x: producer.x + producerSize.width + gap,
-    y: centeredY,
-  };
   const below = {
     x: centeredX,
     y: producer.y + producerSize.height + gap,
+  };
+  const right = {
+    x: producer.x + producerSize.width + gap,
+    y: centeredY,
   };
   const above = {
     x: centeredX,
@@ -185,7 +187,7 @@ export function previewBubblePositions(
     x: producer.x - bubbleSize.width - gap,
     y: centeredY,
   };
-  return [right, below, above, left];
+  return [below, right, left, above];
 }
 
 export type PreviewTilePlacementInput = {
@@ -197,6 +199,8 @@ export type PreviewTilePlacementInput = {
   fixed?: boolean;
   /** Nearby positions considered before the distant collision fallback. */
   localPositions?: { x: number; y: number }[];
+  /** Optional tighter collision clearance for compact bubbles. */
+  clearance?: number;
 };
 
 type PreviewTileRect = PreviewTilePlacementInput & {
@@ -208,11 +212,12 @@ function tilesOverlap(
   b: PreviewTileRect,
   gap: number,
 ): boolean {
+  const clearance = Math.min(a.clearance ?? gap, b.clearance ?? gap);
   return !(
-    a.position.x + a.width + gap <= b.position.x ||
-    b.position.x + b.width + gap <= a.position.x ||
-    a.position.y + a.height + gap <= b.position.y ||
-    b.position.y + b.height + gap <= a.position.y
+    a.position.x + a.width + clearance <= b.position.x ||
+    b.position.x + b.width + clearance <= a.position.x ||
+    a.position.y + a.height + clearance <= b.position.y ||
+    b.position.y + b.height + clearance <= a.position.y
   );
 }
 
