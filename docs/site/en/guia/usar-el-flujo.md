@@ -76,7 +76,7 @@ Say in the same chat: “Now translate this guide into English.” The agent cre
 **Continue from here**, at the end of the graph, helps you draft that request. **Copy request for chat** is the usual path (copy ≠ delivery). Paste into the connected chat; automatic send needs a send connector — MCP alone cannot wake the chat (**Send** hidden in this phase). The agent must create the linked run. Use plan revision for changes to unfinished work, or retry for a failed task.
 
 ::: info Availability
-The **2026.10.29.2126 UTC · Preview** installers include compact typed artifact bubbles (sandboxed HTML/SVG preview), the **Jobs** switch, the standard frame, and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
+The **2026.10.30.1436 UTC · Preview** installers include compact typed artifact bubbles (sandboxed HTML/SVG preview), the **Jobs** switch, the standard frame, and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
 :::
 
 ## Move and arrange nodes
@@ -89,4 +89,4 @@ Drag the dotted grip above a card or symbol. With a keyboard, focus the node, pr
 Positions are saved in this browser per workflow, orientation and steps/jobs view, including when agent activity arrives. They do not change dependencies or history, and do not sync across devices.
 :::
 
-Available in **2026.10.29.2126 UTC · Preview** installers. [Download](primeros-pasos.md).
+Available in **2026.10.30.1436 UTC · Preview** installers. [Download](primeros-pasos.md).
