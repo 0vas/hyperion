@@ -368,7 +368,21 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
                   {String(data.index + 1).padStart(2, '0')}
                 </span>
               </span>
-              <span className={`status-tag ${step.status}`}>
+            </div>
+            {(data.jobTitle || step.phase) && (
+              <span className="node-phase">{data.jobTitle || step.phase}</span>
+            )}
+            <strong>{step.title}</strong>
+            <div className="node-owner">
+              <span className="node-owner-role">
+                {step.kind === 'agent' ? (
+                  <span className="muted">{t('Agente')}</span>
+                ) : (
+                  t('Tú')
+                )}
+                <ArrowUpRight size={13} />
+              </span>
+              <span className={`status-tag node-status-footer ${step.status}`}>
                 {data.flowState === 'paused' ? (
                   <Pause size={13} />
                 ) : data.flowState === 'stopped' ? (
@@ -380,18 +394,6 @@ function StepNode({ data }: NodeProps<Node<StepNodeData>>) {
                   ? labels[step.status]
                   : flowLabels[data.flowState]}
               </span>
-            </div>
-            {(data.jobTitle || step.phase) && (
-              <span className="node-phase">{data.jobTitle || step.phase}</span>
-            )}
-            <strong>{step.title}</strong>
-            <div className="node-owner">
-              {step.kind === 'agent' ? (
-                <span className="muted">{t('Agente')}</span>
-              ) : (
-                t('Tú')
-              )}
-              <ArrowUpRight size={13} />
             </div>
           </button>
           {tools}
@@ -1541,6 +1543,9 @@ export function App() {
               fixed: Boolean(fixed),
               localPositions: compactBubble ? bubbleSlots.slice(1) : undefined,
               clearance: compactBubble ? previewBubbleLayout.gap : undefined,
+              allowOverlapWith: compactBubble
+                ? [`node:${candidate.producerStepId}`]
+                : undefined,
             },
           ];
         }),
@@ -1611,6 +1616,9 @@ export function App() {
                 t('La vista previa sigue en Hyperion — vuelve a esta ventana'),
               ),
           },
+          // A temporarily expanded tile must keep its own chrome actionable
+          // above sibling compact bubbles from the same producer.
+          zIndex: candidate.downloadOnly || tileUi.collapsed ? 0 : 1,
           draggable: true,
           dragHandle:
             candidate.downloadOnly || tileUi.collapsed

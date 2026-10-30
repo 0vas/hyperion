@@ -159,8 +159,8 @@ export function previewTilePosition(
 
 /**
  * Deterministic close-range slots for a compact satellite. The first choice
- * sits centered below the producer. When that slot is blocked, the packer tries
- * the remaining local ring
+ * sits on the producer's upper-right chrome corner. When that slot is blocked,
+ * the packer tries the remaining local ring
  * before it spills into a distant lane.
  */
 export function previewBubblePositions(
@@ -171,13 +171,17 @@ export function previewBubblePositions(
 ): { x: number; y: number }[] {
   const centeredX = producer.x + (producerSize.width - bubbleSize.width) / 2;
   const centeredY = producer.y + (producerSize.height - bubbleSize.height) / 2;
-  const below = {
-    x: centeredX,
-    y: producer.y + producerSize.height + gap,
+  const topRight = {
+    x: producer.x + producerSize.width - bubbleSize.width / 2,
+    y: producer.y - bubbleSize.height / 2,
   };
   const right = {
     x: producer.x + producerSize.width + gap,
     y: centeredY,
+  };
+  const below = {
+    x: centeredX,
+    y: producer.y + producerSize.height + gap,
   };
   const above = {
     x: centeredX,
@@ -187,7 +191,7 @@ export function previewBubblePositions(
     x: producer.x - bubbleSize.width - gap,
     y: centeredY,
   };
-  return [below, right, left, above];
+  return [topRight, right, below, left, above];
 }
 
 export type PreviewTilePlacementInput = {
@@ -201,6 +205,8 @@ export type PreviewTilePlacementInput = {
   localPositions?: { x: number; y: number }[];
   /** Optional tighter collision clearance for compact bubbles. */
   clearance?: number;
+  /** Its own producer may host a corner satellite; all other nodes still block. */
+  allowOverlapWith?: string[];
 };
 
 type PreviewTileRect = PreviewTilePlacementInput & {
@@ -219,6 +225,13 @@ function tilesOverlap(
     a.position.y + a.height + clearance <= b.position.y ||
     b.position.y + b.height + clearance <= a.position.y
   );
+}
+
+function isAllowedOverlap(
+  tile: PreviewTileRect,
+  other: PreviewTileRect,
+): boolean {
+  return !!tile.allowOverlapWith?.includes(other.id);
 }
 
 /**
@@ -251,12 +264,17 @@ export function placePreviewTiles(
         ...(input.localPositions || []),
       ].find((position) => {
         const candidate = { ...tile, position };
-        return !placed.some((other) => tilesOverlap(candidate, other, gap));
+        return !placed.some(
+          (other) =>
+            !isAllowedOverlap(candidate, other) &&
+            tilesOverlap(candidate, other, gap),
+        );
       });
       if (localPosition) tile.position = { ...localPosition };
       for (;;) {
-        const blockers = placed.filter((other) =>
-          tilesOverlap(tile, other, gap),
+        const blockers = placed.filter(
+          (other) =>
+            !isAllowedOverlap(tile, other) && tilesOverlap(tile, other, gap),
         );
         if (!blockers.length) break;
         tile.position.y = Math.max(

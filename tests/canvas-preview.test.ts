@@ -146,7 +146,7 @@ test('consecutive horizontal producers keep their automatic HTML previews clear'
   );
 });
 
-test('compact bubbles use centered lower slots for nearby horizontal producers', () => {
+test('compact bubbles use upper-right producer chrome for nearby horizontal producers', () => {
   const write = { x: 0, y: 0 };
   const review = { x: 300, y: 0 };
   const producerSize = { width: 220, height: 140 };
@@ -170,6 +170,7 @@ test('compact bubbles use centered lower slots for nearby horizontal producers',
       position: writeSlots[0]!,
       localPositions: writeSlots.slice(1),
       clearance: previewBubbleLayout.gap,
+      allowOverlapWith: ['node:write'],
       ...previewBubbleLayout,
     },
     {
@@ -177,18 +178,19 @@ test('compact bubbles use centered lower slots for nearby horizontal producers',
       position: reviewSlots[0]!,
       localPositions: reviewSlots.slice(1),
       clearance: previewBubbleLayout.gap,
+      allowOverlapWith: ['node:review'],
       ...previewBubbleLayout,
     },
   ]);
   assert.deepEqual(
     placements['preview:write'],
     writeSlots[0],
-    'the first placement is centered below its own producer',
+    'the first placement uses its producer upper-right chrome',
   );
   assert.deepEqual(
     placements['preview:review'],
     reviewSlots[0],
-    'the next producer also keeps the centered lower placement',
+    'the next producer also keeps the upper-right placement',
   );
   for (const previewId of ['preview:write', 'preview:review']) {
     const preview = placements[previewId]!;
@@ -198,6 +200,40 @@ test('compact bubbles use centered lower slots for nearby horizontal producers',
       'each compact bubble remains local to its producer',
     );
   }
+});
+
+test('a blocked upper-right bubble falls back locally without covering another node', () => {
+  const producer = { x: 0, y: 0 };
+  const producerSize = { width: 220, height: 140 };
+  const slots = previewBubblePositions(producer, producerSize);
+  const placements = placePreviewTiles([
+    {
+      id: 'node:producer',
+      position: producer,
+      ...producerSize,
+      fixed: true,
+    },
+    {
+      id: 'node:neighbor',
+      position: { x: 180, y: -90 },
+      width: 220,
+      height: 140,
+      fixed: true,
+    },
+    {
+      id: 'preview:producer',
+      position: slots[0]!,
+      localPositions: slots.slice(1),
+      clearance: previewBubbleLayout.gap,
+      allowOverlapWith: ['node:producer'],
+      ...previewBubbleLayout,
+    },
+  ]);
+  assert.deepEqual(
+    placements['preview:producer'],
+    slots[2],
+    'the blocked corner and side slots fall to the lower local slot',
+  );
 });
 
 test('compact fallback remains clear and never rewrites a manual obstacle', () => {
@@ -223,6 +259,7 @@ test('compact fallback remains clear and never rewrites a manual obstacle', () =
       position: slots[0]!,
       localPositions: slots.slice(1),
       clearance: previewBubbleLayout.gap,
+      allowOverlapWith: ['node:producer'],
       ...previewBubbleLayout,
     },
   ]);

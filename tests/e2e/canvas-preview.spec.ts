@@ -81,6 +81,11 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     'data-kind',
     'markup',
   );
+  await expect(
+    page
+      .getByRole('button', { name: 'Ver paso: Preparar guía' })
+      .locator('.node-status-footer'),
+  ).toBeVisible();
   await expect(tile.locator('.preview-tile')).toHaveCount(0);
   await initialBubble
     .getByRole('button', { name: 'Mostrar artefacto', exact: true })
