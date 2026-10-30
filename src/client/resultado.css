@@ -210,8 +210,7 @@
 
 .gateway-evidence-meta > div,
 .gateway-route-list,
-.gateway-evidence-observed,
-.gateway-evidence-record {
+.gateway-evidence-observed {
   border: 1px solid var(--line, #e4dfd4);
   border-radius: 10px;
   background: color-mix(in srgb, var(--stone, #f4efe7) 60%, transparent);
@@ -277,28 +276,13 @@
 }
 
 .gateway-evidence-observed code,
-.gateway-evidence-observed pre,
-.gateway-evidence-record code {
+.gateway-evidence-observed pre {
   overflow-wrap: anywhere;
 }
 
 .gateway-evidence-observed pre {
   grid-column: 1 / -1;
   margin: 0;
-  white-space: pre-wrap;
-}
-
-.gateway-evidence-record {
-  padding: 10px;
-}
-
-.gateway-evidence-record summary {
-  cursor: pointer;
-}
-
-.gateway-evidence-record code {
-  display: block;
-  margin-top: 8px;
   white-space: pre-wrap;
 }
 

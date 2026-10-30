@@ -1230,6 +1230,7 @@ test('human checklist, waiting motion, SVG gateways and horizontal layout form o
   await expect(observedGatewayOutput).toContainText('Sí');
   await expect(observedGatewayOutput).not.toContainText('docs');
   await expect(observedGatewayOutput).not.toContainText('code');
+  await expect(gatewayEvidence).not.toContainText('docs');
   await page.screenshot({ path: 'test-results/gateway-evidence.png' });
   await gatewayEvidence
     .getByRole('button', { name: 'Revisar documentación', exact: true })

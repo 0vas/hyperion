@@ -152,12 +152,6 @@ function EvidenceBody({
               </ul>
             </section>
           )}
-          {step.result && (
-            <details className="gateway-evidence-record">
-              <summary>{t('Registro del motor')}</summary>
-              <code>{step.result}</code>
-            </details>
-          )}
         </section>
       );
     }
