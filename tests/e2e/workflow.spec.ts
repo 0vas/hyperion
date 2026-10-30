@@ -1208,6 +1208,34 @@ test('human checklist, waiting motion, SVG gateways and horizontal layout form o
     (await after.json()).steps.find((s: { id: string }) => s.id === 'scope')
       .outputValues,
   ).toEqual({ docs: true, code: false });
+  await page.reload();
+  await page
+    .getByRole('button', {
+      name: 'Ver paso: Elegir ruta documental',
+      exact: true,
+    })
+    .click();
+  const gatewayEvidence = page.getByTestId('gateway-evidence');
+  await expect(gatewayEvidence).toContainText('Exclusiva');
+  await expect(gatewayEvidence).toContainText('División de rutas');
+  await expect(gatewayEvidence).toContainText('Rutas activadas');
+  await expect(gatewayEvidence).toContainText('Revisar documentación');
+  await expect(gatewayEvidence).toContainText('Rutas no tomadas');
+  await expect(gatewayEvidence).toContainText('Registrar exclusión documental');
+  await expect(gatewayEvidence).toContainText('Datos observados');
+  const observedGatewayOutput = gatewayEvidence.locator(
+    '.gateway-evidence-observed',
+  );
+  await expect(observedGatewayOutput).toContainText('Salida registrada');
+  await expect(observedGatewayOutput).toContainText('Sí');
+  await expect(observedGatewayOutput).not.toContainText('docs');
+  await expect(observedGatewayOutput).not.toContainText('code');
+  await expect(gatewayEvidence).not.toContainText('docs');
+  await page.screenshot({ path: 'test-results/gateway-evidence.png' });
+  await gatewayEvidence
+    .getByRole('button', { name: 'Revisar documentación', exact: true })
+    .click();
+  await expect(resultado(page)).toContainText('Revisar documentación');
 });
 
 test('a human retries a failed task from its card without starting it or losing history', async ({

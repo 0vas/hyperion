@@ -13,6 +13,10 @@ import { Artifacts } from './Artifacts';
 import { HarnessIcon } from './HarnessIcon';
 import { t, useLocale } from './i18n';
 import { resolveStepEvidence } from './resultado-evidence';
+import {
+  gatewayEvidenceForStep,
+  gatewayRouteDisplayTitle,
+} from './gateway-evidence';
 
 export type ResultadoSection =
   'evidence' | 'detalle' | 'io' | 'logs' | 'artifacts' | 'actividad';
@@ -51,16 +55,107 @@ type Props = {
 function EvidenceBody({
   runId,
   step,
+  steps,
   events,
   failed,
   running,
+  statusLabel,
+  onSelectStep,
 }: {
   runId: string;
   step: Step;
+  steps: Step[];
   events: Run['events'];
   failed: boolean;
   running: boolean;
+  statusLabel: string;
+  onSelectStep?: (id: string) => void;
 }) {
+  if (step.kind === 'gateway') {
+    const gateway = gatewayEvidenceForStep(step, steps);
+    if (gateway) {
+      const typeLabel = t(
+        gateway.type === 'parallel'
+          ? 'Paralela'
+          : gateway.type === 'exclusive'
+            ? 'Exclusiva'
+            : 'Inclusiva',
+      );
+      const routeLabel =
+        gateway.direction === 'join'
+          ? t('Rutas recibidas')
+          : t('Rutas activadas');
+      return (
+        <section
+          className="gateway-evidence resultado-evidence"
+          data-testid="gateway-evidence"
+        >
+          <header>
+            <p className="eyebrow">{t('Compuerta')}</p>
+            <h3>{typeLabel}</h3>
+          </header>
+          <dl className="gateway-evidence-meta">
+            <div>
+              <dt>{t('Operación')}</dt>
+              <dd>
+                {gateway.direction === 'split'
+                  ? t('División de rutas')
+                  : t('Unión de rutas')}
+              </dd>
+            </div>
+            <div>
+              <dt>{t('Estado')}</dt>
+              <dd>{statusLabel}</dd>
+            </div>
+          </dl>
+          {gateway.decisionKnown ? (
+            <p className="gateway-evidence-outcome">
+              {t('Decisión registrada')}
+            </p>
+          ) : (
+            <p className="muted gateway-evidence-outcome">
+              {t(
+                gateway.direction === 'join'
+                  ? 'Sin decisión de ruta registrada'
+                  : 'La decisión todavía no está registrada.',
+              )}
+            </p>
+          )}
+          {!!gateway.activeRoutes.length && (
+            <GatewayRouteList
+              heading={routeLabel}
+              routes={gateway.activeRoutes}
+              onSelectStep={onSelectStep}
+            />
+          )}
+          {!!gateway.inactiveRoutes.length && (
+            <GatewayRouteList
+              heading={t('Rutas no tomadas')}
+              routes={gateway.inactiveRoutes}
+              onSelectStep={onSelectStep}
+              muted
+            />
+          )}
+          {!!gateway.observedValues.length && (
+            <section className="gateway-evidence-observed">
+              <h4>{t('Datos observados')}</h4>
+              <ul>
+                {gateway.observedValues.map((value, index) => (
+                  <li key={`${value.stepTitle}:${index}`}>
+                    <strong>{value.stepTitle}</strong>
+                    <span>{t('Salida registrada')}</span>
+                    {value.value !== undefined && (
+                      <pre>{formatGatewayObservedValue(value.value)}</pre>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </section>
+      );
+    }
+  }
   const evidence = resolveStepEvidence(step, events);
   if (evidence.kind === 'artifact' && evidence.artifact) {
     return (
@@ -114,6 +209,45 @@ function EvidenceBody({
     <p className="muted resultado-empty">
       {t('Todavía no hay un resultado registrado para este paso.')}
     </p>
+  );
+}
+
+function formatGatewayObservedValue(value: boolean | number | null): string {
+  if (value === true) return t('Sí');
+  if (value === false) return t('No');
+  return value === null ? '—' : String(value);
+}
+
+function GatewayRouteList({
+  heading,
+  routes,
+  onSelectStep,
+  muted = false,
+}: {
+  heading: string;
+  routes: { id: string; title?: string }[];
+  onSelectStep?: (id: string) => void;
+  muted?: boolean;
+}) {
+  return (
+    <section className={`gateway-route-list${muted ? ' is-muted' : ''}`}>
+      <h4>{heading}</h4>
+      <ul>
+        {routes.map((route) => (
+          <li key={route.id}>
+            {onSelectStep && route.title ? (
+              <button type="button" onClick={() => onSelectStep(route.id)}>
+                {route.title}
+              </button>
+            ) : (
+              <span>
+                {gatewayRouteDisplayTitle(route, t('Destino no disponible'))}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -274,9 +408,12 @@ export function ResultadoStage({
           <EvidenceBody
             runId={run.id}
             step={step}
+            steps={run.steps}
             events={run.events}
             failed={step.status === 'failed'}
             running={step.status === 'running'}
+            statusLabel={statusLabel}
+            onSelectStep={onSelectStep}
           />
         )}
         {step && section === 'artifacts' && (
