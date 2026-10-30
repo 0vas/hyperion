@@ -90,7 +90,7 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           className="artifact-bubble-action nodrag nopan"
           href={href}
           aria-label={t('Descargar {0}', { 0: data.artifact.name })}
-          title={t('Descargar')}
+          title={t('Descargar {0}', { 0: data.artifact.name })}
           onClick={(event) => event.stopPropagation()}
           {...(data.artifact.url
             ? { target: '_blank', rel: 'noopener noreferrer' }
@@ -129,8 +129,8 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
         <button
           type="button"
           className="artifact-bubble-action nodrag nopan"
-          aria-label={t('Mostrar artefacto')}
-          title={t('Mostrar artefacto')}
+          aria-label={t('Mostrar artefacto: {0}', { 0: data.artifact.name })}
+          title={t('Mostrar artefacto: {0}', { 0: data.artifact.name })}
           onClick={() => data.onTileUiChange({ ...tileUi, collapsed: false })}
         >
           <PreviewArtifactIcon kind={bubbleIconKind} />

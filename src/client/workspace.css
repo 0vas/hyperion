@@ -858,15 +858,18 @@ a.preview-tile-action.icon-button {
   border-color: var(--gold);
 }
 .artifact-download-bubble .preview-office-icon {
-  width: 30px;
-  height: 38px;
+  width: 24px;
+  height: 30px;
 }
 .artifact-bubble span {
   max-width: calc(var(--artifact-bubble-size) - 20px);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 10px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+  font-size: 9px;
+  line-height: 1.05;
 }
 .artifact-preview-bubble .artifact-bubble-action {
   font-size: 10px;

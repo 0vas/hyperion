@@ -189,6 +189,125 @@
   margin-top: 8px;
 }
 
+.gateway-evidence {
+  display: grid;
+  gap: 14px;
+}
+
+.gateway-evidence header,
+.gateway-evidence h3,
+.gateway-evidence h4,
+.gateway-evidence p {
+  margin: 0;
+}
+
+.gateway-evidence-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.gateway-evidence-meta > div,
+.gateway-route-list,
+.gateway-evidence-observed,
+.gateway-evidence-record {
+  border: 1px solid var(--line, #e4dfd4);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--stone, #f4efe7) 60%, transparent);
+}
+
+.gateway-evidence-meta > div {
+  padding: 10px;
+}
+
+.gateway-evidence-meta dt,
+.gateway-route-list h4,
+.gateway-evidence-observed h4 {
+  color: var(--muted, #6f6a60);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.gateway-evidence-meta dd {
+  margin: 4px 0 0;
+  font-weight: 650;
+}
+
+.gateway-evidence-outcome {
+  font-weight: 600;
+}
+
+.gateway-route-list,
+.gateway-evidence-observed {
+  padding: 10px;
+}
+
+.gateway-route-list ul,
+.gateway-evidence-observed ul {
+  display: grid;
+  gap: 5px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gateway-route-list button {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--node-surface, #fff) 75%, transparent);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.gateway-route-list.is-muted {
+  color: var(--muted, #6f6a60);
+}
+
+.gateway-evidence-observed li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: baseline;
+}
+
+.gateway-evidence-observed code,
+.gateway-evidence-observed pre,
+.gateway-evidence-record code {
+  overflow-wrap: anywhere;
+}
+
+.gateway-evidence-observed pre {
+  grid-column: 1 / -1;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.gateway-evidence-record {
+  padding: 10px;
+}
+
+.gateway-evidence-record summary {
+  cursor: pointer;
+}
+
+.gateway-evidence-record code {
+  display: block;
+  margin-top: 8px;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 480px) {
+  .gateway-evidence-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
 .resultado-actividad .history-dot {
   flex-shrink: 0;
 }

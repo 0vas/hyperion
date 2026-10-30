@@ -64,7 +64,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
       commandId: 'upload-canvas-preview-presentation',
       stepId: 'write',
       attempt: 1,
-      name: 'guia.pptx',
+      name: 'demo-hyperion-presentacion-final.pptx',
       mediaType:
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       contentBase64: Buffer.from('presentation bytes').toString('base64'),
@@ -88,7 +88,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   ).toBeVisible();
   await expect(tile.locator('.preview-tile')).toHaveCount(0);
   await initialBubble
-    .getByRole('button', { name: 'Mostrar artefacto', exact: true })
+    .getByRole('button', { name: /^Mostrar artefacto:/ })
     .click();
   await expect(
     tile.getByRole('group', { name: 'Vista previa del paso Preparar guía' }),
@@ -106,11 +106,22 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   ).toBeVisible();
   expect(await page.evaluate(() => 'attacked' in window)).toBe(false);
   const officeBubble = page.locator(
-    '.artifact-download-bubble .artifact-bubble-action[download="guia.pptx"]',
+    '.artifact-download-bubble .artifact-bubble-action[download="demo-hyperion-presentacion-final.pptx"]',
   );
   await expect(officeBubble).toBeVisible();
   await expect(officeBubble.locator('.preview-office-icon')).toBeVisible();
-  await expect(officeBubble).toHaveAttribute('download', 'guia.pptx');
+  await expect(officeBubble).toHaveAttribute(
+    'download',
+    'demo-hyperion-presentacion-final.pptx',
+  );
+  await expect(officeBubble).toHaveAttribute(
+    'title',
+    'Descargar demo-hyperion-presentacion-final.pptx',
+  );
+  await expect(officeBubble).toHaveAttribute(
+    'aria-label',
+    'Descargar demo-hyperion-presentacion-final.pptx',
+  );
   await expect(officeBubble).toHaveAttribute(
     'href',
     new RegExp(`/api/runs/${run.id}/artifacts/`),
@@ -167,7 +178,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
   ).toHaveCount(2);
   await hiddenBubble
-    .getByRole('button', { name: 'Mostrar artefacto', exact: true })
+    .getByRole('button', { name: /^Mostrar artefacto:/ })
     .click();
   await expect(tile.locator('.preview-tile')).toBeVisible();
   await tile.locator('.preview-tile-chrome-main').click();

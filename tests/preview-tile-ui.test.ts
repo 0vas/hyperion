@@ -208,6 +208,8 @@ test('PreviewNode has one frame, full-screen expansion, and connected movable bu
   assert.match(source, /PreviewArtifactIcon/);
   assert.match(source, /previewBubbleIconKind/);
   assert.match(source, /Mostrar artefacto/);
+  assert.match(source, /Mostrar artefacto: \{0\}/);
+  assert.match(source, /title=\{t\('Descargar \{0\}'/);
   assert.match(source, /artifactFileUrl/);
   assert.doesNotMatch(source, /PREVIEW_TILE_SIZE_OPTIONS/);
   assert.doesNotMatch(source, /preview-tile-resolution/);
@@ -235,5 +237,7 @@ test('App opens an immersive full-screen shell and keeps the Jobs switch', () =>
   assert.match(css, /\.artifact-markup-expanded\.is-immersive/);
   assert.match(css, /\.artifact-download-bubble/);
   assert.match(css, /\.artifact-preview-bubble/);
+  assert.match(css, /-webkit-line-clamp:\s*2/);
+  assert.match(css, /overflow-wrap:\s*anywhere/);
   assert.match(css, /\.artifact-html-frame-expanded/);
 });
