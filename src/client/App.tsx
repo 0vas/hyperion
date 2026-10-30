@@ -1543,9 +1543,6 @@ export function App() {
               fixed: Boolean(fixed),
               localPositions: compactBubble ? bubbleSlots.slice(1) : undefined,
               clearance: compactBubble ? previewBubbleLayout.gap : undefined,
-              allowOverlapWith: compactBubble
-                ? [`node:${candidate.producerStepId}`]
-                : undefined,
             },
           ];
         }),

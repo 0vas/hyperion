@@ -170,7 +170,6 @@ test('compact bubbles use upper-right producer chrome for nearby horizontal prod
       position: writeSlots[0]!,
       localPositions: writeSlots.slice(1),
       clearance: previewBubbleLayout.gap,
-      allowOverlapWith: ['node:write'],
       ...previewBubbleLayout,
     },
     {
@@ -178,7 +177,6 @@ test('compact bubbles use upper-right producer chrome for nearby horizontal prod
       position: reviewSlots[0]!,
       localPositions: reviewSlots.slice(1),
       clearance: previewBubbleLayout.gap,
-      allowOverlapWith: ['node:review'],
       ...previewBubbleLayout,
     },
   ]);
@@ -225,7 +223,6 @@ test('a blocked upper-right bubble falls back locally without covering another n
       position: slots[0]!,
       localPositions: slots.slice(1),
       clearance: previewBubbleLayout.gap,
-      allowOverlapWith: ['node:producer'],
       ...previewBubbleLayout,
     },
   ]);
@@ -259,7 +256,6 @@ test('compact fallback remains clear and never rewrites a manual obstacle', () =
       position: slots[0]!,
       localPositions: slots.slice(1),
       clearance: previewBubbleLayout.gap,
-      allowOverlapWith: ['node:producer'],
       ...previewBubbleLayout,
     },
   ]);

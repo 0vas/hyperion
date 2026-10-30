@@ -172,8 +172,8 @@ export function previewBubblePositions(
   const centeredX = producer.x + (producerSize.width - bubbleSize.width) / 2;
   const centeredY = producer.y + (producerSize.height - bubbleSize.height) / 2;
   const topRight = {
-    x: producer.x + producerSize.width - bubbleSize.width / 2,
-    y: producer.y - bubbleSize.height / 2,
+    x: producer.x + producerSize.width - bubbleSize.width,
+    y: producer.y - bubbleSize.height - gap,
   };
   const right = {
     x: producer.x + producerSize.width + gap,
@@ -205,8 +205,6 @@ export type PreviewTilePlacementInput = {
   localPositions?: { x: number; y: number }[];
   /** Optional tighter collision clearance for compact bubbles. */
   clearance?: number;
-  /** Its own producer may host a corner satellite; all other nodes still block. */
-  allowOverlapWith?: string[];
 };
 
 type PreviewTileRect = PreviewTilePlacementInput & {
@@ -225,13 +223,6 @@ function tilesOverlap(
     a.position.y + a.height + clearance <= b.position.y ||
     b.position.y + b.height + clearance <= a.position.y
   );
-}
-
-function isAllowedOverlap(
-  tile: PreviewTileRect,
-  other: PreviewTileRect,
-): boolean {
-  return !!tile.allowOverlapWith?.includes(other.id);
 }
 
 /**
@@ -264,17 +255,12 @@ export function placePreviewTiles(
         ...(input.localPositions || []),
       ].find((position) => {
         const candidate = { ...tile, position };
-        return !placed.some(
-          (other) =>
-            !isAllowedOverlap(candidate, other) &&
-            tilesOverlap(candidate, other, gap),
-        );
+        return !placed.some((other) => tilesOverlap(candidate, other, gap));
       });
       if (localPosition) tile.position = { ...localPosition };
       for (;;) {
-        const blockers = placed.filter(
-          (other) =>
-            !isAllowedOverlap(tile, other) && tilesOverlap(tile, other, gap),
+        const blockers = placed.filter((other) =>
+          tilesOverlap(tile, other, gap),
         );
         if (!blockers.length) break;
         tile.position.y = Math.max(
