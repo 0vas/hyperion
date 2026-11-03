@@ -92,19 +92,18 @@ export function previewBubbleIconKind(
  */
 export function artifactBubbleLabelKey(artifact: Artifact): string {
   const office = officeKindForArtifact(artifact);
-  if (office === 'docx') return 'Documento';
-  if (office === 'xlsx') return 'Hoja de cálculo';
-  if (office === 'pptx') return 'Presentación';
-  if (office === 'other') return 'Documento';
+  if (office === 'docx') return 'DOCX';
+  if (office === 'xlsx') return 'XLSX';
+  if (office === 'pptx') return 'PPTX';
+  if (office === 'other') return 'Archivo';
 
-  const markup =
-    artifact.mediaType === 'text/html' ||
-    artifact.mediaType === 'image/svg+xml';
+  const markup = artifact.mediaType === 'text/html';
+  if (artifact.mediaType === 'image/svg+xml') return 'SVG';
   const kind = previewAestheticKind(artifact, { isSandboxedMarkup: markup });
-  if (kind === 'markup') return 'Página web';
+  if (kind === 'markup') return 'HTML';
   if (kind === 'image') return 'Imagen';
-  if (kind === 'csv') return 'Tabla';
-  if (kind === 'note') return 'Notas';
+  if (kind === 'csv') return 'CSV';
+  if (kind === 'note') return 'Nota';
   return 'Texto';
 }
 

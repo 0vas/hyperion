@@ -209,7 +209,7 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
       attempt: 1,
       createdAt: '',
     }),
-    'Página web',
+    'HTML',
   );
   assert.equal(
     artifactBubbleLabelKey({
@@ -219,7 +219,7 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
       attempt: 1,
       createdAt: '',
     }),
-    'Tabla',
+    'CSV',
   );
   assert.equal(
     artifactBubbleLabelKey({
@@ -230,7 +230,7 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
       attempt: 1,
       createdAt: '',
     }),
-    'Hoja de cálculo',
+    'XLSX',
   );
   assert.equal(
     artifactBubbleLabelKey({
@@ -241,17 +241,19 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
       attempt: 1,
       createdAt: '',
     }),
-    'Presentación',
+    'PPTX',
   );
-  assert.equal(translate('en', 'Página web'), 'Web page');
-  assert.equal(translate('en', 'Hoja de cálculo'), 'Spreadsheet');
-  assert.equal(translate('en', 'Presentación'), 'Presentation');
+  assert.equal(translate('en', 'Nota'), 'Note');
+  assert.equal(translate('en', 'Archivo'), 'File');
 
   const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
   const labelRule =
     /\.artifact-bubble-type-label\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-  assert.match(labelRule, /width:\s*64px/);
-  assert.match(labelRule, /font-size:\s*8px/);
+  assert.match(
+    labelRule,
+    /width:\s*calc\(var\(--artifact-bubble-size\)\s*-\s*20px\)/,
+  );
+  assert.match(labelRule, /font-size:\s*9px/);
   assert.doesNotMatch(labelRule, /text-overflow:\s*ellipsis/);
 });
 

@@ -102,7 +102,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     name: `Mostrar artefacto: ${longHtmlName}`,
   });
   await expect(initialBubble.locator('.artifact-bubble-type-label')).toHaveText(
-    'Página web',
+    'HTML',
   );
   await expect(showArtifact).toHaveAttribute(
     'title',
@@ -159,13 +159,13 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     'Descargar demo-hyperion-presentacion-final.pptx',
   );
   await expect(officeBubble.locator('.artifact-bubble-type-label')).toHaveText(
-    'Presentación',
+    'PPTX',
   );
   await expect(
     page.locator(
       '.artifact-download-bubble .artifact-bubble-action[download="presupuesto-anual-de-licencias.xlsx"] .artifact-bubble-type-label',
     ),
-  ).toHaveText('Hoja de cálculo');
+  ).toHaveText('XLSX');
   await expect(officeBubble).toHaveAttribute(
     'href',
     new RegExp(`/api/runs/${run.id}/artifacts/`),
