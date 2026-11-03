@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Informe de accesibilidad y rendimiento — vista de prueba</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --surface: #f7f8fb;
+        --card: #ffffff;
+        --ink: #172033;
+        --muted: #536077;
+        --line: #d8deea;
+        --accent: #1769aa;
+        --accent-soft: #e4f1fb;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--surface);
+        color: var(--ink);
+        line-height: 1.5;
+      }
+      .shell {
+        max-width: 1080px;
+        margin: auto;
+        padding: clamp(16px, 3vw, 36px);
+      }
+      header {
+        display: grid;
+        gap: 14px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+      nav a {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 999px;
+        color: var(--accent);
+        background: var(--accent-soft);
+        text-decoration: none;
+        font-weight: 650;
+      }
+      h1 {
+        max-width: 28ch;
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.8rem);
+        line-height: 1.08;
+      }
+      .lede {
+        max-width: 72ch;
+        color: var(--muted);
+      }
+      main {
+        display: grid;
+        gap: 20px;
+        margin-top: 24px;
+      }
+      .dashboard {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.9fr);
+        gap: 20px;
+      }
+      .panel,
+      .card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+        box-shadow: 0 8px 24px rgb(20 34 55 / 0.06);
+      }
+      .panel {
+        padding: 18px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .card {
+        padding: 14px;
+      }
+      .metric {
+        font-size: 1.75rem;
+        font-weight: 760;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .chart {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 10px;
+        background: linear-gradient(180deg, var(--accent-soft), transparent);
+      }
+      .table-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      th {
+        background: color-mix(in srgb, var(--accent-soft) 72%, var(--card));
+      }
+      form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: end;
+      }
+      label {
+        display: grid;
+        gap: 5px;
+        font-weight: 650;
+      }
+      input,
+      select,
+      button {
+        min-height: 40px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        font: inherit;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 7px 9px;
+        background: var(--card);
+        color: var(--ink);
+      }
+      button {
+        padding: 7px 14px;
+        color: white;
+        background: var(--accent);
+        border-color: var(--accent);
+        cursor: pointer;
+      }
+      pre {
+        overflow: auto;
+        padding: 14px;
+        border-radius: 10px;
+        background: #172033;
+        color: #e9eff8;
+        font-size: 0.85rem;
+      }
+      @media (max-width: 680px) {
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        form {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --surface: #111827;
+          --card: #1c2638;
+          --ink: #edf2fa;
+          --muted: #b4c1d5;
+          --line: #3a4860;
+          --accent: #7bc6ff;
+          --accent-soft: #173c59;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <nav aria-label="Navegación del informe">
+          <ul>
+            <li><a href="#resumen">Resumen</a></li>
+            <li><a href="#entregables">Entregables</a></li>
+            <li><a href="#configuracion">Configuración</a></li>
+          </ul>
+        </nav>
+        <div>
+          <p class="muted">Informe de calidad · Octubre 2026</p>
+          <h1>
+            Informe muy extenso de accesibilidad, rendimiento y cobertura de
+            entregables para la revisión humana
+          </h1>
+          <p class="lede">
+            Esta muestra autocontenida combina navegación semántica, contenido
+            anidado, datos anchos y controles para comprobar el comportamiento
+            del marco de vista previa.
+          </p>
+        </div>
+      </header>
+      <main>
+        <section id="resumen" class="dashboard" aria-labelledby="summary-title">
+          <div class="panel">
+            <h2 id="summary-title">Tendencia de cobertura</h2>
+            <svg
+              class="chart"
+              viewBox="0 0 640 230"
+              role="img"
+              aria-labelledby="chart-title chart-description"
+            >
+              <title id="chart-title">Cobertura semanal</title>
+              <desc id="chart-description">
+                La cobertura asciende de 61 a 94 por ciento durante seis
+                semanas.
+              </desc>
+              <g fill="none" stroke="currentColor" opacity=".2">
+                <path d="M45 30v160h560" />
+                <path d="M45 70h560M45 110h560M45 150h560" />
+              </g>
+              <polyline
+                points="45,165 155,140 265,128 375,92 485,72 605,48"
+                fill="none"
+                stroke="#1769aa"
+                stroke-width="7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <g fill="#1769aa">
+                <circle cx="45" cy="165" r="6" />
+                <circle cx="155" cy="140" r="6" />
+                <circle cx="265" cy="128" r="6" />
+                <circle cx="375" cy="92" r="6" />
+                <circle cx="485" cy="72" r="6" />
+                <circle cx="605" cy="48" r="6" />
+              </g>
+            </svg>
+          </div>
+          <aside class="cards" aria-label="Indicadores">
+            <article class="card">
+              <span class="muted">Cobertura</span
+              ><strong class="metric">94%</strong
+              ><span>+8 puntos esta semana</span>
+            </article>
+            <article class="card">
+              <span class="muted">Revisiones</span
+              ><strong class="metric">18</strong
+              ><span>3 pendientes de validación</span>
+            </article>
+          </aside>
+        </section>
+        <section
+          id="entregables"
+          class="panel"
+          aria-labelledby="deliverables-title"
+        >
+          <h2 id="deliverables-title">Entregables y propietarios</h2>
+          <div class="table-scroll" data-testid="complex-table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Entregable</th>
+                  <th>Propietario</th>
+                  <th>Estado</th>
+                  <th>Fecha comprometida</th>
+                  <th>Observación extensa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Guía de implementación accesible</td>
+                  <td>Equipo de experiencia</td>
+                  <td>En revisión</td>
+                  <td>2026-10-28</td>
+                  <td>
+                    Validar contraste, navegación por teclado y lectura en
+                    ventanas estrechas.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Panel de trazabilidad</td>
+                  <td>Equipo de plataforma</td>
+                  <td>Listo</td>
+                  <td>2026-10-26</td>
+                  <td>
+                    Conservar evidencia sin exponer claves internas del motor.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section
+          id="configuracion"
+          class="panel"
+          aria-labelledby="settings-title"
+        >
+          <h2 id="settings-title">Configuración de la revisión</h2>
+          <form>
+            <label
+              >Responsable<input
+                name="owner"
+                value="Ana García"
+                aria-describedby="owner-help" /></label
+            ><label
+              >Ritmo<select name="cadence">
+                <option>Semanal</option>
+                <option>Quincenal</option>
+              </select></label
+            ><button type="button">Guardar borrador</button>
+          </form>
+          <p id="owner-help" class="muted">
+            Los controles son demostrativos; este documento no envía datos.
+          </p>
+        </section>
+        <section class="panel" aria-labelledby="code-title">
+          <h2 id="code-title">Ejemplo de integración</h2>
+          <pre><code>const preview = { sandbox: '', network: false, source: 'artifact' };
+renderPreview(preview);</code></pre>
+        </section>
+      </main>
+    </div>
+    <script>
+      document.documentElement.dataset.scriptExecuted = 'true';
+    </script>
+  </body>
+</html>
