@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
+const complexHtmlFixture = readFileSync(
+  'tests/fixtures/complex-preview.html',
+  'utf8',
+);
+
 test('canvas preview tiles select the producer and collapse under 900px', async ({
   page,
   request,
@@ -330,4 +335,124 @@ test('compact artifact type tokens stay bounded in Spanish and English', async (
     expect(label.overflow).toBe('hidden');
     expect(label.whiteSpace).toBe('nowrap');
   }
+});
+
+test('a complex self-contained HTML artifact stays inert across preview, source and expand', async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const headers = {
+    authorization: `Bearer ${JSON.parse(readFileSync('.hyperion-e2e/credentials.json', 'utf8')).agentToken}`,
+  };
+  const created = await request.post('/api/runs', {
+    headers,
+    data: {
+      commandId: crypto.randomUUID(),
+      plan: {
+        title: 'Muestra HTML compleja',
+        profile: 'bpmn-lite',
+        request: 'Renderiza un informe HTML complejo',
+        steps: [
+          { id: 'begin', title: 'Inicio', kind: 'start' },
+          {
+            id: 'render',
+            title: 'Renderizar informe',
+            kind: 'agent',
+            dependencies: ['begin'],
+          },
+          { id: 'end', title: 'Fin', kind: 'end', dependencies: ['render'] },
+        ],
+      },
+    },
+  });
+  expect(created.status()).toBe(201);
+  const run = await created.json();
+  for (const type of ['start', 'complete']) {
+    const response = await request.post(`/api/runs/${run.id}/commands`, {
+      headers,
+      data: {
+        type,
+        stepId: 'render',
+        attempt: type === 'complete' ? 1 : undefined,
+        message: 'Informe generado',
+        commandId: crypto.randomUUID(),
+      },
+    });
+    expect(response.ok()).toBe(true);
+    if (type === 'start') {
+      const uploaded = await request.post(`/api/runs/${run.id}/artifacts`, {
+        headers,
+        data: {
+          commandId: 'upload-complex-html-preview',
+          stepId: 'render',
+          attempt: 1,
+          name: 'informe-accesibilidad-rendimiento.html',
+          mediaType: 'text/html',
+          contentBase64: Buffer.from(complexHtmlFixture).toString('base64'),
+        },
+      });
+      expect(uploaded.ok()).toBe(true);
+    }
+  }
+
+  await page.goto(`/?run=${run.id}`);
+  const tile = page.getByTestId('rf__node-preview:render');
+  await tile
+    .getByRole('button', {
+      name: 'Mostrar artefacto: informe-accesibilidad-rendimiento.html',
+    })
+    .click();
+  const frame = tile.locator('iframe.preview-tile-html-frame');
+  await expect(frame).toHaveAttribute('sandbox', '');
+  const preview = page.frameLocator('iframe.preview-tile-html-frame');
+  await expect(
+    preview.getByRole('heading', {
+      name: 'Informe muy extenso de accesibilidad, rendimiento y cobertura de entregables para la revisión humana',
+    }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole('navigation', { name: 'Navegación del informe' }),
+  ).toBeVisible();
+  await expect(preview.locator('svg[role="img"]')).toBeVisible();
+  await expect(
+    preview.getByRole('textbox', { name: 'Responsable' }),
+  ).toHaveValue('Ana García');
+  await expect(preview.locator('pre code')).toContainText('sandbox');
+  await expect(preview.locator('html')).not.toHaveAttribute(
+    'data-script-executed',
+    'true',
+  );
+  await expect
+    .poll(() =>
+      preview
+        .locator('[data-testid="complex-table-scroll"]')
+        .evaluate((element) => element.scrollWidth > element.clientWidth),
+    )
+    .toBe(true);
+
+  await tile
+    .getByRole('button', { name: 'Código fuente', exact: true })
+    .click();
+  await expect(tile.locator('iframe.preview-tile-html-frame')).toHaveCount(0);
+  await expect(tile.locator('pre.artifact-text')).toContainText(
+    'Informe muy extenso de accesibilidad',
+  );
+  await tile.getByRole('button', { name: 'Vista previa', exact: true }).click();
+  await expect(tile.locator('iframe.preview-tile-html-frame')).toBeVisible();
+
+  await tile
+    .getByRole('button', { name: 'Ampliar vista', exact: true })
+    .click();
+  const shell = page.locator('.preview-open-shell');
+  await expect(shell).toBeVisible();
+  const immersive = shell.frameLocator('iframe.artifact-html-frame');
+  await expect(
+    immersive.getByRole('heading', {
+      name: /Informe muy extenso de accesibilidad/,
+    }),
+  ).toBeVisible();
+  await shell.getByRole('button', { name: 'Volver', exact: true }).click();
+  await expect(shell).toHaveCount(0);
+  await expect(tile.locator('iframe.preview-tile-html-frame')).toBeVisible();
 });
