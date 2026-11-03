@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { translate } from '../src/i18n/core.js';
 import {
   clearPreviewTileUiForRun,
   collapsePreviewTile,
@@ -22,6 +23,7 @@ import {
   writePreviewTileUiState,
 } from '../src/client/preview-tile-ui.js';
 import {
+  artifactBubbleLabelKey,
   officeKindForArtifact,
   parseDelimitedPreview,
   previewAestheticKind,
@@ -198,6 +200,64 @@ test('open-browser CSP remains inert for composed documents', () => {
   assert.equal(PREVIEW_OPEN_BROWSER_CSP.includes("default-src 'none'"), true);
 });
 
+test('compact bubbles use a semantic label instead of fragmenting filenames', () => {
+  assert.equal(
+    artifactBubbleLabelKey({
+      id: 'html',
+      name: 'demo-hyperion-contenido-muy-largo.html',
+      mediaType: 'text/html',
+      attempt: 1,
+      createdAt: '',
+    }),
+    'HTML',
+  );
+  assert.equal(
+    artifactBubbleLabelKey({
+      id: 'csv',
+      name: 'datos-de-entregables-muy-largos.csv',
+      mediaType: 'text/csv',
+      attempt: 1,
+      createdAt: '',
+    }),
+    'CSV',
+  );
+  assert.equal(
+    artifactBubbleLabelKey({
+      id: 'xlsx',
+      name: 'presupuesto-anual-de-licencias.xlsx',
+      mediaType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      attempt: 1,
+      createdAt: '',
+    }),
+    'XLSX',
+  );
+  assert.equal(
+    artifactBubbleLabelKey({
+      id: 'pptx',
+      name: 'demo-hyperion-presentacion-final.pptx',
+      mediaType:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      attempt: 1,
+      createdAt: '',
+    }),
+    'PPTX',
+  );
+  assert.equal(translate('en', 'Nota'), 'Note');
+  assert.equal(translate('en', 'Archivo'), 'File');
+
+  const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
+  const labelRule =
+    /\.artifact-bubble-type-label\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(
+    labelRule,
+    /width:\s*calc\(var\(--artifact-bubble-size\)\s*-\s*20px\)/,
+  );
+  assert.match(labelRule, /font-size:\s*9px/);
+  assert.match(labelRule, /overflow:\s*hidden/);
+  assert.doesNotMatch(labelRule, /text-overflow:\s*ellipsis/);
+});
+
 test('PreviewNode has one frame, full-screen expansion, and connected movable bubbles', () => {
   const source = readFileSync(resolve('src/client/PreviewNode.tsx'), 'utf8');
   assert.match(source, /Ampliar vista/);
@@ -209,6 +269,11 @@ test('PreviewNode has one frame, full-screen expansion, and connected movable bu
   assert.match(source, /previewBubbleIconKind/);
   assert.match(source, /Mostrar artefacto/);
   assert.match(source, /Mostrar artefacto: \{0\}/);
+  assert.match(source, /artifactBubbleLabelKey/);
+  assert.match(source, /artifact-bubble-type-label/);
+  assert.match(source, /artifact-bubble-filename-tooltip/);
+  assert.match(source, /aria-describedby/);
+  assert.doesNotMatch(source, /<span>\{data\.artifact\.name\}<\/span>/);
   assert.match(source, /title=\{t\('Descargar \{0\}'/);
   assert.match(source, /artifactFileUrl/);
   assert.doesNotMatch(source, /PREVIEW_TILE_SIZE_OPTIONS/);
@@ -237,7 +302,9 @@ test('App opens an immersive full-screen shell and keeps the Jobs switch', () =>
   assert.match(css, /\.artifact-markup-expanded\.is-immersive/);
   assert.match(css, /\.artifact-download-bubble/);
   assert.match(css, /\.artifact-preview-bubble/);
-  assert.match(css, /-webkit-line-clamp:\s*2/);
+  assert.match(css, /\.artifact-bubble-type-label/);
+  assert.match(css, /\.artifact-bubble-filename-tooltip/);
   assert.match(css, /overflow-wrap:\s*anywhere/);
+  assert.doesNotMatch(css, /\.artifact-bubble span/);
   assert.match(css, /\.artifact-html-frame-expanded/);
 });

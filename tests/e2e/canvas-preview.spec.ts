@@ -24,6 +24,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
       { id: 'end', title: 'Fin', kind: 'end', dependencies: ['write'] },
     ],
   };
+  const longHtmlName = 'demo-hyperion-guia-de-contenido-final.html';
   const created = await request.post('/api/runs', {
     headers,
     data: { commandId: crypto.randomUUID(), plan },
@@ -50,7 +51,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
       commandId: 'upload-canvas-preview',
       stepId: 'write',
       attempt: 1,
-      name: 'guia.html',
+      name: longHtmlName,
       mediaType: 'text/html',
       contentBase64: Buffer.from(
         '<h1>Guía en canvas</h1><script>window.attacked=true</script>',
@@ -71,6 +72,22 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     },
   });
   expect(officeUploaded.ok()).toBe(true);
+  const spreadsheetUploaded = await request.post(
+    `/api/runs/${run.id}/artifacts`,
+    {
+      headers,
+      data: {
+        commandId: 'upload-canvas-preview-spreadsheet',
+        stepId: 'write',
+        attempt: 1,
+        name: 'presupuesto-anual-de-licencias.xlsx',
+        mediaType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        contentBase64: Buffer.from('spreadsheet bytes').toString('base64'),
+      },
+    },
+  );
+  expect(spreadsheetUploaded.ok()).toBe(true);
   await command('complete');
   await page.goto(`/?run=${run.id}`);
   const tile = page.getByTestId('rf__node-preview:write');
@@ -81,15 +98,34 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     'data-kind',
     'markup',
   );
+  const showArtifact = initialBubble.getByRole('button', {
+    name: `Mostrar artefacto: ${longHtmlName}`,
+  });
+  await expect(initialBubble.locator('.artifact-bubble-type-label')).toHaveText(
+    'HTML',
+  );
+  await expect(showArtifact).toHaveAttribute(
+    'title',
+    `Mostrar artefacto: ${longHtmlName}`,
+  );
+  await expect(showArtifact).toHaveAttribute(
+    'aria-label',
+    `Mostrar artefacto: ${longHtmlName}`,
+  );
+  const tooltipId = await showArtifact.getAttribute('aria-describedby');
+  expect(tooltipId).toBeTruthy();
+  const tooltip = page.locator(`#${tooltipId}`);
+  await expect(tooltip).toHaveText(longHtmlName);
+  await expect(tooltip).toBeHidden();
+  await showArtifact.focus();
+  await expect(tooltip).toBeVisible();
   await expect(
     page
       .getByRole('button', { name: 'Ver paso: Preparar guía' })
       .locator('.node-status-footer'),
   ).toBeVisible();
   await expect(tile.locator('.preview-tile')).toHaveCount(0);
-  await initialBubble
-    .getByRole('button', { name: /^Mostrar artefacto:/ })
-    .click();
+  await page.keyboard.press('Enter');
   await expect(
     tile.getByRole('group', { name: 'Vista previa del paso Preparar guía' }),
   ).toBeVisible();
@@ -122,13 +158,21 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     'aria-label',
     'Descargar demo-hyperion-presentacion-final.pptx',
   );
+  await expect(officeBubble.locator('.artifact-bubble-type-label')).toHaveText(
+    'PPTX',
+  );
+  await expect(
+    page.locator(
+      '.artifact-download-bubble .artifact-bubble-action[download="presupuesto-anual-de-licencias.xlsx"] .artifact-bubble-type-label',
+    ),
+  ).toHaveText('XLSX');
   await expect(officeBubble).toHaveAttribute(
     'href',
     new RegExp(`/api/runs/${run.id}/artifacts/`),
   );
   await expect(
     page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
-  ).toHaveCount(2);
+  ).toHaveCount(3);
   const officeNode = page.locator('.react-flow__node').filter({
     has: officeBubble,
   });
@@ -176,7 +220,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   await expect.poll(hiddenTransform).not.toBe(initialHiddenTransform);
   await expect(
     page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
-  ).toHaveCount(2);
+  ).toHaveCount(3);
   await hiddenBubble
     .getByRole('button', { name: /^Mostrar artefacto:/ })
     .click();
@@ -235,4 +279,55 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     ),
   ).toBeVisible();
   await expect(resultado.locator('iframe.artifact-html-frame')).toBeVisible();
+});
+
+test('compact artifact type tokens stay bounded in Spanish and English', async ({
+  page,
+}) => {
+  const labels = [
+    'HTML',
+    'SVG',
+    'CSV',
+    'DOCX',
+    'XLSX',
+    'PPTX',
+    'Nota',
+    'Imagen',
+    'Archivo',
+    'Texto',
+    'Note',
+    'Image',
+    'File',
+    'Text',
+  ];
+  const css = readFileSync('src/client/workspace.css', 'utf8');
+  await page.setContent(`
+    <style>:root { --artifact-bubble-size: 72px; } ${css}</style>
+    <div>${labels
+      .map(
+        (label) =>
+          `<span class="artifact-bubble-type-label" data-label="${label}">${label}</span>`,
+      )
+      .join('')}</div>
+  `);
+
+  const measured = await page
+    .locator('.artifact-bubble-type-label')
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const style = getComputedStyle(element);
+        return {
+          label: element.textContent,
+          bounded: element.scrollWidth <= element.clientWidth,
+          overflow: style.overflow,
+          whiteSpace: style.whiteSpace,
+        };
+      }),
+    );
+  expect(measured).toHaveLength(labels.length);
+  for (const label of measured) {
+    expect(label.bounded, `${label.label} should fit its token box`).toBe(true);
+    expect(label.overflow).toBe('hidden');
+    expect(label.whiteSpace).toBe('nowrap');
+  }
 });
