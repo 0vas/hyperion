@@ -24,6 +24,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
       { id: 'end', title: 'Fin', kind: 'end', dependencies: ['write'] },
     ],
   };
+  const longHtmlName = 'demo-hyperion-guia-de-contenido-final.html';
   const created = await request.post('/api/runs', {
     headers,
     data: { commandId: crypto.randomUUID(), plan },
@@ -50,7 +51,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
       commandId: 'upload-canvas-preview',
       stepId: 'write',
       attempt: 1,
-      name: 'guia.html',
+      name: longHtmlName,
       mediaType: 'text/html',
       contentBase64: Buffer.from(
         '<h1>Guía en canvas</h1><script>window.attacked=true</script>',
@@ -81,15 +82,34 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     'data-kind',
     'markup',
   );
+  const showArtifact = initialBubble.getByRole('button', {
+    name: `Mostrar artefacto: ${longHtmlName}`,
+  });
+  await expect(initialBubble.locator('.artifact-bubble-type-label')).toHaveText(
+    'Página web',
+  );
+  await expect(showArtifact).toHaveAttribute(
+    'title',
+    `Mostrar artefacto: ${longHtmlName}`,
+  );
+  await expect(showArtifact).toHaveAttribute(
+    'aria-label',
+    `Mostrar artefacto: ${longHtmlName}`,
+  );
+  const tooltipId = await showArtifact.getAttribute('aria-describedby');
+  expect(tooltipId).toBeTruthy();
+  const tooltip = page.locator(`#${tooltipId}`);
+  await expect(tooltip).toHaveText(longHtmlName);
+  await expect(tooltip).toBeHidden();
+  await showArtifact.focus();
+  await expect(tooltip).toBeVisible();
   await expect(
     page
       .getByRole('button', { name: 'Ver paso: Preparar guía' })
       .locator('.node-status-footer'),
   ).toBeVisible();
   await expect(tile.locator('.preview-tile')).toHaveCount(0);
-  await initialBubble
-    .getByRole('button', { name: /^Mostrar artefacto:/ })
-    .click();
+  await page.keyboard.press('Enter');
   await expect(
     tile.getByRole('group', { name: 'Vista previa del paso Preparar guía' }),
   ).toBeVisible();
@@ -121,6 +141,9 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   await expect(officeBubble).toHaveAttribute(
     'aria-label',
     'Descargar demo-hyperion-presentacion-final.pptx',
+  );
+  await expect(officeBubble.locator('.artifact-bubble-type-label')).toHaveText(
+    'Presentación',
   );
   await expect(officeBubble).toHaveAttribute(
     'href',

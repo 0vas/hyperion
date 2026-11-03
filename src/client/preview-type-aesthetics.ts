@@ -85,6 +85,29 @@ export function previewBubbleIconKind(
   return kind === 'office' ? 'text' : kind;
 }
 
+/**
+ * Compact bubbles name the artifact class, never a clipped fragment of its
+ * filename. The caller translates this stable Spanish source key with `t()`;
+ * the filename itself stays verbatim in the action and tooltip.
+ */
+export function artifactBubbleLabelKey(artifact: Artifact): string {
+  const office = officeKindForArtifact(artifact);
+  if (office === 'docx') return 'Documento';
+  if (office === 'xlsx') return 'Hoja de cálculo';
+  if (office === 'pptx') return 'Presentación';
+  if (office === 'other') return 'Documento';
+
+  const markup =
+    artifact.mediaType === 'text/html' ||
+    artifact.mediaType === 'image/svg+xml';
+  const kind = previewAestheticKind(artifact, { isSandboxedMarkup: markup });
+  if (kind === 'markup') return 'Página web';
+  if (kind === 'image') return 'Imagen';
+  if (kind === 'csv') return 'Tabla';
+  if (kind === 'note') return 'Notas';
+  return 'Texto';
+}
+
 /** Minimal CSV/TSV split — not a spreadsheet engine (Track J4). */
 export function parseDelimitedPreview(
   raw: string,

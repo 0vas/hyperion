@@ -15,6 +15,7 @@ import {
   artifactFileUrl,
 } from './ArtifactSandboxPreview';
 import {
+  artifactBubbleLabelKey,
   officeKindForArtifact,
   previewBubbleIconKind,
 } from './preview-type-aesthetics';
@@ -24,7 +25,7 @@ import {
 } from './preview-tile-ui';
 import { previewBubbleLayout } from './canvas-preview';
 import { t, useLocale } from './i18n';
-import type { CSSProperties } from 'react';
+import { useId, type CSSProperties } from 'react';
 
 export type PreviewNodeData = {
   producerStepId: string;
@@ -53,6 +54,8 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
   const { tileUi } = data;
   const officeKind = officeKindForArtifact(data.artifact);
   const bubbleIconKind = previewBubbleIconKind(data.artifact);
+  const bubbleLabel = t(artifactBubbleLabelKey(data.artifact));
+  const filenameTooltipId = useId();
   const mountsPreview = previewTileMountsIframe(tileUi);
   const hideLabel = tileUi.collapsed
     ? t('Mostrar artefacto')
@@ -91,14 +94,22 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           href={href}
           aria-label={t('Descargar {0}', { 0: data.artifact.name })}
           title={t('Descargar {0}', { 0: data.artifact.name })}
+          aria-describedby={filenameTooltipId}
           onClick={(event) => event.stopPropagation()}
           {...(data.artifact.url
             ? { target: '_blank', rel: 'noopener noreferrer' }
             : { download: data.artifact.name })}
         >
           <OfficeFileIcon kind={officeKind} />
-          <span>{data.artifact.name}</span>
+          <span className="artifact-bubble-type-label">{bubbleLabel}</span>
           <Download size={14} aria-hidden="true" />
+          <span
+            id={filenameTooltipId}
+            className="artifact-bubble-filename-tooltip"
+            role="tooltip"
+          >
+            {data.artifact.name}
+          </span>
         </a>
       </div>
     );
@@ -131,10 +142,18 @@ export function PreviewNode({ data }: NodeProps<Node<PreviewNodeData>>) {
           className="artifact-bubble-action nodrag nopan"
           aria-label={t('Mostrar artefacto: {0}', { 0: data.artifact.name })}
           title={t('Mostrar artefacto: {0}', { 0: data.artifact.name })}
+          aria-describedby={filenameTooltipId}
           onClick={() => data.onTileUiChange({ ...tileUi, collapsed: false })}
         >
           <PreviewArtifactIcon kind={bubbleIconKind} />
-          <span>{data.artifact.name}</span>
+          <span className="artifact-bubble-type-label">{bubbleLabel}</span>
+          <span
+            id={filenameTooltipId}
+            className="artifact-bubble-filename-tooltip"
+            role="tooltip"
+          >
+            {data.artifact.name}
+          </span>
         </button>
       </div>
     );
