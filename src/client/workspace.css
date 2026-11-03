@@ -862,13 +862,13 @@ a.preview-tile-action.icon-button {
   height: 30px;
 }
 .artifact-bubble-type-label {
-  max-width: calc(var(--artifact-bubble-size) - 20px);
-  overflow: hidden;
+  width: 64px;
+  overflow: visible;
   display: block;
-  text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1.05;
+  letter-spacing: -0.015em;
 }
 .artifact-bubble-filename-tooltip {
   position: absolute;

@@ -223,6 +223,17 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
   );
   assert.equal(
     artifactBubbleLabelKey({
+      id: 'xlsx',
+      name: 'presupuesto-anual-de-licencias.xlsx',
+      mediaType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      attempt: 1,
+      createdAt: '',
+    }),
+    'Hoja de cálculo',
+  );
+  assert.equal(
+    artifactBubbleLabelKey({
       id: 'pptx',
       name: 'demo-hyperion-presentacion-final.pptx',
       mediaType:
@@ -233,7 +244,15 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
     'Presentación',
   );
   assert.equal(translate('en', 'Página web'), 'Web page');
+  assert.equal(translate('en', 'Hoja de cálculo'), 'Spreadsheet');
   assert.equal(translate('en', 'Presentación'), 'Presentation');
+
+  const css = readFileSync(resolve('src/client/workspace.css'), 'utf8');
+  const labelRule =
+    /\.artifact-bubble-type-label\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(labelRule, /width:\s*64px/);
+  assert.match(labelRule, /font-size:\s*8px/);
+  assert.doesNotMatch(labelRule, /text-overflow:\s*ellipsis/);
 });
 
 test('PreviewNode has one frame, full-screen expansion, and connected movable bubbles', () => {

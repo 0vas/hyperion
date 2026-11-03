@@ -72,6 +72,22 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
     },
   });
   expect(officeUploaded.ok()).toBe(true);
+  const spreadsheetUploaded = await request.post(
+    `/api/runs/${run.id}/artifacts`,
+    {
+      headers,
+      data: {
+        commandId: 'upload-canvas-preview-spreadsheet',
+        stepId: 'write',
+        attempt: 1,
+        name: 'presupuesto-anual-de-licencias.xlsx',
+        mediaType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        contentBase64: Buffer.from('spreadsheet bytes').toString('base64'),
+      },
+    },
+  );
+  expect(spreadsheetUploaded.ok()).toBe(true);
   await command('complete');
   await page.goto(`/?run=${run.id}`);
   const tile = page.getByTestId('rf__node-preview:write');
@@ -145,13 +161,18 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   await expect(officeBubble.locator('.artifact-bubble-type-label')).toHaveText(
     'Presentación',
   );
+  await expect(
+    page.locator(
+      '.artifact-download-bubble .artifact-bubble-action[download="presupuesto-anual-de-licencias.xlsx"] .artifact-bubble-type-label',
+    ),
+  ).toHaveText('Hoja de cálculo');
   await expect(officeBubble).toHaveAttribute(
     'href',
     new RegExp(`/api/runs/${run.id}/artifacts/`),
   );
   await expect(
     page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
-  ).toHaveCount(2);
+  ).toHaveCount(3);
   const officeNode = page.locator('.react-flow__node').filter({
     has: officeBubble,
   });
@@ -199,7 +220,7 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   await expect.poll(hiddenTransform).not.toBe(initialHiddenTransform);
   await expect(
     page.locator('[data-testid^="rf__edge-preview-tether:write:"]'),
-  ).toHaveCount(2);
+  ).toHaveCount(3);
   await hiddenBubble
     .getByRole('button', { name: /^Mostrar artefacto:/ })
     .click();
