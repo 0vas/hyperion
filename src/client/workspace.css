@@ -863,7 +863,7 @@ a.preview-tile-action.icon-button {
 }
 .artifact-bubble-type-label {
   width: calc(var(--artifact-bubble-size) - 20px);
-  overflow: visible;
+  overflow: hidden;
   display: block;
   white-space: nowrap;
   font-size: 9px;

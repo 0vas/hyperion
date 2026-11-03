@@ -254,6 +254,7 @@ test('compact bubbles use a semantic label instead of fragmenting filenames', ()
     /width:\s*calc\(var\(--artifact-bubble-size\)\s*-\s*20px\)/,
   );
   assert.match(labelRule, /font-size:\s*9px/);
+  assert.match(labelRule, /overflow:\s*hidden/);
   assert.doesNotMatch(labelRule, /text-overflow:\s*ellipsis/);
 });
 

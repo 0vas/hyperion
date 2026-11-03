@@ -280,3 +280,54 @@ test('canvas preview tiles select the producer and collapse under 900px', async 
   ).toBeVisible();
   await expect(resultado.locator('iframe.artifact-html-frame')).toBeVisible();
 });
+
+test('compact artifact type tokens stay bounded in Spanish and English', async ({
+  page,
+}) => {
+  const labels = [
+    'HTML',
+    'SVG',
+    'CSV',
+    'DOCX',
+    'XLSX',
+    'PPTX',
+    'Nota',
+    'Imagen',
+    'Archivo',
+    'Texto',
+    'Note',
+    'Image',
+    'File',
+    'Text',
+  ];
+  const css = readFileSync('src/client/workspace.css', 'utf8');
+  await page.setContent(`
+    <style>:root { --artifact-bubble-size: 72px; } ${css}</style>
+    <div>${labels
+      .map(
+        (label) =>
+          `<span class="artifact-bubble-type-label" data-label="${label}">${label}</span>`,
+      )
+      .join('')}</div>
+  `);
+
+  const measured = await page
+    .locator('.artifact-bubble-type-label')
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const style = getComputedStyle(element);
+        return {
+          label: element.textContent,
+          bounded: element.scrollWidth <= element.clientWidth,
+          overflow: style.overflow,
+          whiteSpace: style.whiteSpace,
+        };
+      }),
+    );
+  expect(measured).toHaveLength(labels.length);
+  for (const label of measured) {
+    expect(label.bounded, `${label.label} should fit its token box`).toBe(true);
+    expect(label.overflow).toBe('hidden');
+    expect(label.whiteSpace).toBe('nowrap');
+  }
+});
