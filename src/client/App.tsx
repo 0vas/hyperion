@@ -876,6 +876,7 @@ export function App() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [retryTarget, setRetryTarget] = useState<string>();
   const [amending, setAmending] = useState(false);
+  const amendDraftRef = useRef<Record<string, string>>({});
   const [confirmation, setConfirmation] = useState<
     'cancel' | 'reject' | 'retry' | 'amend' | null
   >(null);
@@ -1718,13 +1719,22 @@ export function App() {
     setBusy(true);
     setError('');
     try {
+      const targetStep = target
+        ? run.steps.find((item) => item.id === target)
+        : step;
+      const draft =
+        type === 'amend' && Object.keys(amendDraftRef.current).length
+          ? amendDraftRef.current
+          : outputDraft;
       const outputs =
-        step && ['submit', 'approve'].includes(type) && step.outputs?.length
+        targetStep &&
+        ['submit', 'approve', 'amend'].includes(type) &&
+        targetStep.outputs?.length
           ? Object.fromEntries(
-              step.outputs
-                .filter((port) => !!outputDraft[port.name]?.trim())
+              targetStep.outputs
+                .filter((port) => !!draft[port.name]?.trim())
                 .map((port) => {
-                  const raw = outputDraft[port.name]!;
+                  const raw = draft[port.name]!;
                   return [port.name, parseField(port, raw)];
                 }),
             )
@@ -1799,6 +1809,7 @@ export function App() {
   }
   function requestAmend() {
     if (!run || !step) return;
+    amendDraftRef.current = { ...outputDraft };
     const irreversible = irreversibleAmendTargets(run, step.id);
     if (irreversible.length > 0) setConfirmation('amend');
     else void act('amend', step.id);
@@ -2559,7 +2570,9 @@ export function App() {
                             className="secondary full amend-button"
                             disabled={busy || !online}
                             onClick={() => {
-                              setOutputDraft(draftFromOutputValues(step));
+                              const draft = draftFromOutputValues(step);
+                              amendDraftRef.current = draft;
+                              setOutputDraft(draft);
                               setAnswer('');
                               setError('');
                               setAmending(true);
