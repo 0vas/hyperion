@@ -46,7 +46,7 @@ jobs:
           assert.ok(release.body?.length > 100, 'Reviewed release notes required');
           appendFileSync(process.env.GITHUB_OUTPUT, `version=${metadata.version}\ntag=${tag}\nrelease_id=${release.id}\n`);
           JS
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           run-id: ${{ inputs.build_run }}
           github-token: ${{ github.token }}
