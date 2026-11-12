@@ -201,6 +201,10 @@ Todas las respuestas HTTP/MCP/CLI incluyen `step.availableContext`: `request`, `
 
 Una ruta admite `label`, por ejemplo `"Continuar con el informe"`. Sin etiqueta, una condición booleana usa `form.trueLabel` / `form.falseLabel` del campo o «Sí» / «No». La alternativa de una exclusión binaria usa el valor opuesto. Otras alternativas muestran «Otra opción». Las condiciones de ejecución permanecen sin cambios; sus identificadores técnicos no son instrucciones para la persona.
 
+## Corrección humana de una respuesta ya guardada (amend)
+
+La persona puede corregir las salidas tipadas de un paso **manual completado** con el comando `amend` (no es `retry`, ni `revise`, ni un ciclo `parentRunId`). Conserva el historial (evento `amend` con valores previos), exige `expectedRevision` y `commandId`, y reabre trabajo agent derivado según la política C: si hay descendientes agent completados/fallidos o con artefactos, hace falta `acknowledgeIrreversible: true`; la lista vacía no pide diálogo extra. No deshace efectos externos. Las reglas están en [el protocolo](protocol.md#human-amend-of-a-saved-manual-answer).
+
 ## Revisión excepcional durante una conversación
 
 Un cambio explícito de alcance puede modificar el trabajo futuro dentro del mismo flujo mediante `revise`. Se valida el plan completo, se conserva lo ya ejecutado y se archivan ambas versiones. No se cambian compuertas resueltas ni decisiones ya presentadas; no puede haber trabajo en ejecución. El flujo queda pausado para revisión humana. Las reglas y campos están en [el protocolo](protocol.md#exceptional-plan-revision).
