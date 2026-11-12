@@ -264,6 +264,19 @@
 .decision-footer {
   margin-top: 22px;
 }
+.amend-irreversible-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.amend-irreversible-list li {
+  line-height: 1.35;
+}
+.amend-button {
+  margin-top: 0.75rem;
+}
 .canvas-app .human-action .decision-footer .primary {
   min-height: 44px;
   border-radius: 10px;

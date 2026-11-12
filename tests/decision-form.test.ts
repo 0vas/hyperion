@@ -1,7 +1,42 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRun } from '../src/domain/workflow.js';
-import { fieldError, parseField } from '../src/client/decision-form.js';
+import {
+  draftFromOutputValues,
+  fieldError,
+  parseField,
+} from '../src/client/decision-form.js';
+
+test('draftFromOutputValues prefills typed ports for amend', () => {
+  const run = createRun(
+    {
+      title: 'Amend draft',
+      steps: [
+        {
+          id: 'answer',
+          title: 'Decide',
+          kind: 'manual',
+          outputs: [
+            { name: 'choice', type: 'string', required: true },
+            { name: 'ok', type: 'boolean', required: true },
+            { name: 'count', type: 'number', required: true },
+          ],
+        },
+      ],
+    },
+    'codex',
+  );
+  const step = {
+    ...run.steps[0]!,
+    status: 'completed' as const,
+    outputValues: { choice: 'first', ok: true, count: 3 },
+  };
+  assert.deepEqual(draftFromOutputValues(step), {
+    choice: 'first',
+    ok: 'true',
+    count: '3',
+  });
+});
 
 test('field guidance is optional and never changes output types or selects an answer', () => {
   const run = createRun(
