@@ -307,10 +307,11 @@ export function ResultadoStage({
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const waiting = !!step && step.status === 'waiting' && live;
+  const showActionForm = !!waitingForm && live && !!step;
   const [sheetExpanded, setSheetExpanded] = useState(false);
   useEffect(() => {
-    setSheetExpanded(waiting);
-  }, [step?.id, job?.id, waiting]);
+    setSheetExpanded(waiting || showActionForm);
+  }, [step?.id, job?.id, waiting, showActionForm]);
   useEffect(() => {
     closeRef.current?.focus();
   }, [step?.id, job?.id]);
@@ -363,12 +364,16 @@ export function ResultadoStage({
       </header>
 
       <div className="resultado-body">
-        {waiting && waitingForm && (
+        {showActionForm && (
           <section
             className="resultado-waiting"
-            aria-label={t('Tu turno en este paso')}
+            aria-label={
+              waiting ? t('Tu turno en este paso') : t('Corregir respuesta')
+            }
           >
-            <p className="resultado-lead-in">{t('Tu turno en este paso')}</p>
+            {waiting && (
+              <p className="resultado-lead-in">{t('Tu turno en este paso')}</p>
+            )}
             {waitingForm}
           </section>
         )}

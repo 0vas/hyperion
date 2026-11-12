@@ -57,6 +57,7 @@ import {
 } from '@xyflow/react';
 import {
   Package,
+  Pencil,
   RotateCcw,
   ArrowUpRight,
   Focus,
@@ -95,7 +96,7 @@ import {
 import { CurrentEdge } from './CurrentEdge';
 import { BpmnSymbol } from './BpmnSymbol';
 import { HumanForm } from './HumanForm';
-import { parseField } from './decision-form';
+import { draftFromOutputValues, parseField } from './decision-form';
 import { canvasInsets, previewTileBreakpoint, resultadoDock } from './viewport';
 import {
   previewBubbleLayout,
@@ -140,7 +141,13 @@ import { requestDesktopUpdateCheck } from './desktop-updates';
 import { usePreferences } from './preferences';
 import { RELEASE_CHANNEL, VERSION } from '../version';
 import { layoutSteps } from './layout';
-import type { Run, Step, StepStatus } from '../domain/workflow';
+import {
+  irreversibleAmendTargets,
+  transitiveDependents,
+  type Run,
+  type Step,
+  type StepStatus,
+} from '../domain/workflow';
 
 const labels: Record<StepStatus, string> = localizedLabels({
   blocked: 'En espera',
@@ -658,6 +665,15 @@ async function api<T>(path: string, data?: unknown): Promise<T> {
       TERMINAL: t('Este flujo ya terminó.'),
       FORBIDDEN: t('Esta acción corresponde a otro participante.'),
       EVIDENCE_REQUIRED: t('Escribe una respuesta antes de continuar.'),
+      IRREVERSIBLE_CONFIRMATION_REQUIRED: t(
+        'Confirma la lista de efectos irreversibles antes de corregir.',
+      ),
+      RUNNING_TASKS: t(
+        'Espera a que terminen las tareas en curso antes de corregir.',
+      ),
+      NOT_AMENDABLE: t(
+        'Solo puedes corregir una respuesta manual ya guardada.',
+      ),
     };
     throw new Error(
       messages[body.error] ||
@@ -859,8 +875,10 @@ export function App() {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [retryTarget, setRetryTarget] = useState<string>();
+  const [amending, setAmending] = useState(false);
+  const amendDraftRef = useRef<Record<string, string>>({});
   const [confirmation, setConfirmation] = useState<
-    'cancel' | 'reject' | 'retry' | null
+    'cancel' | 'reject' | 'retry' | 'amend' | null
   >(null);
   useEffect(() => {
     if (popup || help || confirmation) setMenuOpen(false);
@@ -1115,6 +1133,7 @@ export function App() {
     setOutputDraft({});
     setError('');
     setConfirmation(null);
+    setAmending(false);
   }, [run?.id]);
   useEffect(() => {
     // Keep drafts across Resultado close/reopen of the same step; reset only on a different step.
@@ -1124,6 +1143,7 @@ export function App() {
     setOutputDraft({});
     setError('');
     setConfirmation(null);
+    setAmending(false);
   }, [stepId]);
   const selectRun = (id: string) => {
     setRunId(id);
@@ -1690,18 +1710,31 @@ export function App() {
       setConfirmation('retry');
     } else void act('retry', id);
   }
-  async function act(type: string, target?: string) {
+  async function act(
+    type: string,
+    target?: string,
+    options?: { acknowledgeIrreversible?: boolean },
+  ) {
     if (!run || busy) return;
     setBusy(true);
     setError('');
     try {
+      const targetStep = target
+        ? run.steps.find((item) => item.id === target)
+        : step;
+      const draft =
+        type === 'amend' && Object.keys(amendDraftRef.current).length
+          ? amendDraftRef.current
+          : outputDraft;
       const outputs =
-        step && ['submit', 'approve'].includes(type) && step.outputs?.length
+        targetStep &&
+        ['submit', 'approve', 'amend'].includes(type) &&
+        targetStep.outputs?.length
           ? Object.fromEntries(
-              step.outputs
-                .filter((port) => !!outputDraft[port.name]?.trim())
+              targetStep.outputs
+                .filter((port) => !!draft[port.name]?.trim())
                 .map((port) => {
-                  const raw = outputDraft[port.name]!;
+                  const raw = draft[port.name]!;
                   return [port.name, parseField(port, raw)];
                 }),
             )
@@ -1710,9 +1743,19 @@ export function App() {
         type,
         ...(outputs ? { outputs } : {}),
         ...(target ? { stepId: target } : {}),
-        ...(answer.trim() ? { message: answer.trim() } : {}),
+        ...(type === 'amend'
+          ? {
+              message:
+                answer.trim() || t('Corrección de la respuesta guardada.'),
+            }
+          : answer.trim()
+            ? { message: answer.trim() }
+            : {}),
         commandId: crypto.randomUUID(),
         expectedRevision: run.revision,
+        ...(options?.acknowledgeIrreversible
+          ? { acknowledgeIrreversible: true }
+          : {}),
       });
       setAnswer('');
       if (['submit', 'approve'].includes(type))
@@ -1739,8 +1782,20 @@ export function App() {
             'Solicitud de reintento enviada. Se conserva el historial y tus respuestas.',
           ),
         );
+      if (type === 'amend') {
+        setNotice(
+          t(
+            'Corrección guardada. El historial conserva la respuesta anterior; el trabajo derivado se reabre si aplica.',
+          ),
+        );
+        setAmending(false);
+      }
       setConfirmation(null);
-      if (['submit', 'approve', 'reject', 'cancel', 'retry'].includes(type)) {
+      if (
+        ['submit', 'approve', 'reject', 'cancel', 'retry', 'amend'].includes(
+          type,
+        )
+      ) {
         setPopup(null);
         clearResultado();
       }
@@ -1751,6 +1806,13 @@ export function App() {
     } finally {
       setBusy(false);
     }
+  }
+  function requestAmend() {
+    if (!run || !step) return;
+    amendDraftRef.current = { ...outputDraft };
+    const irreversible = irreversibleAmendTargets(run, step.id);
+    if (irreversible.length > 0) setConfirmation('amend');
+    else void act('amend', step.id);
   }
   async function copyPrompt() {
     try {
@@ -2443,7 +2505,7 @@ export function App() {
                   eventLabels={eventLabels}
                   reduceMotion={preferences.reduceMotion}
                   waitingForm={
-                    step && step.status === 'waiting' && live ? (
+                    step && live && step.status === 'waiting' ? (
                       <div className="answering-step">
                         <HumanForm
                           key={step.id}
@@ -2464,6 +2526,61 @@ export function App() {
                           }
                           onReject={() => setConfirmation('reject')}
                         />
+                      </div>
+                    ) : step &&
+                      live &&
+                      step.kind === 'manual' &&
+                      step.status === 'completed' &&
+                      !!step.outputs?.length ? (
+                      <div className="answering-step">
+                        {amending ? (
+                          <HumanForm
+                            key={`amend-${step.id}`}
+                            mode="amend"
+                            step={step}
+                            answer={answer}
+                            onAnswer={setAnswer}
+                            values={outputDraft}
+                            onValues={setOutputDraft}
+                            busy={busy}
+                            online={online}
+                            agentWaiting={!!run.agentWaiting}
+                            continuation={run.continuation}
+                            amendBlocked={
+                              transitiveDependents(run, step.id).some(
+                                (s) => s.status === 'running',
+                              )
+                                ? t(
+                                    'Espera a que terminen las tareas en curso antes de corregir.',
+                                  )
+                                : undefined
+                            }
+                            onSubmit={requestAmend}
+                            onReject={() => undefined}
+                            onCancelAmend={() => {
+                              setAmending(false);
+                              setOutputDraft({});
+                              setAnswer('');
+                              setError('');
+                            }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            className="secondary full amend-button"
+                            disabled={busy || !online}
+                            onClick={() => {
+                              const draft = draftFromOutputValues(step);
+                              amendDraftRef.current = draft;
+                              setOutputDraft(draft);
+                              setAnswer('');
+                              setError('');
+                              setAmending(true);
+                            }}
+                          >
+                            <Pencil size={16} /> {t('Corregir respuesta')}
+                          </button>
+                        )}
                       </div>
                     ) : undefined
                   }
@@ -3207,17 +3324,44 @@ export function App() {
                 ? t('Cancelar este flujo')
                 : confirmation === 'retry'
                   ? t('Recuperar tarea atascada')
-                  : t('Rechazar este paso')}
+                  : confirmation === 'amend'
+                    ? t('Confirmar efectos irreversibles')
+                    : t('Rechazar este paso')}
             </h2>
             <p>
               {confirmation === 'retry'
                 ? t(
                     'Se habilitará un nuevo intento conservando tus respuestas y el historial. Esto no cancela herramientas externas: el agente debe comprobar qué terminó antes de repetir acciones.',
                   )
-                : t(
-                    'El flujo quedará cerrado. Esta decisión no deshace acciones que el agente ya haya ejecutado.',
-                  )}
+                : confirmation === 'amend'
+                  ? t(
+                      'Corregir esta respuesta reabrirá trabajo del agente ya ejecutado. Hyperion no deshace efectos externos (archivos, APIs, envíos). Confirma que entiendes esta lista:',
+                    )
+                  : t(
+                      'El flujo quedará cerrado. Esta decisión no deshace acciones que el agente ya haya ejecutado.',
+                    )}
             </p>
+            {confirmation === 'amend' && run && step && (
+              <ul className="amend-irreversible-list">
+                {irreversibleAmendTargets(run, step.id).map((item) => (
+                  <li key={item.id}>
+                    <strong>{item.title}</strong>
+                    <span className={`status-tag ${item.status}`}>
+                      {labels[item.status]}
+                    </span>
+                    {(item.artifacts?.length || 0) > 0 && (
+                      <span>
+                        {' '}
+                        · {item.artifacts!.length}{' '}
+                        {item.artifacts!.length === 1
+                          ? t('artefacto')
+                          : t('artefactos')}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
             {confirmation === 'reject' && (
               <>
                 <label htmlFor="rejection-reason">
@@ -3245,29 +3389,36 @@ export function App() {
                 {t('Volver')}
               </button>
               <button
-                className="danger"
+                className={confirmation === 'amend' ? 'primary' : 'danger'}
                 disabled={
                   busy ||
                   !online ||
                   (confirmation === 'reject' && !answer.trim())
                 }
                 onClick={() =>
-                  void act(
-                    confirmation,
-                    confirmation === 'retry'
-                      ? retryTarget
-                      : confirmation === 'reject'
-                        ? step?.id
-                        : undefined,
-                  )
+                  confirmation === 'amend'
+                    ? void act('amend', step?.id, {
+                        acknowledgeIrreversible: true,
+                      })
+                    : void act(
+                        confirmation,
+                        confirmation === 'retry'
+                          ? retryTarget
+                          : confirmation === 'reject'
+                            ? step?.id
+                            : undefined,
+                      )
                 }
               >
-                {t('Confirmar')}{' '}
-                {confirmation === 'cancel'
-                  ? t('cancelación')
-                  : confirmation === 'retry'
-                    ? t('recuperación')
-                    : t('rechazo')}
+                {confirmation === 'amend'
+                  ? t('Confirmar y corregir')
+                  : `${t('Confirmar')} ${
+                      confirmation === 'cancel'
+                        ? t('cancelación')
+                        : confirmation === 'retry'
+                          ? t('recuperación')
+                          : t('rechazo')
+                    }`}
               </button>
             </div>
           </section>

@@ -80,6 +80,7 @@ export const commandSchema = z
       'resume',
       'cancel',
       'revise',
+      'amend',
     ]),
     plan: planSchema.optional(),
     stepId: identifier.optional(),
@@ -89,6 +90,8 @@ export const commandSchema = z
     attempt: z.number().int().positive().optional(),
     expectedRevision: z.number().int().nonnegative().optional(),
     commandId: z.string().min(1).max(128).optional(),
+    /** Policy C: required when amend has irreversible agent descendants. */
+    acknowledgeIrreversible: z.boolean().optional(),
   })
   .strict();
 export type Plan = z.infer<typeof planSchema>;
@@ -206,6 +209,50 @@ export function refreshRun(run: Run) {
   if (run.steps.every((step) => step.status === 'completed'))
     run.status = 'completed';
 }
+
+/** Steps that transitively depend on `rootId` (excludes root). */
+export function transitiveDependents(run: Run, rootId: string): Step[] {
+  const children = new Map<string, string[]>();
+  for (const step of run.steps) {
+    for (const dep of step.dependencies) {
+      const list = children.get(dep) || [];
+      list.push(step.id);
+      children.set(dep, list);
+    }
+  }
+  const found = new Set<string>();
+  const stack = [...(children.get(rootId) || [])];
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (found.has(id)) continue;
+    found.add(id);
+    for (const next of children.get(id) || []) stack.push(next);
+  }
+  return run.steps.filter((s) => found.has(s.id));
+}
+
+/** Policy C irreversible set: completed/failed agent descendants, or any agent descendant with artifacts. */
+export function irreversibleAmendTargets(
+  run: Run,
+  manualStepId: string,
+): Step[] {
+  return transitiveDependents(run, manualStepId).filter(
+    (s) =>
+      s.kind === 'agent' &&
+      (['completed', 'failed'].includes(s.status) ||
+        (s.artifacts?.length || 0) > 0),
+  );
+}
+
+function reopenDerivedStep(step: Step, _at: string) {
+  step.status = 'blocked';
+  delete step.result;
+  delete step.outputValues;
+  delete step.startedAt;
+  delete step.completedAt;
+  delete step.inputValues;
+  // Keep attempt count and artifacts as historical evidence; next start bumps attempt.
+}
 export function createRun(input: unknown, coordinator: string): Run {
   const plan = normalizeRequiredBindings(planSchema.parse(input));
   const byId = new Map(plan.steps.map((step) => [step.id, step]));
@@ -297,7 +344,8 @@ export function transition(
     400,
   );
   requireCondition(
-    !command.outputs || ['complete', 'submit', 'approve'].includes(type),
+    !command.outputs ||
+      ['complete', 'submit', 'approve', 'amend'].includes(type),
     'INVALID_COMMAND',
     'Outputs belong to task completion',
     400,
@@ -333,6 +381,7 @@ export function transition(
     'pause',
     'resume',
     'cancel',
+    'amend',
   ];
   if (humanActions.includes(type))
     requireCondition(
@@ -401,6 +450,81 @@ export function transition(
       run.status = 'active';
     }
     if (type === 'cancel') run.status = 'cancelled';
+  } else if (type === 'amend') {
+    requireCondition(!!stepId, 'INVALID_COMMAND', 'Amend requires stepId', 400);
+    requireCondition(
+      command.expectedRevision !== undefined,
+      'REVISION_REQUIRED',
+      'Amend requires expectedRevision',
+      400,
+    );
+    requireCondition(
+      !!command.commandId,
+      'INVALID_COMMAND',
+      'Amend requires commandId',
+      400,
+    );
+    requireCondition(
+      command.acknowledgeIrreversible === undefined ||
+        command.acknowledgeIrreversible === true,
+      'INVALID_COMMAND',
+      'acknowledgeIrreversible must be true when supplied',
+      400,
+    );
+    const step = run.steps.find((s) => s.id === stepId);
+    requireCondition(step, 'NOT_FOUND', 'Step not found', 404);
+    requireCondition(
+      step.kind === 'manual',
+      'INVALID_KIND',
+      'Amend requires a completed manual step',
+    );
+    requireCondition(
+      step.status === 'completed',
+      'NOT_AMENDABLE',
+      'Only a completed manual step can be amended',
+    );
+    requireCondition(
+      !!command.outputs && Object.keys(command.outputs).length > 0,
+      'INVALID_COMMAND',
+      'Amend requires typed outputs',
+      400,
+    );
+    requireCondition(
+      message.length > 0,
+      'EVIDENCE_REQUIRED',
+      'A non-empty reason for the amendment is required',
+      400,
+    );
+    const dependents = transitiveDependents(run, step.id);
+    requireCondition(
+      !dependents.some((s) => s.status === 'running'),
+      'RUNNING_TASKS',
+      'Wait for running descendant tasks to finish before amending',
+    );
+    const irreversible = irreversibleAmendTargets(run, step.id);
+    requireCondition(
+      irreversible.length === 0 || command.acknowledgeIrreversible === true,
+      'IRREVERSIBLE_CONFIRMATION_REQUIRED',
+      `Acknowledge irreversible descendants before amending: ${irreversible.map((s) => s.id).join(', ')}`,
+      400,
+    );
+    const priorOutputs = step.outputValues || {};
+    step.outputValues = validateOutputs(step, command.outputs);
+    message = `${message} | prior=${JSON.stringify(priorOutputs)}`;
+    for (const dependent of dependents) {
+      if (
+        dependent.kind === 'agent' &&
+        ['completed', 'failed', 'ready'].includes(dependent.status)
+      ) {
+        reopenDerivedStep(dependent, now);
+      } else if (
+        dependent.kind !== 'agent' &&
+        ['completed', 'failed'].includes(dependent.status)
+      ) {
+        // Downstream human commits after reopened agent work are stale.
+        reopenDerivedStep(dependent, now);
+      }
+    }
   } else {
     const step = run.steps.find((s) => s.id === stepId);
     requireCondition(step, 'NOT_FOUND', 'Step not found', 404);

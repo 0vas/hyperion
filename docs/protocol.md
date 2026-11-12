@@ -112,6 +112,7 @@ Legacy step kinds: `agent`, `manual`, `approval`. The process profile adds `star
 | complete / fail         | Agent                | Agent step running, nonempty evidence/error                 |
 | submit                  | Human                | Manual step waiting, nonempty response                      |
 | approve / reject        | Human                | Approval step waiting; rejection needs explanation          |
+| amend                   | Human                | Completed manual step; typed outputs; see human amend below |
 | retry                   | Human or coordinator | Failed, ready or running agent step; prior history retained |
 | pause / resume / cancel | Human                | Run-level command, no step ID                               |
 
@@ -144,6 +145,16 @@ Emit `log` before a material action and after its real observation, including fa
 ### Orphan running lease (safety net)
 
 When an agent step stays `running`, no coordinator wait is active, no durable continuation owns the turn, and there has been no progress (`start` / `log` / `complete` / `fail` / `artifact`) for that attempt for **180 seconds**, authenticated GET/SSE projections reconcile the attempt to `failed` with a distinct public `abandon` event (`Attempt abandoned: no progress while no agent wait was active.`). Heartbeats within the lease, `agentWaiting`, and in-flight continuation survive. This does not cancel external tools or replace harness `fail`; see [ADR 0035](decisions/0035-orphan-running-lease.md).
+
+## Human amend of a saved manual answer
+
+The person corrects typed outputs on a **completed** `manual` step without rewriting history as `retry` or `revise`, and without opening a `parentRunId` cycle.
+
+Send `{type: "amend", stepId, outputs, message: REASON, expectedRevision, commandId, acknowledgeIrreversible?}` with a **human** principal. `expectedRevision` and `commandId` are required. Revalidated `outputs` replace the step's current `outputValues`; the prior values are retained in the `amend` event message (`prior=...`). Events are append-only.
+
+**Policy C (irreversible descendants):** if any agent descendant is `completed` or `failed`, or carries artifacts, the command must set `acknowledgeIrreversible: true`. An empty irreversible set needs no acknowledge flag. Hyperion never auto-undoes external effects. While a descendant is `running`, amend is rejected. Terminal runs reject amend; use a linked cycle (`parentRunId`) after completion instead.
+
+After a successful amend, derived agent (and stale completed downstream human) steps reopen similarly to recovery: prior attempts/events/artifacts remain as evidence; readiness is recomputed. Amend is not exposed on MCP agent tools (`hyperion_step` has no `amend` action); agents must not submit it.
 
 ## Exceptional plan revision
 

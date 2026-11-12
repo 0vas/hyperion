@@ -16,6 +16,27 @@ export function parseField(port: FormPort, value: string): unknown {
       ? Number(value)
       : JSON.parse(value);
 }
+/** Prefill amend drafts from saved typed outputs. */
+export function draftFromOutputValues(step: Step): Record<string, string> {
+  const saved = step.outputValues || {};
+  const draft: Record<string, string> = {};
+  for (const port of step.outputs || []) {
+    if (!Object.hasOwn(saved, port.name)) continue;
+    const value = saved[port.name];
+    draft[port.name] =
+      port.type === 'string'
+        ? String(value ?? '')
+        : port.type === 'boolean'
+          ? value
+            ? 'true'
+            : 'false'
+          : port.type === 'number'
+            ? String(value)
+            : JSON.stringify(value);
+  }
+  return draft;
+}
+
 export function fieldError(port: FormPort, value: string): string | undefined {
   if (!value.trim())
     return port.required

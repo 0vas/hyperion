@@ -16,6 +16,9 @@ export function HumanForm({
   continuation,
   onSubmit,
   onReject,
+  mode = 'decide',
+  amendBlocked,
+  onCancelAmend,
 }: {
   step: Step;
   answer: string;
@@ -28,33 +31,43 @@ export function HumanForm({
   continuation?: ContinuationState;
   onSubmit: () => void;
   onReject: () => void;
+  mode?: 'decide' | 'amend';
+  amendBlocked?: string;
+  onCancelAmend?: () => void;
 }) {
   useLocale();
+  const amending = mode === 'amend';
   const manual = step.kind === 'manual';
   const ports = step.outputs || [];
-  const question =
-    step.interaction?.question ||
-    (manual
-      ? ports.length
-        ? t('Completa lo necesario para continuar')
-        : t('¿Qué necesitas para este paso?')
-      : t('¿Apruebas este resultado?'));
-  const context = step.interaction?.context || step.description;
+  const question = amending
+    ? t('Corregir la respuesta guardada')
+    : step.interaction?.question ||
+      (manual
+        ? ports.length
+          ? t('Completa lo necesario para continuar')
+          : t('¿Qué necesitas para este paso?')
+        : t('¿Apruebas este resultado?'));
+  const context = amending
+    ? t(
+        'Los valores tipados se actualizarán. El historial conserva la respuesta anterior. Hyperion no deshace efectos externos del agente.',
+      )
+    : step.interaction?.context || step.description;
   const invalid =
     ports.some((p) => fieldError(p, values[p.name] || '')) ||
     (manual &&
       (ports.length
         ? !Object.values(values).some((v) => v.trim())
-        : !answer.trim()));
+        : !answer.trim())) ||
+    !!amendBlocked;
   return (
     <form
-      className="human-action"
+      className={`human-action${amending ? ' amending' : ''}`}
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
         if (!invalid && !busy && online) onSubmit();
       }}
-      aria-label={t('Tu decisión')}
+      aria-label={amending ? t('Corregir respuesta') : t('Tu decisión')}
     >
       <h3 className="action-title">{question}</h3>
       {context &&
@@ -117,15 +130,28 @@ export function HumanForm({
           ) : (
             <Check size={16} />
           )}
-          {manual
-            ? ports.length
-              ? t('Guardar elección')
-              : t('Enviar respuesta')
-            : t('Aprobar paso')}
+          {amending
+            ? t('Guardar corrección')
+            : manual
+              ? ports.length
+                ? t('Guardar elección')
+                : t('Enviar respuesta')
+              : t('Aprobar paso')}
         </button>
+        {amendBlocked && (
+          <p className="field-error" role="status">
+            {amendBlocked}
+          </p>
+        )}
         {!online ? (
           <p className="field-error" role="status">
             {t('Sin conexión. Tus respuestas siguen aquí.')}
+          </p>
+        ) : amending ? (
+          <p className="decision-return">
+            {t(
+              'Si hay trabajo del agente ya completado, confirmarás la lista de efectos antes de guardar.',
+            )}
           </p>
         ) : (
           <p className="decision-return">
@@ -142,7 +168,17 @@ export function HumanForm({
                   )}
           </p>
         )}
-        {!manual && (
+        {amending && onCancelAmend && (
+          <button
+            type="button"
+            className="text-button"
+            disabled={busy}
+            onClick={onCancelAmend}
+          >
+            {t('Cancelar corrección')}
+          </button>
+        )}
+        {!manual && !amending && (
           <button
             type="button"
             className="text-button reject"
