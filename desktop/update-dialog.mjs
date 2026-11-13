@@ -4,6 +4,12 @@ import { markPostUpdateRefresh } from './post-update-refresh.mjs';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+function channelLabel(channel) {
+  const value = String(channel || 'preview').toLowerCase();
+  if (value === 'stable') return 'Stable';
+  return 'Preview';
+}
+
 export function createUpdateController({
   t = (message, values = {}) =>
     message.replace(/\{(\d+)\}/g, (match, key) =>
@@ -55,17 +61,25 @@ export function createUpdateController({
             await dialog.showMessageBox(window, {
               type: 'info',
               message: t('No hay una versión más reciente compatible'),
-              detail: t('Versión instalada: {0}', { 0: currentVersion }),
+              detail: t('Versión instalada: {0} ({1})', {
+                0: currentVersion,
+                1: channelLabel(channel),
+              }),
               buttons: [t('Listo')],
             });
           return;
         }
         const answer = await dialog.showMessageBox(window, {
-          type: 'info',
-          message: t('Actualización disponible'),
+          type: 'warning',
+          message: t('Conviene actualizar Hyperion'),
           detail: t(
-            'Tienes {0}. Se descarga desde GitHub, se verifica el digest y Hyperion se reinicia. Tus flujos se conservan.',
-            { 0: currentVersion },
+            'Tienes {0} ({1}). Hay {2} ({3}) disponible. Conviene actualizar: se descarga desde GitHub, se verifica el digest y Hyperion se reinicia. Tus flujos se conservan.',
+            {
+              0: currentVersion,
+              1: channelLabel(channel),
+              2: update.version,
+              3: channelLabel(channel),
+            },
           ),
           buttons: [
             t('Actualizar y reiniciar'),

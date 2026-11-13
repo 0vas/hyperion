@@ -49,6 +49,7 @@ test('native onboarding and update dialogs use the selected language', async () 
   assert.match(copied[0], /^Use Hyperion/);
   const updater = createUpdateController({
     t,
+    channel: 'preview',
     app: { getVersion: () => '2026.10.12.0638' },
     getWindow: () => undefined,
     check: async () => undefined,
@@ -57,7 +58,10 @@ test('native onboarding and update dialogs use the selected language', async () 
     },
   });
   await updater.check();
-  assert.equal(messages.at(-1).detail, 'Installed version: 2026.10.12.0638');
+  assert.equal(
+    messages.at(-1).detail,
+    'Installed version: 2026.10.12.0638 (Preview)',
+  );
   const error = 'Diagnóstico del proceso';
   await recoverStartup({
     t,

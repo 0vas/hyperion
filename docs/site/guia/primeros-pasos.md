@@ -113,7 +113,9 @@ Incluido en el instalador **2026.11.13.0019 UTC · Preview**, junto con un artef
 
 ## Actualizar Desktop
 
-Desde la versión CalVer **2026.10.12.0638 UTC**, abre **Hyperion → Buscar actualizaciones…**. La app consulta GitHub y ofrece el instalador de tu equipo. Con **Actualizar y reiniciar**, descarga el instalador oficial, verifica tamaño y SHA-256 y aplica el cambio reiniciando Hyperion (en macOS reemplaza esta app tras `codesign`; en Windows lanza el instalador NSIS verificado). **Descargar instalador…** guarda el archivo para instalarlo a mano. Puedes cancelar desde **Hyperion → Cancelar descarga**. Tus flujos permanecen en el almacenamiento local.
+En el **Desktop empaquetado**, Hyperion comprueba actualizaciones al arrancar. Si hay una versión más reciente del mismo canal, un diálogo nativo indica que conviene actualizar y muestra la CalVer y el canal instalados frente a los disponibles. No bloquea el uso: puedes elegir **Actualizar y reiniciar**, **Ahora no** o **Descargar instalador…**. Sin actualización o sin red, esa comprobación automática no interrumpe. El canvas web y Desktop sin empaquetar no hacen auto-check; en Desktop también puedes abrir **Hyperion → Buscar actualizaciones…** en cualquier momento.
+
+Desde la versión CalVer **2026.10.12.0638 UTC**, el menú consulta GitHub y ofrece el instalador de tu equipo. Con **Actualizar y reiniciar**, descarga el instalador oficial, verifica tamaño y SHA-256 y aplica el cambio reiniciando Hyperion (en macOS reemplaza esta app tras `codesign`; en Windows lanza el instalador NSIS verificado). **Descargar instalador…** guarda el archivo para instalarlo a mano. Puedes cancelar desde **Hyperion → Cancelar descarga**. Tus flujos permanecen en el almacenamiento local. La actualización no es un flujo del canvas.
 
 **La primera migración desde 0.4 o 0.5.1 a CalVer es manual desde esta página**: el actualizador antiguo no reconoce las nuevas etiquetas. La versión pública usa **AAAA.MM.DD.HHMM UTC**, con hora y minuto; el canal Preview se muestra por separado. Las siguientes actualizaciones se comparan cronológicamente.
 
