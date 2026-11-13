@@ -105,7 +105,9 @@ Included in the **2026.10.26.1533 UTC · Preview** installer, together with step
 
 ## Update Desktop
 
-From CalVer **2026.10.12.0638 UTC**, open **Hyperion → Check for updates…**. The app checks GitHub and offers an installer for your computer. **Update and restart** downloads the official installer, checks size and SHA-256, then applies it and relaunches Hyperion (on macOS it replaces this app after `codesign`; on Windows it runs the verified NSIS installer). **Download installer…** saves the file for a manual install. Cancel with **Hyperion → Cancel download**. Workflows remain in local storage.
+On **packaged Desktop**, Hyperion checks for updates at startup. If a newer build on the same channel is available, a native dialog says you should update and shows installed vs available CalVer and channel. It is not a hard gate: choose **Update and restart**, **Not now**, or **Download installer…**. With no update or no network, the automatic check stays quiet. The web canvas and unpackaged Desktop do not auto-check; on Desktop you can also open **Hyperion → Check for updates…** any time.
+
+From CalVer **2026.10.12.0638 UTC**, the menu checks GitHub and offers an installer for your computer. **Update and restart** downloads the official installer, checks size and SHA-256, then applies it and relaunches Hyperion (on macOS it replaces this app after `codesign`; on Windows it runs the verified NSIS installer). **Download installer…** saves the file for a manual install. Cancel with **Hyperion → Cancel download**. Workflows remain in local storage. Updating is not a canvas workflow.
 
 **The first migration from 0.4 or 0.5.1 to CalVer is manual from this page**: the old updater does not recognize the new tags. Public versions use **YYYY.MM.DD.HHmm UTC**, including hours and minutes; Preview is a separate channel. Subsequent updates are compared chronologically.
 

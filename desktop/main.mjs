@@ -24,6 +24,7 @@ import {
   resolveWorkspaceService,
 } from '../dist/adapters/desktop.js';
 import { createUpdateController } from './update-dialog.mjs';
+import { scheduleStartupUpdateCheck } from './startup-update-check.mjs';
 import { consumePostUpdateRefresh } from './post-update-refresh.mjs';
 import { refreshSameInstallConflicts } from '../dist/adapters/post-update-connections.js';
 import { recoverStartup } from './startup.mjs';
@@ -53,6 +54,7 @@ const updater = createUpdateController({
   currentVersion: VERSION,
   channel: RELEASE_CHANNEL,
 });
+let startupUpdateScheduler = { cancel() {} };
 function diagnostics(error) {
   const folder = app.getPath('logs');
   mkdirSync(folder, { recursive: true });
@@ -341,12 +343,13 @@ if (!app.requestSingleInstanceLock()) {
           report(error);
         }
       }
-      if (app.isPackaged && !process.env.HYPERION_DISABLE_UPDATE_CHECK) {
-        const timer = setTimeout(() => {
-          if (!connecting) void updater.check(false);
-        }, 15000);
-        timer.unref();
-      }
+      startupUpdateScheduler.cancel();
+      startupUpdateScheduler = scheduleStartupUpdateCheck({
+        isPackaged: app.isPackaged,
+        disabled: Boolean(process.env.HYPERION_DISABLE_UPDATE_CHECK),
+        isConnecting: () => connecting,
+        check: (manual) => updater.check(manual),
+      });
     })
     .catch((error) => {
       report(error);
@@ -357,6 +360,7 @@ if (!app.requestSingleInstanceLock()) {
       void openRun(process.argv).catch(report);
   });
   app.on('before-quit', () => {
+    startupUpdateScheduler.cancel();
     updater.cancel();
     stopDesktopOutboundWorker();
   });

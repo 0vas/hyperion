@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createUpdateController } from '../desktop/update-dialog.mjs';
 
 const userData = mkdtempSync(join(tmpdir(), 'hyperion-update-ui-'));
@@ -28,6 +29,7 @@ test('Actualizar y reiniciar requires consent, downloads under userData/updates,
   const boxes = [];
   const controller = createUpdateController({
     platform: 'darwin',
+    channel: 'preview',
     app: {
       ...app,
       relaunch: () => calls.push(['relaunch']),
@@ -59,10 +61,15 @@ test('Actualizar y reiniciar requires consent, downloads under userData/updates,
     shell: { showItemInFolder: (path) => calls.push(['show', path]) },
   });
   await controller.check();
-  assert.equal(boxes[0].message, 'Actualización disponible');
+  assert.equal(boxes[0].type, 'warning');
+  assert.equal(boxes[0].message, 'Conviene actualizar Hyperion');
   assert.match(
     boxes[0].detail,
-    /Se descarga desde GitHub, se verifica el digest y Hyperion se reinicia/,
+    /Tienes 2026\.10\.12\.2204 \(Preview\)\. Hay 2026\.10\.15\.1916 \(Preview\) disponible/,
+  );
+  assert.match(
+    boxes[0].detail,
+    /Conviene actualizar: se descarga desde GitHub, se verifica el digest y Hyperion se reinicia/,
   );
   assert.equal(boxes[0].buttons[0], 'Actualizar y reiniciar');
   assert.equal(boxes[0].buttons[1], 'Ahora no');
@@ -228,4 +235,29 @@ test('background network failures stay quiet and manual failures report an error
   assert.equal(messages.length, 0);
   await controller.check(true);
   assert.equal(messages.length, 1);
+});
+
+test('automatic check with no update stays quiet; manual names CalVer and channel', async () => {
+  const messages = [];
+  const controller = createUpdateController({
+    app,
+    channel: 'preview',
+    getWindow: () => undefined,
+    check: async () => null,
+    dialog: { showMessageBox: async (_w, m) => messages.push(m) },
+  });
+  await controller.check(false);
+  assert.equal(messages.length, 0);
+  await controller.check(true);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].detail, /2026\.10\.12\.2204 \(Preview\)/);
+});
+
+test('update dialog never touches workflow command surfaces', () => {
+  const source = readFileSync(
+    fileURLToPath(new URL('../desktop/update-dialog.mjs', import.meta.url)),
+    'utf8',
+  );
+  assert.doesNotMatch(source, /\/api\/(runs|commands)|revisePlan|createRun/);
+  assert.doesNotMatch(source, /from ['"]\.\.\/src\/domain/);
 });
