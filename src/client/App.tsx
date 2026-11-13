@@ -137,6 +137,7 @@ import {
   type ConnectionMessage,
 } from './connection-messages';
 import { AppMenu, type AppMenuAction } from './AppMenu';
+import { ChatBubble } from './ChatBubble';
 import { requestDesktopUpdateCheck } from './desktop-updates';
 import { usePreferences } from './preferences';
 import { RELEASE_CHANNEL, VERSION } from '../version';
@@ -3423,6 +3424,47 @@ export function App() {
             </div>
           </section>
         </Modal>
+      )}
+      {isElectron && (
+        <ChatBubble
+          reduceMotion={preferences.reduceMotion}
+          disabled={dialogOpen}
+          runUrl={run ? `${location.origin}/?run=${run.id}` : undefined}
+          runId={run?.id}
+          runCoordinator={run?.coordinator}
+          inventory={connections.inventory}
+          resumeConnector={hostResumeConnector}
+          busy={busy}
+          onNotice={(message) => setNotice(message)}
+          onError={(message) => setError(message)}
+          onEnqueueOutbound={
+            run
+              ? async (text) => {
+                  const parsed = connectorSchema.safeParse(
+                    readHostResumeConnector(),
+                  );
+                  if (
+                    !parsed.success ||
+                    parsed.data.harness !== run.coordinator
+                  ) {
+                    throw new Error(
+                      t(
+                        'No hay un conector de envío configurado para este harness. Usa Copiar continuación.',
+                      ),
+                    );
+                  }
+                  await api<Run>(`/api/runs/${run.id}/outbound-prompts`, {
+                    expectedRevision: run.revision,
+                    commandId: crypto.randomUUID(),
+                    text,
+                    connector: parsed.data,
+                    kind: 'continuation_prompt',
+                  });
+                  await refresh();
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   );

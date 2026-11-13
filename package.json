@@ -1,6 +1,6 @@
 {
   "name": "hyperion-workflows",
-  "version": "2026.11.12-build.219",
+  "version": "2026.11.13-build.19",
   "private": true,
   "description": "Human-guided workflows for any AI tool",
   "license": "MIT",
