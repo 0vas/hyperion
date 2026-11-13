@@ -92,6 +92,11 @@ const STATUS_LABEL: Record<ConnectionStatusId, string> = {
   unknown: 'No se pudo comprobar',
 };
 
+/** Honest Conexiones status copy — never “connected” / tools-loaded. */
+export function connectionStatusLabel(status: ConnectionStatusId): string {
+  return STATUS_LABEL[status];
+}
+
 const PREVIEW_FIELDS: {
   key: keyof ConnectionEntryPreview;
   label: string;
