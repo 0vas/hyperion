@@ -487,10 +487,24 @@ test('birth story page and home teaser ship in both languages with static diagra
     teaser.getByRole('link', { name: 'Leer el paisaje', exact: true }),
   ).toHaveAttribute('href', '/hyperion/guia/el-paisaje.html');
   await expect(teaser.locator('.landscape-compare.compact')).toBeVisible();
+  await expect(teaser.locator('.scanner-stage')).toBeVisible();
+  await expect(teaser.locator('.scanner-beam')).toBeVisible();
+  await expect(teaser.locator('.scanner-badge')).toContainText('Estado visible');
   await expect(teaser.locator('.mini-flow li').first()).toHaveCSS(
     'animation-name',
     'none',
   );
+  await expect(teaser.getByText(/Distill|Kessler/i)).toHaveCount(0);
+  const teaserTrack = teaser.locator('.scanner-track').first();
+  const teaserBefore = await teaserTrack.evaluate(
+    (node) => getComputedStyle(node).transform,
+  );
+  await page.waitForTimeout(400);
+  await expect
+    .poll(async () =>
+      teaserTrack.evaluate((node) => getComputedStyle(node).transform),
+    )
+    .toBe(teaserBefore);
   await teaser
     .getByRole('link', { name: 'Leer el paisaje', exact: true })
     .click();
@@ -503,7 +517,14 @@ test('birth story page and home teaser ship in both languages with static diagra
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(page.locator('.landscape-compare')).toBeVisible();
+  const compare = page.locator('.landscape-compare').first();
+  await expect(compare).toBeVisible();
+  await expect(compare.locator('.scanner-stage')).toBeVisible();
+  await expect(compare.locator('.scanner-beam')).toBeVisible();
+  await expect(compare.locator('.scanner-badge')).toContainText('Estado visible');
+  await expect(compare.locator('.chat-lane .scanner-card').first()).toBeVisible();
+  await expect(compare.locator('.flow-lane .scanner-card').first()).toBeVisible();
+  await expect(page.getByText(/Distill|Kessler/i)).toHaveCount(0);
   await expect(page.locator('.landscape-loop')).toBeVisible();
   await expect(page.locator('.mini-flow li').first()).toHaveCSS(
     'animation-name',
@@ -531,6 +552,12 @@ test('birth story page and home teaser ship in both languages with static diagra
     .getByRole('link', { name: 'Read the landscape', exact: true })
     .click();
   await expect(page.locator('h1')).toContainText('A landscape for your AI');
+  const enCompare = page.locator('.landscape-compare').first();
+  await expect(enCompare.locator('.scanner-badge')).toContainText(
+    'Visible state',
+  );
+  await expect(enCompare.locator('.scanner-beam')).toBeVisible();
+  await expect(page.getByText(/Distill|Kessler/i)).toHaveCount(0);
   await expect(
     page.getByRole('heading', { name: /You in the loop/ }),
   ).toBeVisible();

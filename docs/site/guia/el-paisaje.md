@@ -19,6 +19,8 @@ Durante años la IA fue sobre todo consultiva: preguntas, respuestas y un hilo q
 
 Agentes, MCP y herramientas hacen que la IA actúe. Hyperion no sustituye tu chat: añade el paisaje donde ves el plan, las puertas humanas y lo ya registrado.
 
+Arrastra las tarjetas: a la derecha es chat; al cruzar el escáner, el mismo trabajo aparece como proceso guiado.
+
 <LandscapeCompare />
 
 ## De consultar a ejecutar
