@@ -180,7 +180,9 @@
     var(--scan-hot) 88%,
     transparent
   );
-  box-shadow: 0 0 18px #ff5a1f99, 0 0 40px #ff5a1f33;
+  box-shadow:
+    0 0 18px #ff5a1f99,
+    0 0 40px #ff5a1f33;
   pointer-events: none;
 }
 .scanner-fx {

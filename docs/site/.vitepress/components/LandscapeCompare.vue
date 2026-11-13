@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  ref,
-  watch,
-} from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useData } from 'vitepress';
 
 const props = defineProps<{ compact?: boolean }>();
@@ -148,7 +141,9 @@ const syncNarrow = () => {
 };
 
 const measure = () => {
-  const sample = stage.value?.querySelector('.scanner-card') as HTMLElement | null;
+  const sample = stage.value?.querySelector(
+    '.scanner-card',
+  ) as HTMLElement | null;
   if (!sample) return;
   cardSpan = sample.offsetWidth + CARD_GAP;
   loopWidth = cardSpan * cards.value.length;
@@ -170,15 +165,15 @@ const updateCounter = () => {
   const root = stage.value;
   if (!root || !loopWidth) return;
   const mid = root.getBoundingClientRect().left + root.clientWidth / 2;
-  for (const card of root.querySelectorAll<HTMLElement>('.scanner-card[data-id]')) {
+  for (const card of root.querySelectorAll<HTMLElement>(
+    '.scanner-card[data-id]',
+  )) {
     const rect = card.getBoundingClientRect();
     const center = rect.left + rect.width / 2;
     const id = card.dataset.id || '';
     if (center < mid - 8 && !crossed.has(id)) {
       crossed.add(id);
-      visibleState.value += card.dataset.steps
-        ? Number(card.dataset.steps)
-        : 3;
+      visibleState.value += card.dataset.steps ? Number(card.dataset.steps) : 3;
     }
     if (center > mid + 40) crossed.delete(id);
   }
@@ -191,7 +186,10 @@ const paintDissolve = (ts: number) => {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const width = root.clientWidth;
   const height = root.clientHeight;
-  if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
+  if (
+    canvas.width !== Math.floor(width * dpr) ||
+    canvas.height !== Math.floor(height * dpr)
+  ) {
     canvas.width = Math.floor(width * dpr);
     canvas.height = Math.floor(height * dpr);
     canvas.style.width = `${width}px`;
@@ -234,7 +232,8 @@ const paintDissolve = (ts: number) => {
   }
   for (let i = 0; i < 12; i++) {
     const seed = i * 41.7 + ts * 0.02;
-    const sparkY = ((hash(seed) + (ts * 0.00015) * (0.4 + hash(seed + 1))) % 1) * height;
+    const sparkY =
+      ((hash(seed) + ts * 0.00015 * (0.4 + hash(seed + 1))) % 1) * height;
     const sparkX = x + (hash(seed + 5) - 0.5) * 18;
     ctx.fillStyle = `rgba(255,220,180,${0.35 + hash(seed + 8) * 0.5})`;
     ctx.fillRect(sparkX, sparkY, 2, 6);
@@ -253,7 +252,8 @@ const tick = (ts: number) => {
       const target = hovering.value ? HOVER_SPEED : AUTO_SPEED;
       velocity += (target - velocity) * 0.08;
     }
-    if (velocity) offset.value = wrapOffset(offset.value - velocity * (dt / 16));
+    if (velocity)
+      offset.value = wrapOffset(offset.value - velocity * (dt / 16));
   }
   updateCounter();
   paintDissolve(ts);
@@ -421,7 +421,9 @@ watch(cards, async () => {
               :data-id="`${copy}-${card.id}`"
               :data-steps="String(card.flow.length)"
             >
-              <p class="card-label">{{ en ? 'Hyperion canvas' : 'Canvas Hyperion' }}</p>
+              <p class="card-label">
+                {{ en ? 'Hyperion canvas' : 'Canvas Hyperion' }}
+              </p>
               <p class="card-title">{{ card.chatTitle }}</p>
               <ol class="mini-flow">
                 <li

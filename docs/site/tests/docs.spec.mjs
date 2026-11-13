@@ -489,7 +489,9 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect(teaser.locator('.landscape-compare.compact')).toBeVisible();
   await expect(teaser.locator('.scanner-stage')).toBeVisible();
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
-  await expect(teaser.locator('.scanner-badge')).toContainText('Estado visible');
+  await expect(teaser.locator('.scanner-badge')).toContainText(
+    'Estado visible',
+  );
   await expect(teaser.locator('.mini-flow li').first()).toHaveCSS(
     'animation-name',
     'none',
@@ -521,9 +523,15 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect(compare).toBeVisible();
   await expect(compare.locator('.scanner-stage')).toBeVisible();
   await expect(compare.locator('.scanner-beam')).toBeVisible();
-  await expect(compare.locator('.scanner-badge')).toContainText('Estado visible');
-  await expect(compare.locator('.chat-lane .scanner-card').first()).toBeVisible();
-  await expect(compare.locator('.flow-lane .scanner-card').first()).toBeVisible();
+  await expect(compare.locator('.scanner-badge')).toContainText(
+    'Estado visible',
+  );
+  await expect(
+    compare.locator('.chat-lane .scanner-card').first(),
+  ).toBeVisible();
+  await expect(
+    compare.locator('.flow-lane .scanner-card').first(),
+  ).toBeVisible();
   await expect(page.getByText(/Distill|Kessler/i)).toHaveCount(0);
   await expect(page.locator('.landscape-loop')).toBeVisible();
   await expect(page.locator('.mini-flow li').first()).toHaveCSS(
