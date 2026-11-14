@@ -200,9 +200,11 @@ test('Desktop Enviar enqueues when ResumeConnector matches configured primary ha
     expect(body.connector.harness).toBe(harness);
     expect(body.text).toContain('continuar el trabajo del canvas');
     await expect(
-      page.getByText(
-        'Continuación encolada para el conector. Eso no significa que el agente haya ejecutado el trabajo.',
-      ),
+      panel
+        .getByTestId('chat-bubble-msg-system')
+        .getByText(
+          'Continuación encolada para el conector. Eso no significa que el agente haya ejecutado el trabajo.',
+        ),
     ).toBeVisible();
   } finally {
     await context.close();
