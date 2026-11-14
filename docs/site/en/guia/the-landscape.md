@@ -19,9 +19,7 @@ For years AI was mostly consultative: questions, answers and a lengthening threa
 
 Agents, MCP and tools let AI act. Hyperion does not replace your chat: it adds the landscape where you see the plan, human gates and what is already recorded.
 
-Scroll or drag forward: one card at a time — on the right it is chat; through the scanner it becomes a guided process; reverse restores the chat.
-
-<LandscapeCompare />
+On the [home page](/en/) you can scrub the scanner: one card crosses from chat into a Hyperion flow. This page explains the landscape in words — the agent runs what is ready; you decide; the evidence remains.
 
 ## From consulting to executing
 

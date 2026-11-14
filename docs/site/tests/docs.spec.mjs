@@ -487,31 +487,42 @@ test('birth story page and home teaser ship in both languages with static diagra
     teaser.getByRole('link', { name: 'Leer el paisaje', exact: true }),
   ).toHaveAttribute('href', '/hyperion/guia/el-paisaje.html');
   await expect(teaser.locator('.landscape-compare.compact')).toBeVisible();
-  await expect(teaser.locator('.scanner-stage')).toBeVisible();
-  await expect(teaser.locator('.scanner-stage')).toHaveAttribute(
-    'data-scanner',
-    'distill',
-  );
+  const stage = teaser.locator('.scanner-stage');
+  await expect(stage).toBeVisible();
+  await expect(stage).toHaveAttribute('data-scanner', 'distill');
+  await expect(stage).toHaveAttribute('data-cards', '1');
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
   await expect(teaser.locator('.scanner-badge')).toContainText(
     'Estado visible',
   );
-  await expect(teaser.locator('.scanner-slot').first()).toBeVisible();
+  await expect(teaser.locator('.scanner-slot')).toHaveCount(1);
+  await expect(teaser.locator('.scanner-slot.single')).toBeVisible();
+  await expect(teaser.locator('.scanner-slot .chat-face')).toBeVisible();
+  await expect(teaser.locator('.scanner-slot .flow-face')).toBeAttached();
   await expect(teaser.locator('.mini-flow li').first()).toHaveCSS(
     'animation-name',
     'none',
   );
   await expect(teaser.getByText(/Distill|Kessler/i)).toHaveCount(0);
-  const teaserTrack = teaser.locator('.scanner-track').first();
-  const teaserBefore = await teaserTrack.evaluate(
-    (node) => getComputedStyle(node).transform,
-  );
+  const slot = teaser.locator('.scanner-slot.single');
+  const before = await slot.evaluate((node) => node.style.transform);
   await page.waitForTimeout(400);
   await expect
-    .poll(async () =>
-      teaserTrack.evaluate((node) => getComputedStyle(node).transform),
-    )
-    .toBe(teaserBefore);
+    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .toBe(before);
+  await page.evaluate(() => {
+    window.__hyperionScanner?.scrubBy(-220);
+  });
+  await expect
+    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .not.toBe(before);
+  const mid = await slot.evaluate((node) => node.style.transform);
+  await page.evaluate(() => {
+    window.__hyperionScanner?.scrubBy(440);
+  });
+  await expect
+    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .not.toBe(mid);
   await teaser
     .getByRole('link', { name: 'Leer el paisaje', exact: true })
     .click();
@@ -524,57 +535,10 @@ test('birth story page and home teaser ship in both languages with static diagra
       { exact: true },
     ),
   ).toBeVisible();
-  const compare = page.locator('.landscape-compare').first();
-  await expect(compare).toBeVisible();
-  await expect(compare.locator('.scanner-stage')).toBeVisible();
-  await expect(compare.locator('.scanner-stage')).toHaveAttribute(
-    'data-scanner',
-    'distill',
-  );
-  await expect(compare.locator('.scanner-beam')).toBeVisible();
-  await expect(compare.locator('.scanner-badge')).toContainText(
-    'Estado visible',
-  );
-  const slot = compare.locator('.scanner-slot').first();
-  await expect(slot.locator('.chat-face')).toBeVisible();
-  await expect(slot.locator('.flow-face')).toBeAttached();
-  const track = compare.locator('.scanner-track');
-  const before = await track.evaluate(
-    (node) => getComputedStyle(node).transform,
-  );
-  await page.evaluate(() => {
-    window.__hyperionScanner?.scrubBy(-320);
-  });
-  await expect
-    .poll(async () =>
-      track.evaluate((node) => getComputedStyle(node).transform),
-    )
-    .not.toBe(before);
-  const mid = await track.evaluate((node) => getComputedStyle(node).transform);
-  await page.evaluate(() => {
-    window.__hyperionScanner?.scrubBy(640);
-  });
-  await expect
-    .poll(async () =>
-      track.evaluate((node) => getComputedStyle(node).transform),
-    )
-    .not.toBe(mid);
-  await expect
-    .poll(async () =>
-      compare.locator('.scanner-slot .chat-face').evaluateAll((nodes) =>
-        nodes.some((node) => {
-          const clip = getComputedStyle(node).clipPath;
-          return clip === 'none' || clip.startsWith('inset(0px 0px 0px 0px)');
-        }),
-      ),
-    )
-    .toBe(true);
+  await expect(page.locator('.landscape-compare')).toHaveCount(0);
+  await expect(page.locator('.scanner-stage')).toHaveCount(0);
   await expect(page.getByText(/Distill|Kessler/i)).toHaveCount(0);
   await expect(page.locator('.landscape-loop')).toBeVisible();
-  await expect(page.locator('.mini-flow li').first()).toHaveCSS(
-    'animation-name',
-    'none',
-  );
   await expect(
     page.getByRole('link', {
       name: 'Empieza con tu primer flujo',
@@ -587,21 +551,23 @@ test('birth story page and home teaser ship in both languages with static diagra
       .getByRole('link', { name: 'El paisaje', exact: true }),
   ).toBeVisible();
   await page.goto('/hyperion/en/');
+  const enTeaser = page.locator('.landscape-teaser');
   await expect(
-    page
-      .locator('.landscape-teaser')
-      .getByRole('link', { name: 'Read the landscape', exact: true }),
+    enTeaser.getByRole('link', { name: 'Read the landscape', exact: true }),
   ).toHaveAttribute('href', '/hyperion/en/guia/the-landscape.html');
-  await page
-    .locator('.landscape-teaser')
+  await expect(enTeaser.locator('.scanner-stage')).toHaveAttribute(
+    'data-cards',
+    '1',
+  );
+  await expect(enTeaser.locator('.scanner-badge')).toContainText(
+    'Visible state',
+  );
+  await enTeaser
     .getByRole('link', { name: 'Read the landscape', exact: true })
     .click();
   await expect(page.locator('h1')).toContainText('A landscape for your AI');
-  const enCompare = page.locator('.landscape-compare').first();
-  await expect(enCompare.locator('.scanner-badge')).toContainText(
-    'Visible state',
-  );
-  await expect(enCompare.locator('.scanner-beam')).toBeVisible();
+  await expect(page.locator('.landscape-compare')).toHaveCount(0);
+  await expect(page.locator('.scanner-stage')).toHaveCount(0);
   await expect(page.getByText(/Distill|Kessler/i)).toHaveCount(0);
   await expect(
     page.getByRole('heading', { name: /You in the loop/ }),
