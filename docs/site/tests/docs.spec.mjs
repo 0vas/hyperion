@@ -490,6 +490,7 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect(teaser.locator('.scanner-scroll-track')).toHaveCount(0);
   const immersion = teaser.locator('.scanner-immersion');
   await expect(immersion).toHaveAttribute('data-scrub', 'page');
+  await expect(immersion).toHaveAttribute('data-scrub-gate', 'viewport');
   const stage = teaser.locator('.scanner-stage');
   await expect(stage).toBeVisible();
   await expect(stage).toHaveAttribute('data-scanner', 'distill');
@@ -507,12 +508,13 @@ test('birth story page and home teaser ship in both languages with static diagra
     teaser.locator('.scanner-slot .flow-face.sim-canvas'),
   ).toBeAttached();
   await expect(teaser.locator('.sim-composer')).toBeVisible();
-  await expect(teaser.locator('.sim-flow li')).toHaveCount(5);
+  await expect(teaser.locator('.sim-canvas-lane li')).toHaveCount(5);
+  await expect(teaser.locator('.sim-event.start')).toBeAttached();
+  await expect(teaser.locator('.sim-event.end')).toBeAttached();
+  await expect(teaser.locator('.sim-task-card')).toHaveCount(3);
   await expect(teaser.locator('.sim-evidence')).toBeAttached();
-  await expect(teaser.locator('.scanner-hint')).toContainText(
-    /Scroll de la página/i,
-  );
-  await expect(teaser.locator('.sim-flow li').first()).toHaveCSS(
+  await expect(teaser.locator('.scanner-hint')).toContainText(/Scroll/i);
+  await expect(teaser.locator('.sim-canvas-lane li').first()).toHaveCSS(
     'animation-name',
     'none',
   );
@@ -536,19 +538,34 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect
     .poll(async () => slot.evaluate((node) => node.style.transform))
     .not.toBe(mid);
-  // Page scroll through the viewport advances the cut chat→flow (no tall spacer).
+  // Gated page scroll: above the gate cut resets; past the gate it advances.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect
+    .poll(async () =>
+      page.locator('.scanner-stage').getAttribute('data-scrub-armed'),
+    )
+    .toBe('false');
+  await expect
+    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .toMatch(/translate3d\(0(?:\.0+)?px/);
+  const atTop = await slot.evaluate((node) => node.style.transform);
   await page.evaluate(() => {
     const stageNode = document.querySelector('.scanner-stage');
     if (!stageNode) return;
     const top =
       window.scrollY +
       stageNode.getBoundingClientRect().top -
-      window.innerHeight * 0.22;
+      window.innerHeight * 0.18;
     window.scrollTo(0, Math.max(0, top));
   });
   await expect
+    .poll(async () =>
+      page.locator('.scanner-stage').getAttribute('data-scrub-armed'),
+    )
+    .toBe('true');
+  await expect
     .poll(async () => slot.evaluate((node) => node.style.transform))
-    .not.toBe(mid);
+    .not.toBe(atTop);
   await teaser
     .getByRole('link', { name: 'Leer el paisaje', exact: true })
     .click();
@@ -590,9 +607,9 @@ test('birth story page and home teaser ship in both languages with static diagra
     'page',
   );
   await expect(enTeaser.locator('.sim-chat')).toBeVisible();
-  await expect(enTeaser.locator('.scanner-hint')).toContainText(
-    /Scroll the page/i,
-  );
+  await expect(enTeaser.locator('.scanner-hint')).toContainText(/Scroll/i);
+  await expect(enTeaser.locator('.sim-event.start')).toBeAttached();
+  await expect(enTeaser.locator('.sim-task-card')).toHaveCount(3);
   await expect(enTeaser.locator('.scanner-badge')).toHaveCount(0);
   await expect(enTeaser.getByText('Visible state')).toHaveCount(0);
   await enTeaser

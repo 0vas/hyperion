@@ -319,84 +319,142 @@
   font-size: 12px;
   font-weight: 700;
 }
-.sim-flow {
+.sim-canvas-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--canvas-bg, #f5f5ef);
+  border: 1px solid
+    color-mix(in srgb, var(--canvas-border, #b8c2b9) 70%, transparent);
+  overflow: hidden;
+}
+.sim-canvas-lane {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 8px;
-  align-items: stretch;
-  flex: 1 1 auto;
-  min-height: 0;
+  gap: 10px 12px;
+  align-items: center;
 }
-.sim-flow li {
+.sim-canvas-lane li {
   position: relative;
   display: flex;
-  flex: 1 1 112px;
-  max-width: 148px;
+  flex: 0 1 auto;
 }
-.sim-flow li.connector::after {
+.sim-canvas-lane li.connector::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: -7px;
-  width: 6px;
+  right: -10px;
+  width: 8px;
   height: 1.5px;
-  background: var(--story-line);
+  background: var(--canvas-border, #b8c2b9);
   transform: translateY(-50%);
 }
-.sim-node {
+.sim-event {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 52px;
+  color: var(--canvas-muted, #5d6962);
+}
+.sim-event i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  background: var(--canvas-bg, #f5f5ef);
+  box-sizing: border-box;
+}
+.sim-event.start {
+  color: var(--canvas-green, #29734f);
+}
+.sim-event.end {
+  color: var(--canvas-red, #ac4147);
+}
+.sim-event.end i {
+  border-width: 3.5px;
+}
+.sim-event strong {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.sim-task-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 4px;
-  width: 100%;
-  min-height: 64px;
-  padding: 10px 12px;
-  border: 1.5px solid var(--story-line);
-  border-radius: 10px;
-  background: var(--story-panel);
+  width: min(148px, 28vw);
+  min-height: 78px;
+  padding: 10px 12px 10px 16px;
+  border-radius: 12px;
+  border: 1.1px solid var(--canvas-border, #b8c2b9);
+  background: var(--canvas-card, #fffefa);
+  color: var(--canvas-muted, #5d6962);
+  box-shadow: 0 8px 18px #0000000d;
 }
-.sim-node strong {
-  font-size: 13px;
+.sim-task-accent {
+  position: absolute;
+  left: 8px;
+  top: 14px;
+  bottom: 14px;
+  width: 2.8px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.sim-task-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 4px;
+}
+.sim-task-num,
+.sim-task-status {
+  font-size: 10px;
   font-weight: 650;
-  line-height: 1.25;
-  color: var(--story-ink);
+  color: currentColor;
 }
-.sim-node small {
+.sim-task-card strong {
+  padding-left: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--canvas-ink, #29332e);
+}
+.sim-task-role {
+  padding-left: 4px;
   font-size: 11px;
-  color: var(--story-muted);
   font-weight: 600;
+  color: var(--canvas-muted, #5d6962);
 }
-.sim-flow li.done .sim-node {
-  border-color: color-mix(in srgb, var(--story-accent) 45%, var(--story-line));
+.sim-task-card[data-state='done'] {
+  color: var(--canvas-green, #29734f);
+  border-color: var(--canvas-green, #29734f);
 }
-.sim-flow li.wait .sim-node,
-.sim-flow li.decision .sim-node {
-  border-color: var(--story-accent);
-  border-radius: 4px;
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--story-accent) 25%, transparent);
+.sim-task-card[data-state='wait'],
+.sim-canvas-lane li.decision .sim-task-card {
+  color: var(--canvas-amber, #936a18);
+  border-color: var(--canvas-amber, #936a18);
+  border-width: 2px;
 }
-.sim-flow li.wait .sim-node strong,
-.sim-flow li.decision .sim-node strong,
-.sim-flow li.wait .sim-node small,
-.sim-flow li.decision .sim-node small {
-  color: var(--story-accent);
-}
-.sim-flow li.next .sim-node {
-  opacity: 0.72;
+.sim-task-card[data-state='next'] {
+  border-style: dashed;
+  opacity: 0.78;
 }
 .sim-evidence {
   margin: 0;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px dashed
-    color-mix(in srgb, var(--story-accent) 55%, var(--story-line));
+    color-mix(in srgb, var(--canvas-amber, #936a18) 55%, var(--story-line));
   font-size: 12px;
-  color: var(--story-accent);
-  background: color-mix(in srgb, var(--story-accent) 8%, transparent);
+  color: var(--canvas-amber, #936a18);
+  background: color-mix(in srgb, var(--canvas-amber, #936a18) 8%, transparent);
 }
 .mini-flow {
   list-style: none;
@@ -440,7 +498,7 @@
   font-weight: 650;
 }
 .landscape-compare.motion-ready .mini-flow li,
-.landscape-compare.motion-ready .sim-flow li {
+.landscape-compare.motion-ready .sim-canvas-lane li {
   animation: none;
 }
 .loop-lane {
@@ -538,12 +596,11 @@
     bottom: 12px;
     width: min(94%, 560px);
   }
-  .sim-flow li {
-    flex: 1 1 96px;
-    max-width: none;
-  }
-  .sim-flow li.connector::after {
+  .sim-canvas-lane li.connector::after {
     display: none;
+  }
+  .sim-task-card {
+    width: min(132px, 42vw);
   }
   .scanner-hint {
     width: 100%;

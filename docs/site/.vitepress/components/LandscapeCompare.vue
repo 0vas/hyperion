@@ -6,6 +6,15 @@ const props = defineProps<{ compact?: boolean }>();
 const { lang } = useData();
 const en = computed(() => lang.value !== 'es');
 
+type FlowNode = {
+  kind: 'start' | 'task' | 'end';
+  label: string;
+  role?: string;
+  state?: 'done' | 'wait' | 'next';
+  decision?: boolean;
+  status?: string;
+};
+
 const copy = computed(() =>
   en.value
     ? {
@@ -33,25 +42,39 @@ const copy = computed(() =>
         flowTitle: 'Preview installers',
         flowMeta: 'Hyperion · canvas',
         nodes: [
-          { label: 'Start', state: 'done' as const, role: '' },
-          { label: 'Plan release', state: 'done' as const, role: 'Agent' },
+          { kind: 'start' as const, label: 'Start' },
           {
-            label: 'Approve macOS?',
-            state: 'wait' as const,
-            role: 'You',
-            decision: true,
+            kind: 'task' as const,
+            label: 'Plan release',
+            role: 'Agent',
+            state: 'done' as const,
+            status: 'Completed',
           },
-          { label: 'Build artifacts', state: 'next' as const, role: 'Agent' },
-          { label: 'End', state: 'next' as const, role: '' },
-        ],
+          {
+            kind: 'task' as const,
+            label: 'Approve macOS?',
+            role: 'You',
+            state: 'wait' as const,
+            decision: true,
+            status: 'Your turn',
+          },
+          {
+            kind: 'task' as const,
+            label: 'Build artifacts',
+            role: 'Agent',
+            state: 'next' as const,
+            status: 'Pending',
+          },
+          { kind: 'end' as const, label: 'End' },
+        ] satisfies FlowNode[],
         evidence: 'Evidence · digests pending your call',
         footChat: 'The thread is the map',
         footFlow: 'The process is the map',
-        hint: 'Scroll the page · drag optional · reverse restores chat',
+        hint: 'Scroll when the stage is in view · drag optional',
         kicker: 'Guided as a process',
         caption:
-          'One card: as you scroll the page, chat shatters through the beam and reassembles as a Hyperion path. Drag is optional. Decorative — not a live agent run.',
-        aria: 'Illustration: one card crosses a center scanner. Page scroll advances the cut from chat into a Hyperion canvas with fragment shatter and reassembly; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
+          'One card: once the stage sits in view, page scroll dissolves chat into a Hyperion canvas. Drag is optional. Decorative — not a live agent run.',
+        aria: 'Illustration: one card crosses a center scanner. After the stage reaches reading height, page scroll advances chat into a Hyperion canvas; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
       }
     : {
         chatTitle: 'Publicar los instaladores',
@@ -78,37 +101,48 @@ const copy = computed(() =>
         flowTitle: 'Instaladores preview',
         flowMeta: 'Hyperion · canvas',
         nodes: [
-          { label: 'Inicio', state: 'done' as const, role: '' },
-          { label: 'Plan de release', state: 'done' as const, role: 'Agente' },
+          { kind: 'start' as const, label: 'Inicio' },
           {
-            label: '¿Apruebo macOS?',
-            state: 'wait' as const,
-            role: 'Tú',
-            decision: true,
+            kind: 'task' as const,
+            label: 'Plan de release',
+            role: 'Agente',
+            state: 'done' as const,
+            status: 'Completado',
           },
-          { label: 'Build artefactos', state: 'next' as const, role: 'Agente' },
-          { label: 'Fin', state: 'next' as const, role: '' },
-        ],
+          {
+            kind: 'task' as const,
+            label: '¿Apruebo macOS?',
+            role: 'Tú',
+            state: 'wait' as const,
+            decision: true,
+            status: 'Tu turno',
+          },
+          {
+            kind: 'task' as const,
+            label: 'Build artefactos',
+            role: 'Agente',
+            state: 'next' as const,
+            status: 'Pendiente',
+          },
+          { kind: 'end' as const, label: 'Fin' },
+        ] satisfies FlowNode[],
         evidence: 'Evidencia · digests pendientes de tu decisión',
         footChat: 'El hilo es el mapa',
         footFlow: 'El proceso es el mapa',
-        hint: 'Scroll de la página · arrastre opcional · al revés vuelve el chat',
+        hint: 'Scroll cuando el escenario esté a la vista · arrastre opcional',
         kicker: 'Guiado como proceso',
         caption:
-          'Una sola tarjeta: al hacer scroll en la página, el chat se fragmenta en el haz y se recompone como recorrido Hyperion. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
-        aria: 'Ilustración: una sola tarjeta cruza un escáner central. El scroll de la página avanza el corte del chat al canvas Hyperion con fragmentación y reensamblaje; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
+          'Una sola tarjeta: cuando el escenario está a la altura de lectura, el scroll disuelve el chat en un canvas Hyperion. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
+        aria: 'Ilustración: una sola tarjeta cruza un escáner central. Tras alcanzar la altura de lectura, el scroll avanza del chat al canvas Hyperion; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
       },
 );
 
-type Shard = {
+type Speck = {
   x: number;
   y: number;
-  w: number;
-  h: number;
-  rot: number;
+  size: number;
   vx: number;
   vy: number;
-  vr: number;
   life: number;
   maxLife: number;
   kind: 'break' | 'form';
@@ -127,9 +161,13 @@ const cardWidth = ref(520);
 const dragging = ref(false);
 const reduced = ref(true);
 const scrollLocked = ref(false);
+const scrubArmed = ref(false);
 
 const FADE = 28;
 const HOT = '#FF5A1F';
+/** Gate: stage top must reach this fraction of the viewport before cut advances. */
+const SCRUB_GATE = 0.4;
+const SCRUB_END = 0.12;
 
 let mediaMotion: MediaQueryList | undefined;
 let raf = 0;
@@ -137,8 +175,8 @@ let dragOriginX = 0;
 let dragOriginCut = 0;
 let dragBias = 0;
 let prevCut = 0;
-let shards: Shard[] = [];
-let shardSeed = 0;
+let specks: Speck[] = [];
+let speckSeed = 0;
 
 const syncMotion = () => {
   reduced.value = mediaMotion?.matches ?? true;
@@ -161,17 +199,19 @@ const measure = () => {
 };
 
 /**
- * Page-scroll progress from the stage’s natural travel through the viewport.
- * No tall sticky spacer — immersion stays continuous with surrounding page content.
+ * Page-scroll progress — gated until the stage sits at reading height
+ * (hero no longer fills the view). Then maps gate → upper band.
  */
 const scrollProgress = () => {
   const el = stage.value;
   if (!el) return 0;
   const rect = el.getBoundingClientRect();
   const vh = Math.max(1, window.innerHeight);
-  const start = vh * 0.78;
-  const end = vh * 0.22;
-  return Math.min(1, Math.max(0, (start - rect.top) / (start - end)));
+  const gate = vh * SCRUB_GATE;
+  const end = vh * SCRUB_END;
+  scrubArmed.value = rect.top <= gate;
+  if (rect.top > gate) return 0;
+  return Math.min(1, Math.max(0, (gate - rect.top) / Math.max(1, gate - end)));
 };
 
 const applyScrollCut = () => {
@@ -202,146 +242,115 @@ const applyFaces = () => {
   }
 };
 
-const spawnShards = (
+const spawnSpecks = (
   edgeX: number,
   cardTop: number,
   cardH: number,
   delta: number,
 ) => {
   if (reduced.value) return;
-  const active = Math.abs(delta) >= 0.2;
-  // Keep a low ambient composition rate while the cut is mid-transform.
+  const active = Math.abs(delta) >= 0.25;
   const ambient =
     !active &&
     cut.value > 8 &&
     cut.value < cardWidth.value - 8 &&
-    hash(cut.value * 0.17 + shardSeed) > 0.72;
+    hash(cut.value * 0.19 + speckSeed) > 0.55;
   if (!active && !ambient) return;
   const breaking = active ? delta > 0 : true;
-  const burst = active
-    ? Math.min(28, 6 + Math.ceil(Math.abs(delta) * 0.85))
-    : 4;
+  const burst = active ? Math.min(36, 8 + Math.ceil(Math.abs(delta) * 1.1)) : 5;
   for (let i = 0; i < burst; i++) {
-    shardSeed += 1;
-    const seed = shardSeed * 19.7 + cut.value * 0.13;
-    const y = cardTop + 10 + hash(seed) * Math.max(20, cardH - 20);
-    const w = 14 + hash(seed + 2) * 42;
-    const h = 9 + hash(seed + 3) * 28;
+    speckSeed += 1;
+    const seed = speckSeed * 23.1 + cut.value * 0.11;
+    const y = cardTop + 8 + hash(seed) * Math.max(16, cardH - 16);
+    const size = 1.2 + hash(seed + 2) * 2.8;
+    const outward = 0.6 + hash(seed + 3) * 2.4;
+    const lateral = (hash(seed + 4) - 0.5) * 1.6;
     if (breaking) {
-      shards.push({
-        x: edgeX - 4,
+      specks.push({
+        x: edgeX + (hash(seed + 5) - 0.5) * 4,
         y,
-        w,
-        h,
-        rot: (hash(seed + 4) - 0.5) * 0.9,
-        vx: 1.2 + hash(seed + 5) * 5.5,
-        vy: (hash(seed + 6) - 0.45) * 3.2,
-        vr: (hash(seed + 7) - 0.5) * 0.18,
+        size,
+        vx: outward,
+        vy: lateral,
         life: 0,
-        maxLife: 26 + hash(seed + 8) * 38,
+        maxLife: 18 + hash(seed + 6) * 28,
         kind: 'break',
-        tone: hash(seed + 9),
+        tone: hash(seed + 7),
       });
-      shards.push({
-        x: edgeX + 6 + hash(seed + 10) * 28,
-        y: y + (hash(seed + 11) - 0.5) * 16,
-        w: 8 + hash(seed + 12) * 22,
-        h: 6 + hash(seed + 13) * 16,
-        rot: (hash(seed + 14) - 0.5) * 1.2,
-        vx: -(0.8 + hash(seed + 15) * 3.4),
-        vy: (hash(seed + 16) - 0.5) * 2.4,
-        vr: (hash(seed + 17) - 0.5) * 0.14,
+      specks.push({
+        x: edgeX + 4 + hash(seed + 8) * 10,
+        y: y + (hash(seed + 9) - 0.5) * 8,
+        size: 1 + hash(seed + 10) * 2.2,
+        vx: -outward * 0.85,
+        vy: (hash(seed + 11) - 0.5) * 1.4,
         life: 0,
-        maxLife: 22 + hash(seed + 18) * 34,
+        maxLife: 16 + hash(seed + 12) * 24,
         kind: 'form',
-        tone: hash(seed + 19),
+        tone: hash(seed + 13),
       });
     } else {
-      shards.push({
-        x: edgeX + 2,
+      specks.push({
+        x: edgeX + (hash(seed + 5) - 0.5) * 4,
         y,
-        w,
-        h,
-        rot: (hash(seed + 4) - 0.5) * 0.9,
-        vx: -(1.2 + hash(seed + 5) * 5.5),
-        vy: (hash(seed + 6) - 0.45) * 3.2,
-        vr: (hash(seed + 7) - 0.5) * 0.18,
+        size,
+        vx: -outward,
+        vy: lateral,
         life: 0,
-        maxLife: 26 + hash(seed + 8) * 38,
+        maxLife: 18 + hash(seed + 6) * 28,
         kind: 'break',
-        tone: hash(seed + 9),
+        tone: hash(seed + 7),
       });
-      shards.push({
-        x: edgeX - 10 - hash(seed + 10) * 30,
-        y: y + (hash(seed + 11) - 0.5) * 16,
-        w: 8 + hash(seed + 12) * 22,
-        h: 6 + hash(seed + 13) * 16,
-        rot: (hash(seed + 14) - 0.5) * 1.2,
-        vx: 0.8 + hash(seed + 15) * 3.4,
-        vy: (hash(seed + 16) - 0.5) * 2.4,
-        vr: (hash(seed + 17) - 0.5) * 0.14,
+      specks.push({
+        x: edgeX - 4 - hash(seed + 8) * 10,
+        y: y + (hash(seed + 9) - 0.5) * 8,
+        size: 1 + hash(seed + 10) * 2.2,
+        vx: outward * 0.85,
+        vy: (hash(seed + 11) - 0.5) * 1.4,
         life: 0,
-        maxLife: 22 + hash(seed + 18) * 34,
+        maxLife: 16 + hash(seed + 12) * 24,
         kind: 'form',
-        tone: hash(seed + 19),
+        tone: hash(seed + 13),
       });
     }
   }
-  if (shards.length > 220) shards = shards.slice(-160);
+  if (specks.length > 280) specks = specks.slice(-200);
 };
 
-const stepShards = (dt: number) => {
-  const next: Shard[] = [];
-  for (const shard of shards) {
-    shard.life += dt / 16;
-    const t = shard.life / shard.maxLife;
-    if (t >= 1) continue;
-    const drag = shard.kind === 'form' ? 0.94 : 0.985;
-    shard.x += shard.vx * (dt / 16);
-    shard.y += shard.vy * (dt / 16);
-    shard.rot += shard.vr * (dt / 16);
-    shard.vx *= drag;
-    shard.vy = shard.vy * drag + (shard.kind === 'break' ? 0.04 : -0.02);
-    next.push(shard);
+const stepSpecks = (dt: number) => {
+  const next: Speck[] = [];
+  for (const speck of specks) {
+    speck.life += dt / 16;
+    if (speck.life / speck.maxLife >= 1) continue;
+    speck.x += speck.vx * (dt / 16);
+    speck.y += speck.vy * (dt / 16);
+    speck.vx *= 0.97;
+    speck.vy *= 0.97;
+    next.push(speck);
   }
-  shards = next;
+  specks = next;
 };
 
-const paintShards = (ctx: CanvasRenderingContext2D) => {
-  for (const shard of shards) {
-    const t = shard.life / shard.maxLife;
+const paintSpecks = (ctx: CanvasRenderingContext2D) => {
+  for (const speck of specks) {
+    const t = speck.life / speck.maxLife;
     const alpha =
-      shard.kind === 'form'
-        ? Math.min(1, t * 2.4) * (1 - t) * 1
-        : (1 - t) * (0.72 + shard.tone * 0.28);
-    if (alpha <= 0.02) continue;
-    const fill =
-      shard.kind === 'break'
-        ? `rgba(${238 + Math.floor(shard.tone * 14)},${226 + Math.floor(shard.tone * 12)},${208},`
-        : `rgba(${242 + Math.floor(shard.tone * 10)},${214 + Math.floor(shard.tone * 18)},${168},`;
-    ctx.save();
-    ctx.translate(shard.x + shard.w / 2, shard.y + shard.h / 2);
-    ctx.rotate(shard.rot);
+      speck.kind === 'form'
+        ? Math.min(1, t * 2.5) * (1 - t) * 0.9
+        : (1 - t) * (0.45 + speck.tone * 0.45);
+    if (alpha <= 0.03) continue;
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = `${fill}${Math.min(1, alpha + 0.15)})`;
-    ctx.strokeStyle = `rgba(255,90,31,${0.28 + (1 - t) * 0.45})`;
-    ctx.lineWidth = 1.25;
-    const rw = shard.w;
-    const rh = shard.h;
-    ctx.beginPath();
-    ctx.moveTo(-rw / 2, -rh / 2 + 2);
-    ctx.lineTo(-rw / 2 + 3, -rh / 2);
-    ctx.lineTo(rw / 2, -rh / 2 + hash(shard.tone * 40) * 3);
-    ctx.lineTo(rw / 2 - 2, rh / 2);
-    ctx.lineTo(-rw / 2 + hash(shard.tone * 70) * 4, rh / 2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    if (shard.kind === 'form' && shard.w > 16) {
-      ctx.fillStyle = `rgba(149,104,44,${0.25 * (1 - t)})`;
-      ctx.fillRect(-rw / 4, -2, rw / 2, 3);
+    ctx.fillStyle =
+      speck.kind === 'break'
+        ? `rgba(255,${120 + Math.floor(speck.tone * 90)},55,${alpha})`
+        : `rgba(255,${190 + Math.floor(speck.tone * 40)},160,${alpha})`;
+    const s = speck.size;
+    if (hash(speck.tone * 50) > 0.55) {
+      ctx.beginPath();
+      ctx.arc(speck.x, speck.y, s * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(speck.x, speck.y, s, s * 0.7);
     }
-    ctx.restore();
   }
   ctx.globalAlpha = 1;
 };
@@ -381,12 +390,12 @@ const paintDissolve = (ts: number, dt: number) => {
   prevCut = c;
 
   if (!reduced.value && c > 1 && c < cw - 1) {
-    spawnShards(edgeX, cardTop, cardH, delta);
-    stepShards(dt);
+    spawnSpecks(edgeX, cardTop, cardH, delta);
+    stepSpecks(dt);
   } else if (reduced.value) {
-    shards = [];
+    specks = [];
   } else {
-    stepShards(dt);
+    stepSpecks(dt);
   }
 
   ctx.strokeStyle = HOT;
@@ -400,40 +409,27 @@ const paintDissolve = (ts: number, dt: number) => {
 
   if (reduced.value) return;
 
-  const hazeW = 52 + transform * 36;
+  const hazeW = 40 + transform * 24;
   const haze = ctx.createLinearGradient(beam - hazeW, 0, beam + hazeW, 0);
   haze.addColorStop(0, 'rgba(255,90,31,0)');
-  haze.addColorStop(0.38, 'rgba(255,90,31,0.26)');
-  haze.addColorStop(0.5, 'rgba(255,90,31,0.7)');
-  haze.addColorStop(0.62, 'rgba(255,90,31,0.26)');
+  haze.addColorStop(0.4, 'rgba(255,90,31,0.2)');
+  haze.addColorStop(0.5, 'rgba(255,90,31,0.58)');
+  haze.addColorStop(0.6, 'rgba(255,90,31,0.2)');
   haze.addColorStop(1, 'rgba(255,90,31,0)');
   ctx.fillStyle = haze;
   ctx.fillRect(beam - hazeW, 0, hazeW * 2, height);
 
-  paintShards(ctx);
+  paintSpecks(ctx);
 
   if (c <= 1 || c >= cw - 1) return;
 
-  // Fine ash at the cut — secondary to fragment composition.
-  for (let i = 0; i < 160; i++) {
-    const seed = i * 17.3 + Math.floor(c) * 0.37 + Math.floor(ts / 40);
-    const drift = (hash(seed + 11) - 0.35) * (14 + transform * 26);
-    const px = edgeX + (hash(seed) - 0.5) * 16 + drift;
+  for (let i = 0; i < 120; i++) {
+    const seed = i * 17.3 + Math.floor(c) * 0.37 + Math.floor(ts / 48);
+    const px = edgeX + (hash(seed) - 0.5) * 14;
     const py = cardTop + hash(seed + 4.1) * cardH;
-    const twinkle = 0.5 + 0.5 * Math.sin(ts * 0.022 + seed);
-    const alpha = (0.22 + hash(seed + 9) * 0.5) * twinkle;
-    const size = hash(seed + 8) > 0.8 ? 2.6 : 1;
-    ctx.fillStyle = `rgba(255,${80 + Math.floor(hash(seed + 3) * 120)},28,${alpha})`;
-    ctx.fillRect(Math.floor(px), Math.floor(py), size, size);
-  }
-
-  for (let i = 0; i < 28; i++) {
-    const seed = i * 41.7 + ts * 0.025;
-    const sparkY =
-      ((hash(seed) + ts * 0.00022 * (0.35 + hash(seed + 1))) % 1) * height;
-    const sparkX = beam + (hash(seed + 5) - 0.5) * 20;
-    ctx.fillStyle = `rgba(255,230,200,${0.35 + hash(seed + 8) * 0.5})`;
-    ctx.fillRect(sparkX, sparkY, 2, 7);
+    const alpha = 0.18 + hash(seed + 9) * 0.4;
+    ctx.fillStyle = `rgba(255,${90 + Math.floor(hash(seed + 3) * 100)},40,${alpha})`;
+    ctx.fillRect(Math.floor(px), Math.floor(py), 1, 1);
   }
 };
 
@@ -450,6 +446,8 @@ const tick = (ts: number) => {
   if (!lastTs) lastTs = ts;
   const dt = Math.min(32, ts - lastTs);
   lastTs = ts;
+  // Keep cut + gate attribute synced even when scroll events coalesce.
+  applyScrollCut();
   applyFaces();
   paintDissolve(ts, dt);
   raf = requestAnimationFrame(tick);
@@ -532,6 +530,7 @@ onUnmounted(() => {
       compact: props.compact,
       'motion-ready': !reduced,
       dragging,
+      'scrub-armed': scrubArmed,
     }"
     role="img"
     :aria-label="copy.aria"
@@ -541,13 +540,14 @@ onUnmounted(() => {
       <p class="scanner-hint" aria-hidden="true">{{ copy.hint }}</p>
     </div>
 
-    <div class="scanner-immersion" data-scrub="page">
+    <div class="scanner-immersion" data-scrub="page" data-scrub-gate="viewport">
       <div
         ref="stage"
         class="scanner-stage"
         data-scanner="distill"
         data-cards="1"
         data-scrub="page"
+        :data-scrub-armed="scrubArmed ? 'true' : 'false'"
         @pointerdown="onPointerDown"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
@@ -596,24 +596,42 @@ onUnmounted(() => {
               }}</span>
             </header>
             <p class="card-title">{{ copy.flowTitle }}</p>
-            <ol class="sim-flow">
-              <li
-                v-for="(node, index) in copy.nodes"
-                :key="node.label"
-                :class="[
-                  node.state,
-                  {
-                    decision: node.decision,
-                    connector: index < copy.nodes.length - 1,
-                  },
-                ]"
-              >
-                <span class="sim-node">
-                  <strong>{{ node.label }}</strong>
-                  <small v-if="node.role">{{ node.role }}</small>
-                </span>
-              </li>
-            </ol>
+            <div class="sim-canvas-board">
+              <ol class="sim-canvas-lane">
+                <li
+                  v-for="(node, index) in copy.nodes"
+                  :key="node.label"
+                  :class="[
+                    `kind-${node.kind}`,
+                    node.state,
+                    {
+                      decision: node.decision,
+                      connector: index < copy.nodes.length - 1,
+                    },
+                  ]"
+                >
+                  <span v-if="node.kind === 'start'" class="sim-event start">
+                    <i aria-hidden="true"></i>
+                    <strong>{{ node.label }}</strong>
+                  </span>
+                  <span v-else-if="node.kind === 'end'" class="sim-event end">
+                    <i aria-hidden="true"></i>
+                    <strong>{{ node.label }}</strong>
+                  </span>
+                  <span v-else class="sim-task-card" :data-state="node.state">
+                    <span class="sim-task-accent" aria-hidden="true"></span>
+                    <span class="sim-task-top">
+                      <small class="sim-task-num">0{{ index }}</small>
+                      <small class="sim-task-status">{{ node.status }}</small>
+                    </span>
+                    <strong>{{ node.label }}</strong>
+                    <small v-if="node.role" class="sim-task-role">{{
+                      node.role
+                    }}</small>
+                  </span>
+                </li>
+              </ol>
+            </div>
             <p class="sim-evidence">{{ copy.evidence }}</p>
             <p class="panel-foot">{{ copy.footFlow }}</p>
           </article>
