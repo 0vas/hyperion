@@ -492,9 +492,8 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect(stage).toHaveAttribute('data-scanner', 'distill');
   await expect(stage).toHaveAttribute('data-cards', '1');
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
-  await expect(teaser.locator('.scanner-badge')).toContainText(
-    'Estado visible',
-  );
+  await expect(teaser.locator('.scanner-badge')).toHaveCount(0);
+  await expect(teaser.getByText('Estado visible')).toHaveCount(0);
   await expect(teaser.locator('.scanner-slot')).toHaveCount(1);
   await expect(teaser.locator('.scanner-slot.single')).toBeVisible();
   await expect(teaser.locator('.scanner-slot .chat-face')).toBeVisible();
@@ -559,9 +558,8 @@ test('birth story page and home teaser ship in both languages with static diagra
     'data-cards',
     '1',
   );
-  await expect(enTeaser.locator('.scanner-badge')).toContainText(
-    'Visible state',
-  );
+  await expect(enTeaser.locator('.scanner-badge')).toHaveCount(0);
+  await expect(enTeaser.getByText('Visible state')).toHaveCount(0);
   await enTeaser
     .getByRole('link', { name: 'Read the landscape', exact: true })
     .click();

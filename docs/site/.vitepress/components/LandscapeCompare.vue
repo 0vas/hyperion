@@ -17,7 +17,6 @@ const card = computed(() =>
         ],
         flow: ['Start', 'Plan', 'Decision?', 'Build', 'End'],
         decisionIndex: 2,
-        steps: 5,
       }
     : {
         chatTitle: 'Pedido en el chat',
@@ -28,7 +27,6 @@ const card = computed(() =>
         ],
         flow: ['Inicio', 'Plan', '¿Decisión?', 'Build', 'Fin'],
         decisionIndex: 2,
-        steps: 5,
       },
 );
 
@@ -40,8 +38,7 @@ const canvasEl = ref<HTMLCanvasElement | null>(null);
 
 /** Cut across the single card: 0 = all chat (right of beam), cw = all flow (left). */
 const cut = ref(0);
-const cardWidth = ref(360);
-const visibleState = ref(0);
+const cardWidth = ref(520);
 const hovering = ref(false);
 const dragging = ref(false);
 const reduced = ref(true);
@@ -57,7 +54,6 @@ let lastTs = 0;
 let velocity = 0;
 let dragOriginX = 0;
 let dragOriginCut = 0;
-let counted = false;
 
 const syncMotion = () => {
   reduced.value = mediaMotion?.matches ?? true;
@@ -75,7 +71,7 @@ const clampCut = (value: number) => {
 
 const measure = () => {
   if (!slot.value) return;
-  cardWidth.value = slot.value.offsetWidth || 360;
+  cardWidth.value = slot.value.offsetWidth || 520;
   cut.value = clampCut(cut.value);
 };
 
@@ -93,19 +89,15 @@ const applyFaces = () => {
     flow.style.visibility = 'hidden';
     flow.style.clipPath = 'inset(0 100% 0 0)';
   } else {
-    chat.style.clipPath = `inset(0 0 0 ${c}px round 0 16px 16px 0)`;
+    // Hard cut on the left edge; keep radius only on the intact right side.
+    chat.style.clipPath = `inset(0 0 0 ${c}px round 0 18px 18px 0)`;
     const fade = `linear-gradient(90deg, transparent ${c}px, #000 ${c + FADE}px)`;
     chat.style.webkitMaskImage = fade;
     chat.style.maskImage = fade;
     flow.style.visibility = 'visible';
-    flow.style.clipPath = `inset(0 ${Math.max(0, cw - c)}px 0 0)`;
+    // Flow fills exactly the cut region with a hard right edge at the beam.
+    flow.style.clipPath = `inset(0 ${Math.max(0, cw - c)}px 0 0 round 18px 0 0 18px)`;
   }
-
-  if (c >= cw - 1 && !counted) {
-    counted = true;
-    visibleState.value += card.value.steps;
-  }
-  if (c < cw * 0.4) counted = false;
 };
 
 const paintDissolve = (ts: number) => {
@@ -132,12 +124,11 @@ const paintDissolve = (ts: number) => {
   const beam = width / 2;
   const cw = cardWidth.value;
   const c = cut.value;
-  // Card is centered on the beam via left = beam - cut.
   const cardLeft = beam - c;
   const cardTop = slot.value
     ? slot.value.getBoundingClientRect().top - root.getBoundingClientRect().top
-    : height * 0.18;
-  const cardH = slot.value?.offsetHeight || height * 0.7;
+    : height * 0.08;
+  const cardH = slot.value?.offsetHeight || height * 0.84;
 
   ctx.strokeStyle = HOT;
   ctx.lineWidth = 2;
@@ -150,40 +141,36 @@ const paintDissolve = (ts: number) => {
 
   if (reduced.value) return;
 
-  const haze = ctx.createLinearGradient(beam - 42, 0, beam + 42, 0);
+  const haze = ctx.createLinearGradient(beam - 48, 0, beam + 48, 0);
   haze.addColorStop(0, 'rgba(255,90,31,0)');
-  haze.addColorStop(0.42, 'rgba(255,90,31,0.2)');
-  haze.addColorStop(0.5, 'rgba(255,90,31,0.58)');
-  haze.addColorStop(0.58, 'rgba(255,90,31,0.2)');
+  haze.addColorStop(0.42, 'rgba(255,90,31,0.22)');
+  haze.addColorStop(0.5, 'rgba(255,90,31,0.62)');
+  haze.addColorStop(0.58, 'rgba(255,90,31,0.22)');
   haze.addColorStop(1, 'rgba(255,90,31,0)');
   ctx.fillStyle = haze;
-  ctx.fillRect(beam - 42, 0, 84, height);
+  ctx.fillRect(beam - 48, 0, 96, height);
 
   if (c <= 1 || c >= cw - 1) return;
   const edgeX = cardLeft + c;
 
-  // Dense dithered particles fixed to the card surface along the cut.
-  for (let i = 0; i < 160; i++) {
+  for (let i = 0; i < 220; i++) {
     const seed = i * 17.3 + Math.floor(c) * 0.37 + Math.floor(ts / 48);
-    const px = edgeX + (hash(seed) - 0.5) * 22;
+    const px = edgeX + (hash(seed) - 0.5) * 28;
     const py = cardTop + hash(seed + 4.1) * cardH;
-    const twinkle = reduced.value
-      ? 1
-      : 0.55 + 0.45 * Math.sin(ts * 0.02 + seed);
-    const alpha = (0.28 + hash(seed + 9) * 0.55) * twinkle;
+    const twinkle = 0.55 + 0.45 * Math.sin(ts * 0.02 + seed);
+    const alpha = (0.3 + hash(seed + 9) * 0.55) * twinkle;
     const size = hash(seed + 8) > 0.78 ? 3 : hash(seed + 2) > 0.5 ? 2 : 1;
     ctx.fillStyle = `rgba(255,${88 + Math.floor(hash(seed + 3) * 100)},31,${alpha})`;
     ctx.fillRect(Math.floor(px), Math.floor(py), size, size);
   }
 
-  // Free sparks along the beam.
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 18; i++) {
     const seed = i * 41.7 + ts * 0.02;
     const sparkY =
       ((hash(seed) + ts * 0.0002 * (0.35 + hash(seed + 1))) % 1) * height;
-    const sparkX = beam + (hash(seed + 5) - 0.5) * 16;
+    const sparkX = beam + (hash(seed + 5) - 0.5) * 18;
     ctx.fillStyle = `rgba(255,225,190,${0.35 + hash(seed + 8) * 0.55})`;
-    ctx.fillRect(sparkX, sparkY, 2, 6);
+    ctx.fillRect(sparkX, sparkY, 2, 7);
   }
 };
 
@@ -206,7 +193,6 @@ const tick = (ts: number) => {
       velocity += (target - velocity) * 0.08;
     }
     if (velocity) cut.value = clampCut(cut.value + velocity * (dt / 16));
-    // Loop: fully transformed → ease back to chat for another pass.
     if (
       !dragging.value &&
       !reduced.value &&
@@ -236,7 +222,6 @@ const onPointerDown = (event: PointerEvent) => {
 
 const onPointerMove = (event: PointerEvent) => {
   if (!dragging.value) return;
-  // Drag left → increase cut (chat→flow); drag right → rebuild chat.
   const delta = event.clientX - dragOriginX;
   cut.value = clampCut(dragOriginCut - delta);
   velocity = -event.movementX * 0.35;
@@ -275,7 +260,7 @@ onMounted(async () => {
   mediaMotion.addEventListener('change', syncMotion);
   await nextTick();
   measure();
-  cut.value = cardWidth.value * 0.28;
+  cut.value = cardWidth.value * 0.42;
   window.addEventListener('resize', measure);
   (
     window as Window & {
@@ -334,12 +319,6 @@ onUnmounted(() => {
       @pointercancel="onPointerUp"
       @wheel="onWheel"
     >
-      <div class="scanner-badge" aria-hidden="true">
-        <span>{{ en ? 'Visible state' : 'Estado visible' }}</span>
-        <strong>{{ visibleState }}</strong>
-        <small>{{ en ? 'illustration' : 'ilustración' }}</small>
-      </div>
-
       <div class="scanner-beam" aria-hidden="true"></div>
       <canvas ref="canvasEl" class="scanner-fx" aria-hidden="true"></canvas>
 
@@ -394,8 +373,8 @@ onUnmounted(() => {
     <figcaption>
       {{
         en
-          ? 'One card: right of the beam is chat; through the scanner the same work becomes a Hyperion path. Scroll forward to transform; reverse restores chat. The counter is an illustration, not a live run.'
-          : 'Una sola tarjeta: a la derecha del haz es chat; al cruzar el escáner el mismo trabajo se vuelve un recorrido Hyperion. Avanza para transformar; al revés recuperas el chat. El contador es ilustración, no una ejecución en vivo.'
+          ? 'One card: right of the beam is chat; through the scanner the same work becomes a Hyperion path. Scroll forward to transform; reverse restores chat. Decorative motion — not a live agent run.'
+          : 'Una sola tarjeta: a la derecha del haz es chat; al cruzar el escáner el mismo trabajo se vuelve un recorrido Hyperion. Avanza para transformar; al revés recuperas el chat. Movimiento decorativo — no es una ejecución en vivo.'
       }}
     </figcaption>
   </figure>
