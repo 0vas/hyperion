@@ -111,6 +111,7 @@ const cards = computed<Card[]>(() =>
 );
 
 const stage = ref<HTMLElement | null>(null);
+const track = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 const offset = ref(0);
 const visibleState = ref(0);
@@ -119,9 +120,10 @@ const dragging = ref(false);
 const reduced = ref(true);
 const narrow = ref(false);
 
-const AUTO_SPEED = 0.55;
-const HOVER_SPEED = 0.18;
-const CARD_GAP = 28;
+const AUTO_SPEED = 0.62;
+const HOVER_SPEED = 0.2;
+const CARD_GAP = 36;
+const FADE = 26;
 let mediaMotion: MediaQueryList | undefined;
 let mediaNarrow: MediaQueryList | undefined;
 let raf = 0;
@@ -129,9 +131,19 @@ let lastTs = 0;
 let velocity = 0;
 let dragOriginX = 0;
 let dragOriginOffset = 0;
-let cardSpan = 320;
-let loopWidth = 1400;
+let cardWidth = 360;
+let loopWidth = 1600;
 const crossed = new Set<string>();
+type CutSample = {
+  id: string;
+  cut: number;
+  width: number;
+  left: number;
+  top: number;
+  height: number;
+  steps: number;
+};
+const samples: CutSample[] = [];
 
 const syncMotion = () => {
   reduced.value = mediaMotion?.matches ?? true;
@@ -142,11 +154,11 @@ const syncNarrow = () => {
 
 const measure = () => {
   const sample = stage.value?.querySelector(
-    '.scanner-card',
+    '.scanner-slot',
   ) as HTMLElement | null;
   if (!sample) return;
-  cardSpan = sample.offsetWidth + CARD_GAP;
-  loopWidth = cardSpan * cards.value.length;
+  cardWidth = sample.offsetWidth;
+  loopWidth = (cardWidth + CARD_GAP) * cards.value.length;
 };
 
 const wrapOffset = (value: number) => {
@@ -161,21 +173,53 @@ const hash = (n: number) => {
   return x - Math.floor(x);
 };
 
-const updateCounter = () => {
+const applyCuts = () => {
   const root = stage.value;
-  if (!root || !loopWidth) return;
-  const mid = root.getBoundingClientRect().left + root.clientWidth / 2;
-  for (const card of root.querySelectorAll<HTMLElement>(
-    '.scanner-card[data-id]',
-  )) {
-    const rect = card.getBoundingClientRect();
-    const center = rect.left + rect.width / 2;
-    const id = card.dataset.id || '';
-    if (center < mid - 8 && !crossed.has(id)) {
-      crossed.add(id);
-      visibleState.value += card.dataset.steps ? Number(card.dataset.steps) : 3;
+  if (!root) return;
+  const stageRect = root.getBoundingClientRect();
+  const beamX = stageRect.left + stageRect.width / 2;
+  samples.length = 0;
+
+  for (const slot of root.querySelectorAll<HTMLElement>('.scanner-slot')) {
+    const rect = slot.getBoundingClientRect();
+    const width = rect.width || cardWidth;
+    const cut = Math.max(0, Math.min(width, beamX - rect.left));
+    const chat = slot.querySelector<HTMLElement>('.chat-face');
+    const flow = slot.querySelector<HTMLElement>('.flow-face');
+    if (!chat || !flow) continue;
+
+    if (cut <= 0.5) {
+      chat.style.clipPath = 'none';
+      chat.style.webkitMaskImage = '';
+      chat.style.maskImage = '';
+      flow.style.visibility = 'hidden';
+      flow.style.clipPath = 'inset(0 100% 0 0)';
+    } else {
+      chat.style.clipPath = `inset(0 0 0 ${cut}px round 0 16px 16px 0)`;
+      const fade = `linear-gradient(90deg, transparent ${cut}px, #000 ${cut + FADE}px)`;
+      chat.style.webkitMaskImage = fade;
+      chat.style.maskImage = fade;
+      flow.style.visibility = 'visible';
+      flow.style.clipPath = `inset(0 ${Math.max(0, width - cut)}px 0 0)`;
     }
-    if (center > mid + 40) crossed.delete(id);
+
+    const id = slot.dataset.id || '';
+    const steps = Number(slot.dataset.steps || 3);
+    samples.push({
+      id,
+      cut,
+      width,
+      left: rect.left - stageRect.left,
+      top: rect.top - stageRect.top,
+      height: rect.height,
+      steps,
+    });
+
+    if (cut >= width - 2 && id && !crossed.has(id)) {
+      crossed.add(id);
+      visibleState.value += steps;
+    }
+    if (cut < width * 0.35) crossed.delete(id);
   }
 };
 
@@ -199,44 +243,50 @@ const paintDissolve = (ts: number) => {
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  if (reduced.value) return;
 
-  const x = width / 2;
-  const hot = '#FF5A1F';
-  const glow = ctx.createLinearGradient(x - 40, 0, x + 40, 0);
-  glow.addColorStop(0, 'rgba(255,90,31,0)');
-  glow.addColorStop(0.45, 'rgba(255,90,31,0.18)');
-  glow.addColorStop(0.5, 'rgba(255,90,31,0.55)');
-  glow.addColorStop(0.55, 'rgba(255,90,31,0.18)');
-  glow.addColorStop(1, 'rgba(255,90,31,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(x - 40, 0, 80, height);
-
-  ctx.strokeStyle = hot;
+  const beam = width / 2;
+  ctx.strokeStyle = '#FF5A1F';
   ctx.lineWidth = 2;
-  ctx.globalAlpha = 0.9;
+  ctx.globalAlpha = reduced.value ? 0.55 : 0.92;
   ctx.beginPath();
-  ctx.moveTo(x, 0);
-  ctx.lineTo(x, height);
+  ctx.moveTo(beam, 0);
+  ctx.lineTo(beam, height);
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  for (let i = 0; i < 90; i++) {
-    const seed = i * 17.13 + Math.floor(ts / 40);
-    const px = x + (hash(seed) - 0.5) * 54;
-    const py = hash(seed + 3.1) * height;
-    const size = hash(seed + 7) > 0.82 ? 3 : 1.5;
-    const alpha = 0.25 + hash(seed + 9) * 0.55;
-    ctx.fillStyle = `rgba(255,${90 + Math.floor(hash(seed + 2) * 80)},31,${alpha})`;
-    ctx.fillRect(Math.floor(px), Math.floor(py), size, size);
-  }
-  for (let i = 0; i < 12; i++) {
-    const seed = i * 41.7 + ts * 0.02;
-    const sparkY =
-      ((hash(seed) + ts * 0.00015 * (0.4 + hash(seed + 1))) % 1) * height;
-    const sparkX = x + (hash(seed + 5) - 0.5) * 18;
-    ctx.fillStyle = `rgba(255,220,180,${0.35 + hash(seed + 8) * 0.5})`;
-    ctx.fillRect(sparkX, sparkY, 2, 6);
+  if (reduced.value) return;
+
+  const glow = ctx.createLinearGradient(beam - 36, 0, beam + 36, 0);
+  glow.addColorStop(0, 'rgba(255,90,31,0)');
+  glow.addColorStop(0.45, 'rgba(255,90,31,0.16)');
+  glow.addColorStop(0.5, 'rgba(255,90,31,0.5)');
+  glow.addColorStop(0.55, 'rgba(255,90,31,0.16)');
+  glow.addColorStop(1, 'rgba(255,90,31,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(beam - 36, 0, 72, height);
+
+  for (const sample of samples) {
+    if (sample.cut <= 1 || sample.cut >= sample.width - 1) continue;
+    const edgeX = sample.left + sample.cut;
+    for (let i = 0; i < 70; i++) {
+      const seed = i * 19.7 + sample.cut * 0.13 + Math.floor(ts / 36);
+      const px = edgeX + (hash(seed) - 0.5) * 28;
+      const py = sample.top + hash(seed + 4.2) * sample.height;
+      const size = hash(seed + 8) > 0.8 ? 3 : 1.5;
+      const alpha = 0.22 + hash(seed + 11) * 0.55;
+      ctx.fillStyle = `rgba(255,${90 + Math.floor(hash(seed + 2) * 90)},31,${alpha})`;
+      ctx.fillRect(Math.floor(px), Math.floor(py), size, size);
+    }
+    for (let i = 0; i < 8; i++) {
+      const seed = i * 53.1 + ts * 0.018 + sample.cut;
+      const sparkY =
+        sample.top +
+        ((hash(seed) + ts * 0.00018 * (0.35 + hash(seed + 1))) % 1) *
+          sample.height;
+      const sparkX = edgeX + (hash(seed + 6) - 0.5) * 12;
+      ctx.fillStyle = `rgba(255,220,180,${0.35 + hash(seed + 9) * 0.5})`;
+      ctx.fillRect(sparkX, sparkY, 2, 5);
+    }
   }
 };
 
@@ -252,12 +302,18 @@ const tick = (ts: number) => {
       const target = hovering.value ? HOVER_SPEED : AUTO_SPEED;
       velocity += (target - velocity) * 0.08;
     }
-    if (velocity)
+    if (velocity) {
       offset.value = wrapOffset(offset.value - velocity * (dt / 16));
+    }
   }
-  updateCounter();
+  applyCuts();
   paintDissolve(ts);
   raf = requestAnimationFrame(tick);
+};
+
+const scrubBy = (deltaPx: number) => {
+  offset.value = wrapOffset(offset.value + deltaPx);
+  velocity = deltaPx * 0.08;
 };
 
 const onPointerDown = (event: PointerEvent) => {
@@ -266,14 +322,18 @@ const onPointerDown = (event: PointerEvent) => {
   dragOriginX = event.clientX;
   dragOriginOffset = offset.value;
   velocity = 0;
-  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  try {
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  } catch {
+    /* synthetic events may omit capture */
+  }
 };
 
 const onPointerMove = (event: PointerEvent) => {
   if (!dragging.value) return;
   const delta = event.clientX - dragOriginX;
   offset.value = wrapOffset(dragOriginOffset + delta);
-  velocity = event.movementX * 0.35;
+  velocity = event.movementX * 0.4;
 };
 
 const onPointerUp = (event: PointerEvent) => {
@@ -294,14 +354,15 @@ const onWheel = (event: WheelEvent) => {
       : event.deltaY;
   if (!dominant) return;
   event.preventDefault();
-  offset.value = wrapOffset(offset.value - dominant * 0.65);
-  velocity = 0;
+  // Scroll forward (down/right) advances chat→flow (cards move left).
+  // Reverse rebuilds the chat face.
+  scrubBy(-dominant * 0.7);
 };
 
 const ariaLabel = computed(() =>
   en.value
-    ? 'Illustration: chat cards drift left through a center scanner and become Hyperion canvas steps with a visible-state counter. Decorative motion; not a live agent run.'
-    : 'Ilustración: tarjetas de chat cruzan un escáner central y se vuelven pasos del canvas de Hyperion, con contador de estado visible. Movimiento decorativo; no es una ejecución en vivo.',
+    ? 'Illustration: one Hyperion card crosses a center scanner. Right of the beam it is chat; through the dissolve it becomes the same work as a guided flow. Scroll or drag forward to transform; reverse to restore chat. Decorative; not a live agent run.'
+    : 'Ilustración: una tarjeta Hyperion cruza un escáner central. A la derecha del haz es chat; al disolverse se vuelve el mismo trabajo como flujo guiado. Avanza con scroll o arrastre para transformar; al revés recuperas el chat. Decorativo; no es una ejecución en vivo.',
 );
 
 onMounted(async () => {
@@ -313,8 +374,13 @@ onMounted(async () => {
   mediaNarrow.addEventListener('change', syncNarrow);
   await nextTick();
   measure();
-  offset.value = wrapOffset(-cardSpan * 0.35);
+  offset.value = wrapOffset(-(cardWidth + CARD_GAP) * 0.15);
   window.addEventListener('resize', measure);
+  (
+    window as Window & {
+      __hyperionScanner?: { scrubBy: (deltaPx: number) => void };
+    }
+  ).__hyperionScanner = { scrubBy };
   raf = requestAnimationFrame(tick);
 });
 
@@ -323,6 +389,11 @@ onUnmounted(() => {
   mediaMotion?.removeEventListener('change', syncMotion);
   mediaNarrow?.removeEventListener('change', syncNarrow);
   window.removeEventListener('resize', measure);
+  delete (
+    window as Window & {
+      __hyperionScanner?: { scrubBy: (deltaPx: number) => void };
+    }
+  ).__hyperionScanner;
 });
 
 watch(cards, async () => {
@@ -352,8 +423,8 @@ watch(cards, async () => {
       <p class="scanner-hint" aria-hidden="true">
         {{
           en
-            ? 'Drag · scroll sideways · hover to slow'
-            : 'Arrastra · desplaza · pasa el cursor para frenar'
+            ? 'Scroll or drag · reverse restores chat · hover slows'
+            : 'Scroll o arrastra · al revés vuelve el chat · el cursor frena'
         }}
       </p>
     </div>
@@ -361,6 +432,7 @@ watch(cards, async () => {
     <div
       ref="stage"
       class="scanner-stage"
+      data-scanner="distill"
       @pointerenter="hovering = true"
       @pointerleave="hovering = false"
       @pointerdown="onPointerDown"
@@ -378,17 +450,21 @@ watch(cards, async () => {
       <div class="scanner-beam" aria-hidden="true"></div>
       <canvas ref="canvasEl" class="scanner-fx" aria-hidden="true"></canvas>
 
-      <div class="scanner-lane chat-lane" aria-hidden="true">
-        <div
-          class="scanner-track"
-          :style="{ transform: `translate3d(${offset}px,0,0)` }"
-        >
-          <template v-for="copy in 2" :key="`chat-${copy}`">
-            <article
-              v-for="card in cards"
-              :key="`chat-${copy}-${card.id}`"
-              class="scanner-card chat-face"
-            >
+      <div
+        ref="track"
+        class="scanner-track"
+        aria-hidden="true"
+        :style="{ transform: `translate3d(${offset}px,0,0)` }"
+      >
+        <template v-for="copy in 2" :key="`copy-${copy}`">
+          <div
+            v-for="card in cards"
+            :key="`${copy}-${card.id}`"
+            class="scanner-slot"
+            :data-id="`${copy}-${card.id}`"
+            :data-steps="String(card.flow.length)"
+          >
+            <article class="scanner-card chat-face">
               <p class="card-label">{{ en ? 'Chat' : 'Chat' }}</p>
               <p class="card-title">{{ card.chatTitle }}</p>
               <div class="chat-stack">
@@ -404,23 +480,7 @@ watch(cards, async () => {
                 {{ en ? 'The thread is the map' : 'El hilo es el mapa' }}
               </p>
             </article>
-          </template>
-        </div>
-      </div>
-
-      <div class="scanner-lane flow-lane" aria-hidden="true">
-        <div
-          class="scanner-track"
-          :style="{ transform: `translate3d(${offset}px,0,0)` }"
-        >
-          <template v-for="copy in 2" :key="`flow-${copy}`">
-            <article
-              v-for="card in cards"
-              :key="`flow-${copy}-${card.id}`"
-              class="scanner-card flow-face"
-              :data-id="`${copy}-${card.id}`"
-              :data-steps="String(card.flow.length)"
-            >
+            <article class="scanner-card flow-face">
               <p class="card-label">
                 {{ en ? 'Hyperion canvas' : 'Canvas Hyperion' }}
               </p>
@@ -441,16 +501,16 @@ watch(cards, async () => {
                 {{ en ? 'The process is the map' : 'El proceso es el mapa' }}
               </p>
             </article>
-          </template>
-        </div>
+          </div>
+        </template>
       </div>
     </div>
 
     <figcaption>
       {{
         en
-          ? 'Right of the line: chat cards. Through the scanner: the same work as a Hyperion path with steps, your decision and evidence. Numbers are an illustration, not a live run.'
-          : 'A la derecha de la línea: tarjetas de chat. Al cruzar el escáner: el mismo trabajo como recorrido Hyperion con pasos, tu decisión y evidencia. Los números son ilustración, no una ejecución en vivo.'
+          ? 'One card at a time: right of the beam is chat; through the scanner the same work becomes a Hyperion path. Scroll forward to transform; reverse restores chat. The counter is an illustration, not a live run.'
+          : 'Una tarjeta a la vez: a la derecha del haz es chat; al cruzar el escáner el mismo trabajo se vuelve un recorrido Hyperion. Avanza para transformar; al revés recuperas el chat. El contador es ilustración, no una ejecución en vivo.'
       }}
     </figcaption>
   </figure>

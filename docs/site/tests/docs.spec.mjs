@@ -488,10 +488,15 @@ test('birth story page and home teaser ship in both languages with static diagra
   ).toHaveAttribute('href', '/hyperion/guia/el-paisaje.html');
   await expect(teaser.locator('.landscape-compare.compact')).toBeVisible();
   await expect(teaser.locator('.scanner-stage')).toBeVisible();
+  await expect(teaser.locator('.scanner-stage')).toHaveAttribute(
+    'data-scanner',
+    'distill',
+  );
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
   await expect(teaser.locator('.scanner-badge')).toContainText(
     'Estado visible',
   );
+  await expect(teaser.locator('.scanner-slot').first()).toBeVisible();
   await expect(teaser.locator('.mini-flow li').first()).toHaveCSS(
     'animation-name',
     'none',
@@ -522,16 +527,48 @@ test('birth story page and home teaser ship in both languages with static diagra
   const compare = page.locator('.landscape-compare').first();
   await expect(compare).toBeVisible();
   await expect(compare.locator('.scanner-stage')).toBeVisible();
+  await expect(compare.locator('.scanner-stage')).toHaveAttribute(
+    'data-scanner',
+    'distill',
+  );
   await expect(compare.locator('.scanner-beam')).toBeVisible();
   await expect(compare.locator('.scanner-badge')).toContainText(
     'Estado visible',
   );
-  await expect(
-    compare.locator('.chat-lane .scanner-card').first(),
-  ).toBeVisible();
-  await expect(
-    compare.locator('.flow-lane .scanner-card').first(),
-  ).toBeVisible();
+  const slot = compare.locator('.scanner-slot').first();
+  await expect(slot.locator('.chat-face')).toBeVisible();
+  await expect(slot.locator('.flow-face')).toBeAttached();
+  const track = compare.locator('.scanner-track');
+  const before = await track.evaluate(
+    (node) => getComputedStyle(node).transform,
+  );
+  await page.evaluate(() => {
+    window.__hyperionScanner?.scrubBy(-320);
+  });
+  await expect
+    .poll(async () =>
+      track.evaluate((node) => getComputedStyle(node).transform),
+    )
+    .not.toBe(before);
+  const mid = await track.evaluate((node) => getComputedStyle(node).transform);
+  await page.evaluate(() => {
+    window.__hyperionScanner?.scrubBy(640);
+  });
+  await expect
+    .poll(async () =>
+      track.evaluate((node) => getComputedStyle(node).transform),
+    )
+    .not.toBe(mid);
+  await expect
+    .poll(async () =>
+      compare.locator('.scanner-slot .chat-face').evaluateAll((nodes) =>
+        nodes.some((node) => {
+          const clip = getComputedStyle(node).clipPath;
+          return clip === 'none' || clip.startsWith('inset(0px 0px 0px 0px)');
+        }),
+      ),
+    )
+    .toBe(true);
   await expect(page.getByText(/Distill|Kessler/i)).toHaveCount(0);
   await expect(page.locator('.landscape-loop')).toBeVisible();
   await expect(page.locator('.mini-flow li').first()).toHaveCSS(
