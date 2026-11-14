@@ -3434,6 +3434,7 @@ export function App() {
           runCoordinator={run?.coordinator}
           inventory={connections.inventory}
           resumeConnector={hostResumeConnector}
+          outboundPrompt={run?.outboundPrompt}
           busy={busy}
           onNotice={(message) => setNotice(message)}
           onError={(message) => setError(message)}

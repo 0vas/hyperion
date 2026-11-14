@@ -52,6 +52,9 @@ for (const locale of ['es', 'en'] as const) {
       });
       await fab.click();
       const panel = page.getByRole('dialog');
+      await expect(panel.getByTestId('chat-bubble-thread')).toBeVisible();
+      await expect(panel.getByTestId('chat-bubble-composer')).toBeVisible();
+      await expect(panel.getByTestId('chat-bubble-empty')).toBeVisible();
       const select = panel.getByTestId('chat-bubble-harness');
       await expect(select).toBeEnabled();
 
@@ -84,6 +87,11 @@ for (const locale of ['es', 'en'] as const) {
         locale === 'es'
           ? 'MCP solo no despierta el chat'
           : 'MCP alone cannot wake the chat',
+      );
+      await expect(panel).toContainText(
+        locale === 'es'
+          ? 'sin fabricar respuestas del agente'
+          : 'does not invent agent replies',
       );
     } finally {
       await context.close();
