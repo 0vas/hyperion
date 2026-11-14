@@ -487,18 +487,31 @@ test('birth story page and home teaser ship in both languages with static diagra
     teaser.getByRole('link', { name: 'Leer el paisaje', exact: true }),
   ).toHaveAttribute('href', '/hyperion/guia/el-paisaje.html');
   await expect(teaser.locator('.landscape-compare.compact')).toBeVisible();
+  const track = teaser.locator('.scanner-scroll-track');
+  await expect(track).toHaveAttribute('data-scrub', 'page');
   const stage = teaser.locator('.scanner-stage');
   await expect(stage).toBeVisible();
   await expect(stage).toHaveAttribute('data-scanner', 'distill');
   await expect(stage).toHaveAttribute('data-cards', '1');
+  await expect(stage).toHaveAttribute('data-scrub', 'page');
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
   await expect(teaser.locator('.scanner-badge')).toHaveCount(0);
   await expect(teaser.getByText('Estado visible')).toHaveCount(0);
   await expect(teaser.locator('.scanner-slot')).toHaveCount(1);
   await expect(teaser.locator('.scanner-slot.single')).toBeVisible();
-  await expect(teaser.locator('.scanner-slot .chat-face')).toBeVisible();
-  await expect(teaser.locator('.scanner-slot .flow-face')).toBeAttached();
-  await expect(teaser.locator('.mini-flow li').first()).toHaveCSS(
+  await expect(
+    teaser.locator('.scanner-slot .chat-face.sim-chat'),
+  ).toBeVisible();
+  await expect(
+    teaser.locator('.scanner-slot .flow-face.sim-canvas'),
+  ).toBeAttached();
+  await expect(teaser.locator('.sim-composer')).toBeVisible();
+  await expect(teaser.locator('.sim-flow li')).toHaveCount(5);
+  await expect(teaser.locator('.sim-evidence')).toBeAttached();
+  await expect(teaser.locator('.scanner-hint')).toContainText(
+    /Scroll de la página/i,
+  );
+  await expect(teaser.locator('.sim-flow li').first()).toHaveCSS(
     'animation-name',
     'none',
   );
@@ -518,6 +531,19 @@ test('birth story page and home teaser ship in both languages with static diagra
   const mid = await slot.evaluate((node) => node.style.transform);
   await page.evaluate(() => {
     window.__hyperionScanner?.scrubBy(440);
+  });
+  await expect
+    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .not.toBe(mid);
+  // Page scroll through the sticky track advances the cut chat→flow.
+  await page.evaluate(() => {
+    const trackNode = document.querySelector('.scanner-scroll-track');
+    if (!trackNode) return;
+    const top =
+      window.scrollY +
+      trackNode.getBoundingClientRect().top +
+      trackNode.clientHeight * 0.55;
+    window.scrollTo(0, top);
   });
   await expect
     .poll(async () => slot.evaluate((node) => node.style.transform))
@@ -557,6 +583,14 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect(enTeaser.locator('.scanner-stage')).toHaveAttribute(
     'data-cards',
     '1',
+  );
+  await expect(enTeaser.locator('.scanner-stage')).toHaveAttribute(
+    'data-scrub',
+    'page',
+  );
+  await expect(enTeaser.locator('.sim-chat')).toBeVisible();
+  await expect(enTeaser.locator('.scanner-hint')).toContainText(
+    /Scroll the page/i,
   );
   await expect(enTeaser.locator('.scanner-badge')).toHaveCount(0);
   await expect(enTeaser.getByText('Visible state')).toHaveCount(0);
