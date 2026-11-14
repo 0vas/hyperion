@@ -119,14 +119,34 @@
   width: 100%;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: #fffefa;
+  background: var(--stone);
   color: var(--ink);
   padding: 0.55rem 0.65rem;
   font: inherit;
+  color-scheme: inherit;
 }
 
-.chat-bubble-field select:disabled {
-  opacity: 0.85;
+.chat-bubble-field select option {
+  background: var(--stone);
+  color: var(--ink);
+}
+
+.chat-bubble-field textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.chat-bubble-field select:disabled,
+.chat-bubble-field textarea:disabled {
+  opacity: 0.7;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.chat-bubble-field select:focus-visible,
+.chat-bubble-field textarea:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .chat-bubble-field .field-hint {
