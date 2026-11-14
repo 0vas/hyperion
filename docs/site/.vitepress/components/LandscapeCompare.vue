@@ -469,6 +469,8 @@ const scrubBy = (deltaPx: number) => {
   scrollLocked.value = true;
   cut.value = clampCut(cut.value - deltaPx);
   syncBeam();
+  // Preserve programmatic scrub against the next scroll-linked apply.
+  dragBias = cut.value - scrollProgress() * cardWidth.value;
   window.setTimeout(() => {
     scrollLocked.value = false;
   }, 80);
