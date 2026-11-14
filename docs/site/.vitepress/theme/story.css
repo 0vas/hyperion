@@ -79,6 +79,8 @@
 .landscape-compare.compact {
   margin-top: 8px;
   padding: 14px;
+  background: color-mix(in srgb, var(--story-panel) 70%, var(--vp-c-bg));
+  border-color: color-mix(in srgb, var(--story-line) 75%, var(--vp-c-bg));
 }
 .scanner-compare {
   --scan-hot: #ff5a1f;
@@ -104,15 +106,11 @@
   font-size: 12px;
   color: var(--story-muted);
 }
-.scanner-scroll-track {
+/* Immersion: no tall sticky spacer — page scroll drives cut via viewport travel. */
+.scanner-immersion {
   position: relative;
-  height: 220vh;
-  margin: 0 -4px;
-}
-.scanner-sticky {
-  position: sticky;
-  top: max(12px, 8vh);
-  z-index: 1;
+  margin: 0;
+  background: transparent;
 }
 .scanner-stage {
   position: relative;
@@ -528,9 +526,6 @@
   color: var(--story-ink) !important;
 }
 @media (max-width: 767px) {
-  .scanner-scroll-track {
-    height: 190vh;
-  }
   .scanner-stage {
     height: min(62vh, 460px);
   }

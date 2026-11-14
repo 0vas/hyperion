@@ -487,8 +487,9 @@ test('birth story page and home teaser ship in both languages with static diagra
     teaser.getByRole('link', { name: 'Leer el paisaje', exact: true }),
   ).toHaveAttribute('href', '/hyperion/guia/el-paisaje.html');
   await expect(teaser.locator('.landscape-compare.compact')).toBeVisible();
-  const track = teaser.locator('.scanner-scroll-track');
-  await expect(track).toHaveAttribute('data-scrub', 'page');
+  await expect(teaser.locator('.scanner-scroll-track')).toHaveCount(0);
+  const immersion = teaser.locator('.scanner-immersion');
+  await expect(immersion).toHaveAttribute('data-scrub', 'page');
   const stage = teaser.locator('.scanner-stage');
   await expect(stage).toBeVisible();
   await expect(stage).toHaveAttribute('data-scanner', 'distill');
@@ -535,15 +536,15 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect
     .poll(async () => slot.evaluate((node) => node.style.transform))
     .not.toBe(mid);
-  // Page scroll through the sticky track advances the cut chat→flow.
+  // Page scroll through the viewport advances the cut chat→flow (no tall spacer).
   await page.evaluate(() => {
-    const trackNode = document.querySelector('.scanner-scroll-track');
-    if (!trackNode) return;
+    const stageNode = document.querySelector('.scanner-stage');
+    if (!stageNode) return;
     const top =
       window.scrollY +
-      trackNode.getBoundingClientRect().top +
-      trackNode.clientHeight * 0.55;
-    window.scrollTo(0, top);
+      stageNode.getBoundingClientRect().top -
+      window.innerHeight * 0.22;
+    window.scrollTo(0, Math.max(0, top));
   });
   await expect
     .poll(async () => slot.evaluate((node) => node.style.transform))
