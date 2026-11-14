@@ -1,6 +1,6 @@
-# PRODUCT FAIL — Distill timing + particles + Hyperion flow (after #91)
+# PRODUCT FAIL — Distill direction + speed + end beam (after #92)
 
-1. Gate page-scroll cut until stage at reading height (not while hero fills view).
-2. Small aesthetic particles — not chunky shards.
-3. Flow face = Hyperion canvas boxes; Inicio/Fin teal/coral start/end.
-4. Keep: page-scroll, no void, one card, sim-chat, honesty, guía OFF, no brand.
+1. Beam sweeps right → left.
+2. A bit slower scrub travel.
+3. HARD: end with beam on the left so full Hyperion (incl. Fin) is visible; start = beam right (full chat).
+4. Keep prior walls: gate, fine particles, Hyperion flow colors, no void, one card.

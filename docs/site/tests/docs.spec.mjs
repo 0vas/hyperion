@@ -491,11 +491,13 @@ test('birth story page and home teaser ship in both languages with static diagra
   const immersion = teaser.locator('.scanner-immersion');
   await expect(immersion).toHaveAttribute('data-scrub', 'page');
   await expect(immersion).toHaveAttribute('data-scrub-gate', 'viewport');
+  await expect(immersion).toHaveAttribute('data-beam-dir', 'rtl');
   const stage = teaser.locator('.scanner-stage');
   await expect(stage).toBeVisible();
   await expect(stage).toHaveAttribute('data-scanner', 'distill');
   await expect(stage).toHaveAttribute('data-cards', '1');
   await expect(stage).toHaveAttribute('data-scrub', 'page');
+  await expect(stage).toHaveAttribute('data-beam-dir', 'rtl');
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
   await expect(teaser.locator('.scanner-badge')).toHaveCount(0);
   await expect(teaser.getByText('Estado visible')).toHaveCount(0);
@@ -520,25 +522,29 @@ test('birth story page and home teaser ship in both languages with static diagra
   );
   await expect(teaser.getByText(/Distill|Kessler/i)).toHaveCount(0);
   const slot = teaser.locator('.scanner-slot.single');
-  const before = await slot.evaluate((node) => node.style.transform);
+  const before = await stage.getAttribute('data-scanned');
   await page.waitForTimeout(400);
   await expect
-    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .poll(async () => stage.getAttribute('data-scanned'))
     .toBe(before);
   await page.evaluate(() => {
     window.__hyperionScanner?.scrubBy(-220);
   });
   await expect
-    .poll(async () => slot.evaluate((node) => node.style.transform))
-    .not.toBe(before);
-  const mid = await slot.evaluate((node) => node.style.transform);
+    .poll(async () => Number(await stage.getAttribute('data-scanned')))
+    .toBeGreaterThan(Number(before || 0));
+  const mid = await stage.getAttribute('data-scanned');
+  const midBeam = await stage.getAttribute('data-beam-x');
   await page.evaluate(() => {
     window.__hyperionScanner?.scrubBy(440);
   });
   await expect
-    .poll(async () => slot.evaluate((node) => node.style.transform))
+    .poll(async () => stage.getAttribute('data-scanned'))
     .not.toBe(mid);
-  // Gated page scroll: above the gate cut resets; past the gate it advances.
+  await expect
+    .poll(async () => Number(await stage.getAttribute('data-beam-x')))
+    .toBeGreaterThan(Number(midBeam || 0));
+  // Gated page scroll: above the gate scanned resets; past the gate beam moves left.
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect
     .poll(async () =>
@@ -546,16 +552,16 @@ test('birth story page and home teaser ship in both languages with static diagra
     )
     .toBe('false');
   await expect
-    .poll(async () => slot.evaluate((node) => node.style.transform))
-    .toMatch(/translate3d\(0(?:\.0+)?px/);
-  const atTop = await slot.evaluate((node) => node.style.transform);
+    .poll(async () => Number(await stage.getAttribute('data-scanned')))
+    .toBe(0);
+  const atTopBeam = await stage.getAttribute('data-beam-x');
   await page.evaluate(() => {
     const stageNode = document.querySelector('.scanner-stage');
     if (!stageNode) return;
     const top =
       window.scrollY +
       stageNode.getBoundingClientRect().top -
-      window.innerHeight * 0.18;
+      window.innerHeight * 0.05;
     window.scrollTo(0, Math.max(0, top));
   });
   await expect
@@ -564,8 +570,19 @@ test('birth story page and home teaser ship in both languages with static diagra
     )
     .toBe('true');
   await expect
-    .poll(async () => slot.evaluate((node) => node.style.transform))
-    .not.toBe(atTop);
+    .poll(async () => Number(await stage.getAttribute('data-beam-x')))
+    .toBeLessThan(Number(atTopBeam || 9999));
+  await expect
+    .poll(async () => Number(await stage.getAttribute('data-scanned')))
+    .toBeGreaterThan(0);
+  // End state keeps the card fixed — full Hyperion with beam on the left.
+  await page.evaluate(() => {
+    window.__hyperionScanner?.scrubBy(-5000);
+  });
+  await expect
+    .poll(async () => Number(await stage.getAttribute('data-beam-x')))
+    .toBeLessThanOrEqual(2);
+  await expect(slot).toHaveCSS('transform', /matrix|translate/);
   await teaser
     .getByRole('link', { name: 'Leer el paisaje', exact: true })
     .click();

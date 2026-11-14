@@ -70,11 +70,11 @@ const copy = computed(() =>
         evidence: 'Evidence · digests pending your call',
         footChat: 'The thread is the map',
         footFlow: 'The process is the map',
-        hint: 'Scroll when the stage is in view · drag optional',
+        hint: 'Scroll when the stage is in view · beam right→left · drag optional',
         kicker: 'Guided as a process',
         caption:
-          'One card: once the stage sits in view, page scroll dissolves chat into a Hyperion canvas. Drag is optional. Decorative — not a live agent run.',
-        aria: 'Illustration: one card crosses a center scanner. After the stage reaches reading height, page scroll advances chat into a Hyperion canvas; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
+          'One card: once the stage sits in view, a slower beam sweeps right to left — chat becomes a full Hyperion canvas. Drag is optional. Decorative — not a live agent run.',
+        aria: 'Illustration: a beam sweeps right to left across one card. After the stage reaches reading height, page scroll transforms chat into a full Hyperion canvas ending with the beam on the left; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
       }
     : {
         chatTitle: 'Publicar los instaladores',
@@ -129,11 +129,11 @@ const copy = computed(() =>
         evidence: 'Evidencia · digests pendientes de tu decisión',
         footChat: 'El hilo es el mapa',
         footFlow: 'El proceso es el mapa',
-        hint: 'Scroll cuando el escenario esté a la vista · arrastre opcional',
+        hint: 'Scroll cuando el escenario esté a la vista · haz derecha→izquierda · arrastre opcional',
         kicker: 'Guiado como proceso',
         caption:
-          'Una sola tarjeta: cuando el escenario está a la altura de lectura, el scroll disuelve el chat en un canvas Hyperion. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
-        aria: 'Ilustración: una sola tarjeta cruza un escáner central. Tras alcanzar la altura de lectura, el scroll avanza del chat al canvas Hyperion; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
+          'Una sola tarjeta: cuando el escenario está a la altura de lectura, un haz más lento barre de derecha a izquierda y el chat se vuelve un canvas Hyperion completo. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
+        aria: 'Ilustración: un haz barre de derecha a izquierda sobre una sola tarjeta. Tras la altura de lectura, el scroll transforma el chat en un canvas Hyperion completo con el haz a la izquierda; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
       },
 );
 
@@ -155,9 +155,15 @@ const chatEl = ref<HTMLElement | null>(null);
 const flowEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
-/** Cut across the single card: 0 = all chat (right of beam), cw = all flow (left). */
+/**
+ * Scanned amount from the right: 0 = beam at right (full chat),
+ * cw = beam at left (full Hyperion). Beam sweeps right → left.
+ */
 const cut = ref(0);
 const cardWidth = ref(520);
+const beamX = ref(520);
+/** Beam X within the stage (card left + beamX). */
+const beamLeft = ref(0);
 const dragging = ref(false);
 const reduced = ref(true);
 const scrollLocked = ref(false);
@@ -165,9 +171,9 @@ const scrubArmed = ref(false);
 
 const FADE = 28;
 const HOT = '#FF5A1F';
-/** Gate: stage top must reach this fraction of the viewport before cut advances. */
-const SCRUB_GATE = 0.4;
-const SCRUB_END = 0.12;
+/** Gate + longer travel so scrub feels a bit slower. */
+const SCRUB_GATE = 0.42;
+const SCRUB_END = -0.1;
 
 let mediaMotion: MediaQueryList | undefined;
 let raf = 0;
@@ -192,15 +198,29 @@ const clampCut = (value: number) => {
   return Math.max(0, Math.min(max, value));
 };
 
+const syncBeam = () => {
+  beamX.value = Math.max(0, cardWidth.value - cut.value);
+  const root = stage.value;
+  const card = slot.value;
+  if (!root || !card) {
+    beamLeft.value = beamX.value;
+    return;
+  }
+  const cardLeft =
+    card.getBoundingClientRect().left - root.getBoundingClientRect().left;
+  beamLeft.value = cardLeft + beamX.value;
+};
+
 const measure = () => {
   if (!slot.value) return;
   cardWidth.value = slot.value.offsetWidth || 520;
   cut.value = clampCut(cut.value);
+  syncBeam();
 };
 
 /**
  * Page-scroll progress — gated until the stage sits at reading height
- * (hero no longer fills the view). Then maps gate → upper band.
+ * (hero no longer fills the view). Longer travel = slower scrub.
  */
 const scrollProgress = () => {
   const el = stage.value;
@@ -217,28 +237,39 @@ const scrollProgress = () => {
 const applyScrollCut = () => {
   if (dragging.value || scrollLocked.value) return;
   cut.value = clampCut(scrollProgress() * cardWidth.value + dragBias);
+  syncBeam();
 };
 
 const applyFaces = () => {
   const chat = chatEl.value;
   const flow = flowEl.value;
   const cw = cardWidth.value;
-  const c = cut.value;
+  const bx = beamX.value;
   if (!chat || !flow || !cw) return;
 
-  if (c <= 0.5) {
+  // Left of beam = chat (unscanned); right of beam = Hyperion (scanned).
+  if (bx >= cw - 0.5) {
+    chat.style.visibility = 'visible';
     chat.style.clipPath = 'none';
     chat.style.webkitMaskImage = '';
     chat.style.maskImage = '';
     flow.style.visibility = 'hidden';
-    flow.style.clipPath = 'inset(0 100% 0 0)';
+    flow.style.clipPath = 'inset(0 0 0 100%)';
+  } else if (bx <= 0.5) {
+    chat.style.visibility = 'hidden';
+    chat.style.clipPath = 'inset(0 100% 0 0)';
+    chat.style.webkitMaskImage = '';
+    chat.style.maskImage = '';
+    flow.style.visibility = 'visible';
+    flow.style.clipPath = 'none';
   } else {
-    chat.style.clipPath = `inset(0 0 0 ${c}px round 0 18px 18px 0)`;
-    const fade = `linear-gradient(90deg, transparent ${c}px, #000 ${c + FADE}px)`;
+    chat.style.visibility = 'visible';
+    chat.style.clipPath = `inset(0 ${Math.max(0, cw - bx)}px 0 0 round 18px 0 0 18px)`;
+    const fade = `linear-gradient(90deg, #000 ${Math.max(0, bx - FADE)}px, transparent ${bx}px)`;
     chat.style.webkitMaskImage = fade;
     chat.style.maskImage = fade;
     flow.style.visibility = 'visible';
-    flow.style.clipPath = `inset(0 ${Math.max(0, cw - c)}px 0 0 round 18px 0 0 18px)`;
+    flow.style.clipPath = `inset(0 0 0 ${bx}px round 0 18px 18px 0)`;
   }
 };
 
@@ -256,7 +287,8 @@ const spawnSpecks = (
     cut.value < cardWidth.value - 8 &&
     hash(cut.value * 0.19 + speckSeed) > 0.55;
   if (!active && !ambient) return;
-  const breaking = active ? delta > 0 : true;
+  // cut↑ = beam moves left (advance); chat breaks on the left, Hyperion forms on the right.
+  const advancing = active ? delta > 0 : true;
   const burst = active ? Math.min(36, 8 + Math.ceil(Math.abs(delta) * 1.1)) : 5;
   for (let i = 0; i < burst; i++) {
     speckSeed += 1;
@@ -265,30 +297,7 @@ const spawnSpecks = (
     const size = 1.2 + hash(seed + 2) * 2.8;
     const outward = 0.6 + hash(seed + 3) * 2.4;
     const lateral = (hash(seed + 4) - 0.5) * 1.6;
-    if (breaking) {
-      specks.push({
-        x: edgeX + (hash(seed + 5) - 0.5) * 4,
-        y,
-        size,
-        vx: outward,
-        vy: lateral,
-        life: 0,
-        maxLife: 18 + hash(seed + 6) * 28,
-        kind: 'break',
-        tone: hash(seed + 7),
-      });
-      specks.push({
-        x: edgeX + 4 + hash(seed + 8) * 10,
-        y: y + (hash(seed + 9) - 0.5) * 8,
-        size: 1 + hash(seed + 10) * 2.2,
-        vx: -outward * 0.85,
-        vy: (hash(seed + 11) - 0.5) * 1.4,
-        life: 0,
-        maxLife: 16 + hash(seed + 12) * 24,
-        kind: 'form',
-        tone: hash(seed + 13),
-      });
-    } else {
+    if (advancing) {
       specks.push({
         x: edgeX + (hash(seed + 5) - 0.5) * 4,
         y,
@@ -301,10 +310,33 @@ const spawnSpecks = (
         tone: hash(seed + 7),
       });
       specks.push({
-        x: edgeX - 4 - hash(seed + 8) * 10,
+        x: edgeX + 4 + hash(seed + 8) * 10,
         y: y + (hash(seed + 9) - 0.5) * 8,
         size: 1 + hash(seed + 10) * 2.2,
         vx: outward * 0.85,
+        vy: (hash(seed + 11) - 0.5) * 1.4,
+        life: 0,
+        maxLife: 16 + hash(seed + 12) * 24,
+        kind: 'form',
+        tone: hash(seed + 13),
+      });
+    } else {
+      specks.push({
+        x: edgeX + (hash(seed + 5) - 0.5) * 4,
+        y,
+        size,
+        vx: outward,
+        vy: lateral,
+        life: 0,
+        maxLife: 18 + hash(seed + 6) * 28,
+        kind: 'break',
+        tone: hash(seed + 7),
+      });
+      specks.push({
+        x: edgeX - 4 - hash(seed + 8) * 10,
+        y: y + (hash(seed + 9) - 0.5) * 8,
+        size: 1 + hash(seed + 10) * 2.2,
+        vx: -outward * 0.85,
         vy: (hash(seed + 11) - 0.5) * 1.4,
         life: 0,
         maxLife: 16 + hash(seed + 12) * 24,
@@ -376,16 +408,16 @@ const paintDissolve = (ts: number, dt: number) => {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
-  const beam = width / 2;
   const cw = cardWidth.value;
   const c = cut.value;
-  const cardLeft = beam - c;
-  const cardTop = slot.value
-    ? slot.value.getBoundingClientRect().top - root.getBoundingClientRect().top
-    : height * 0.08;
+  const bx = beamX.value;
+  const slotRect = slot.value?.getBoundingClientRect();
+  const rootRect = root.getBoundingClientRect();
+  const cardLeft = slotRect ? slotRect.left - rootRect.left : (width - cw) / 2;
+  const cardTop = slotRect ? slotRect.top - rootRect.top : height * 0.08;
   const cardH = slot.value?.offsetHeight || height * 0.84;
   const transform = Math.min(1, Math.max(0, c / Math.max(1, cw)));
-  const edgeX = cardLeft + c;
+  const edgeX = cardLeft + bx;
   const delta = c - prevCut;
   prevCut = c;
 
@@ -402,22 +434,22 @@ const paintDissolve = (ts: number, dt: number) => {
   ctx.lineWidth = 2;
   ctx.globalAlpha = reduced.value ? 0.55 : 0.98;
   ctx.beginPath();
-  ctx.moveTo(beam, 0);
-  ctx.lineTo(beam, height);
+  ctx.moveTo(edgeX, 0);
+  ctx.lineTo(edgeX, height);
   ctx.stroke();
   ctx.globalAlpha = 1;
 
   if (reduced.value) return;
 
   const hazeW = 40 + transform * 24;
-  const haze = ctx.createLinearGradient(beam - hazeW, 0, beam + hazeW, 0);
+  const haze = ctx.createLinearGradient(edgeX - hazeW, 0, edgeX + hazeW, 0);
   haze.addColorStop(0, 'rgba(255,90,31,0)');
   haze.addColorStop(0.4, 'rgba(255,90,31,0.2)');
   haze.addColorStop(0.5, 'rgba(255,90,31,0.58)');
   haze.addColorStop(0.6, 'rgba(255,90,31,0.2)');
   haze.addColorStop(1, 'rgba(255,90,31,0)');
   ctx.fillStyle = haze;
-  ctx.fillRect(beam - hazeW, 0, hazeW * 2, height);
+  ctx.fillRect(edgeX - hazeW, 0, hazeW * 2, height);
 
   paintSpecks(ctx);
 
@@ -436,6 +468,9 @@ const paintDissolve = (ts: number, dt: number) => {
 const scrubBy = (deltaPx: number) => {
   scrollLocked.value = true;
   cut.value = clampCut(cut.value - deltaPx);
+  syncBeam();
+  // Preserve programmatic scrub against the next scroll-linked apply.
+  dragBias = cut.value - scrollProgress() * cardWidth.value;
   window.setTimeout(() => {
     scrollLocked.value = false;
   }, 80);
@@ -446,7 +481,6 @@ const tick = (ts: number) => {
   if (!lastTs) lastTs = ts;
   const dt = Math.min(32, ts - lastTs);
   lastTs = ts;
-  // Keep cut + gate attribute synced even when scroll events coalesce.
   applyScrollCut();
   applyFaces();
   paintDissolve(ts, dt);
@@ -467,8 +501,10 @@ const onPointerDown = (event: PointerEvent) => {
 
 const onPointerMove = (event: PointerEvent) => {
   if (!dragging.value) return;
+  // Drag left advances (beam → left); drag right restores chat.
   const delta = event.clientX - dragOriginX;
   cut.value = clampCut(dragOriginCut - delta);
+  syncBeam();
 };
 
 const onPointerUp = (event: PointerEvent) => {
@@ -540,29 +576,40 @@ onUnmounted(() => {
       <p class="scanner-hint" aria-hidden="true">{{ copy.hint }}</p>
     </div>
 
-    <div class="scanner-immersion" data-scrub="page" data-scrub-gate="viewport">
+    <div
+      class="scanner-immersion"
+      data-scrub="page"
+      data-scrub-gate="viewport"
+      data-beam-dir="rtl"
+    >
       <div
         ref="stage"
         class="scanner-stage"
         data-scanner="distill"
         data-cards="1"
         data-scrub="page"
+        data-beam-dir="rtl"
         :data-scrub-armed="scrubArmed ? 'true' : 'false'"
+        :data-beam-x="String(Math.round(beamX))"
+        :data-scanned="String(Math.round(cut))"
         @pointerdown="onPointerDown"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
         @pointercancel="onPointerUp"
       >
-        <div class="scanner-beam" aria-hidden="true"></div>
+        <div
+          class="scanner-beam"
+          aria-hidden="true"
+          :style="{ left: `${beamLeft}px` }"
+        ></div>
         <canvas ref="canvasEl" class="scanner-fx" aria-hidden="true"></canvas>
 
         <div
           ref="slot"
           class="scanner-slot single"
           aria-hidden="true"
-          :style="{
-            transform: `translate3d(-${cut}px, 0, 0)`,
-          }"
+          :data-beam-x="String(Math.round(beamX))"
+          :data-scanned="String(Math.round(cut))"
         >
           <article ref="chatEl" class="scanner-card chat-face sim-chat">
             <header class="sim-bar">
