@@ -52,6 +52,9 @@ for (const locale of ['es', 'en'] as const) {
       });
       await fab.click();
       const panel = page.getByRole('dialog');
+      await expect(panel.getByTestId('chat-bubble-thread')).toBeVisible();
+      await expect(panel.getByTestId('chat-bubble-composer')).toBeVisible();
+      await expect(panel.getByTestId('chat-bubble-empty')).toBeVisible();
       const select = panel.getByTestId('chat-bubble-harness');
       await expect(select).toBeEnabled();
 
@@ -84,6 +87,11 @@ for (const locale of ['es', 'en'] as const) {
         locale === 'es'
           ? 'MCP solo no despierta el chat'
           : 'MCP alone cannot wake the chat',
+      );
+      await expect(panel).toContainText(
+        locale === 'es'
+          ? 'sin fabricar respuestas del agente'
+          : 'does not invent agent replies',
       );
     } finally {
       await context.close();
@@ -192,9 +200,11 @@ test('Desktop Enviar enqueues when ResumeConnector matches configured primary ha
     expect(body.connector.harness).toBe(harness);
     expect(body.text).toContain('continuar el trabajo del canvas');
     await expect(
-      page.getByText(
-        'Continuación encolada para el conector. Eso no significa que el agente haya ejecutado el trabajo.',
-      ),
+      panel
+        .getByTestId('chat-bubble-msg-system')
+        .getByText(
+          'Continuación encolada para el conector. Eso no significa que el agente haya ejecutado el trabajo.',
+        ),
     ).toBeVisible();
   } finally {
     await context.close();

@@ -82,6 +82,9 @@ test('ChatBubble shell has no human command or API commit path', () => {
     /Configurado en Conexiones no implica herramientas cargadas/,
   );
   assert.match(source, /MCP solo no despierta el chat/);
+  assert.match(source, /chat-bubble-thread/);
+  assert.match(source, /chat-bubble-composer/);
+  assert.match(source, /sin fabricar respuestas del agente/);
 });
 
 test('Desktop mount gates the bubble on Electron only and passes inventory', () => {
