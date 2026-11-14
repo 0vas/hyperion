@@ -1,171 +1,66 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useData } from 'vitepress';
 
 const props = defineProps<{ compact?: boolean }>();
 const { lang } = useData();
 const en = computed(() => lang.value !== 'es');
 
-type Card = {
-  id: string;
-  chatTitle: string;
-  chatLines: { side: 'agent' | 'user'; text: string }[];
-  flow: string[];
-  decisionIndex: number;
-};
-
-const cards = computed<Card[]>(() =>
+const card = computed(() =>
   en.value
-    ? [
-        {
-          id: 'brief',
-          chatTitle: 'Brief in chat',
-          chatLines: [
-            { side: 'agent', text: 'What’s the goal?' },
-            { side: 'user', text: 'Ship the preview installers.' },
-            { side: 'agent', text: 'I’ll draft steps…' },
-          ],
-          flow: ['Start', 'Plan', 'Decision?', 'Build', 'End'],
-          decisionIndex: 2,
-        },
-        {
-          id: 'gate',
-          chatTitle: 'Long thread',
-          chatLines: [
-            { side: 'user', text: 'Approve the macOS path?' },
-            { side: 'agent', text: 'Waiting on your call.' },
-            { side: 'user', text: 'Hold — check digests.' },
-          ],
-          flow: ['Job', 'Agent', 'You', 'Evidence', 'Next'],
-          decisionIndex: 2,
-        },
-        {
-          id: 'evidence',
-          chatTitle: 'Tools firing',
-          chatLines: [
-            { side: 'agent', text: 'Running checks…' },
-            { side: 'user', text: 'Did it finish?' },
-            { side: 'agent', text: 'Still scrolling…' },
-          ],
-          flow: ['Ready', 'Run', 'Gate', 'Log', 'Done'],
-          decisionIndex: 2,
-        },
-        {
-          id: 'handoff',
-          chatTitle: 'Handoff lost',
-          chatLines: [
-            { side: 'user', text: 'Who owns the next step?' },
-            { side: 'agent', text: 'I thought you did.' },
-            { side: 'user', text: 'The thread forgot.' },
-          ],
-          flow: ['Ask', 'Canvas', 'Decide', 'Resume', 'Keep'],
-          decisionIndex: 2,
-        },
-      ]
-    : [
-        {
-          id: 'brief',
-          chatTitle: 'Pedido en el chat',
-          chatLines: [
-            { side: 'agent', text: '¿Cuál es el objetivo?' },
-            { side: 'user', text: 'Publicar los instaladores.' },
-            { side: 'agent', text: 'Te propongo pasos…' },
-          ],
-          flow: ['Inicio', 'Plan', '¿Decisión?', 'Build', 'Fin'],
-          decisionIndex: 2,
-        },
-        {
-          id: 'gate',
-          chatTitle: 'Hilo largo',
-          chatLines: [
-            { side: 'user', text: '¿Apruebo macOS?' },
-            { side: 'agent', text: 'Espero tu decisión.' },
-            { side: 'user', text: 'Espera — revisa digests.' },
-          ],
-          flow: ['Trabajo', 'Agente', 'Tú', 'Evidencia', 'Siguiente'],
-          decisionIndex: 2,
-        },
-        {
-          id: 'evidence',
-          chatTitle: 'Herramientas',
-          chatLines: [
-            { side: 'agent', text: 'Ejecutando checks…' },
-            { side: 'user', text: '¿Terminó?' },
-            { side: 'agent', text: 'Sigue el scroll…' },
-          ],
-          flow: ['Listo', 'Correr', 'Puerta', 'Log', 'Hecho'],
-          decisionIndex: 2,
-        },
-        {
-          id: 'handoff',
-          chatTitle: 'Relevo perdido',
-          chatLines: [
-            { side: 'user', text: '¿Quién sigue?' },
-            { side: 'agent', text: 'Creí que eras tú.' },
-            { side: 'user', text: 'El hilo olvidó.' },
-          ],
-          flow: ['Pedir', 'Canvas', 'Decidir', 'Retomar', 'Conservar'],
-          decisionIndex: 2,
-        },
-      ],
+    ? {
+        chatTitle: 'Brief in chat',
+        chatLines: [
+          { side: 'agent' as const, text: 'What’s the goal?' },
+          { side: 'user' as const, text: 'Ship the preview installers.' },
+          { side: 'agent' as const, text: 'I’ll draft the path…' },
+        ],
+        flow: ['Start', 'Plan', 'Decision?', 'Build', 'End'],
+        decisionIndex: 2,
+        steps: 5,
+      }
+    : {
+        chatTitle: 'Pedido en el chat',
+        chatLines: [
+          { side: 'agent' as const, text: '¿Cuál es el objetivo?' },
+          { side: 'user' as const, text: 'Publicar los instaladores.' },
+          { side: 'agent' as const, text: 'Te propongo el recorrido…' },
+        ],
+        flow: ['Inicio', 'Plan', '¿Decisión?', 'Build', 'Fin'],
+        decisionIndex: 2,
+        steps: 5,
+      },
 );
 
 const stage = ref<HTMLElement | null>(null);
-const track = ref<HTMLElement | null>(null);
+const slot = ref<HTMLElement | null>(null);
+const chatEl = ref<HTMLElement | null>(null);
+const flowEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
-const offset = ref(0);
+
+/** Cut across the single card: 0 = all chat (right of beam), cw = all flow (left). */
+const cut = ref(0);
+const cardWidth = ref(360);
 const visibleState = ref(0);
 const hovering = ref(false);
 const dragging = ref(false);
 const reduced = ref(true);
-const narrow = ref(false);
 
-const AUTO_SPEED = 0.62;
-const HOVER_SPEED = 0.2;
-const CARD_GAP = 36;
+const AUTO_SPEED = 0.55;
+const HOVER_FACTOR = 0.35;
 const FADE = 26;
+const HOT = '#FF5A1F';
+
 let mediaMotion: MediaQueryList | undefined;
-let mediaNarrow: MediaQueryList | undefined;
 let raf = 0;
 let lastTs = 0;
 let velocity = 0;
 let dragOriginX = 0;
-let dragOriginOffset = 0;
-let cardWidth = 360;
-let loopWidth = 1600;
-const crossed = new Set<string>();
-type CutSample = {
-  id: string;
-  cut: number;
-  width: number;
-  left: number;
-  top: number;
-  height: number;
-  steps: number;
-};
-const samples: CutSample[] = [];
+let dragOriginCut = 0;
+let counted = false;
 
 const syncMotion = () => {
   reduced.value = mediaMotion?.matches ?? true;
-};
-const syncNarrow = () => {
-  narrow.value = mediaNarrow?.matches ?? false;
-};
-
-const measure = () => {
-  const sample = stage.value?.querySelector(
-    '.scanner-slot',
-  ) as HTMLElement | null;
-  if (!sample) return;
-  cardWidth = sample.offsetWidth;
-  loopWidth = (cardWidth + CARD_GAP) * cards.value.length;
-};
-
-const wrapOffset = (value: number) => {
-  if (!loopWidth) return value;
-  let next = value % loopWidth;
-  if (next > 0) next -= loopWidth;
-  return next;
 };
 
 const hash = (n: number) => {
@@ -173,54 +68,44 @@ const hash = (n: number) => {
   return x - Math.floor(x);
 };
 
-const applyCuts = () => {
-  const root = stage.value;
-  if (!root) return;
-  const stageRect = root.getBoundingClientRect();
-  const beamX = stageRect.left + stageRect.width / 2;
-  samples.length = 0;
+const clampCut = (value: number) => {
+  const max = Math.max(1, cardWidth.value);
+  return Math.max(0, Math.min(max, value));
+};
 
-  for (const slot of root.querySelectorAll<HTMLElement>('.scanner-slot')) {
-    const rect = slot.getBoundingClientRect();
-    const width = rect.width || cardWidth;
-    const cut = Math.max(0, Math.min(width, beamX - rect.left));
-    const chat = slot.querySelector<HTMLElement>('.chat-face');
-    const flow = slot.querySelector<HTMLElement>('.flow-face');
-    if (!chat || !flow) continue;
+const measure = () => {
+  if (!slot.value) return;
+  cardWidth.value = slot.value.offsetWidth || 360;
+  cut.value = clampCut(cut.value);
+};
 
-    if (cut <= 0.5) {
-      chat.style.clipPath = 'none';
-      chat.style.webkitMaskImage = '';
-      chat.style.maskImage = '';
-      flow.style.visibility = 'hidden';
-      flow.style.clipPath = 'inset(0 100% 0 0)';
-    } else {
-      chat.style.clipPath = `inset(0 0 0 ${cut}px round 0 16px 16px 0)`;
-      const fade = `linear-gradient(90deg, transparent ${cut}px, #000 ${cut + FADE}px)`;
-      chat.style.webkitMaskImage = fade;
-      chat.style.maskImage = fade;
-      flow.style.visibility = 'visible';
-      flow.style.clipPath = `inset(0 ${Math.max(0, width - cut)}px 0 0)`;
-    }
+const applyFaces = () => {
+  const chat = chatEl.value;
+  const flow = flowEl.value;
+  const cw = cardWidth.value;
+  const c = cut.value;
+  if (!chat || !flow || !cw) return;
 
-    const id = slot.dataset.id || '';
-    const steps = Number(slot.dataset.steps || 3);
-    samples.push({
-      id,
-      cut,
-      width,
-      left: rect.left - stageRect.left,
-      top: rect.top - stageRect.top,
-      height: rect.height,
-      steps,
-    });
-
-    if (cut >= width - 2 && id && !crossed.has(id)) {
-      crossed.add(id);
-      visibleState.value += steps;
-    }
-    if (cut < width * 0.35) crossed.delete(id);
+  if (c <= 0.5) {
+    chat.style.clipPath = 'none';
+    chat.style.webkitMaskImage = '';
+    chat.style.maskImage = '';
+    flow.style.visibility = 'hidden';
+    flow.style.clipPath = 'inset(0 100% 0 0)';
+  } else {
+    chat.style.clipPath = `inset(0 0 0 ${c}px round 0 16px 16px 0)`;
+    const fade = `linear-gradient(90deg, transparent ${c}px, #000 ${c + FADE}px)`;
+    chat.style.webkitMaskImage = fade;
+    chat.style.maskImage = fade;
+    flow.style.visibility = 'visible';
+    flow.style.clipPath = `inset(0 ${Math.max(0, cw - c)}px 0 0)`;
   }
+
+  if (c >= cw - 1 && !counted) {
+    counted = true;
+    visibleState.value += card.value.steps;
+  }
+  if (c < cw * 0.4) counted = false;
 };
 
 const paintDissolve = (ts: number) => {
@@ -245,9 +130,18 @@ const paintDissolve = (ts: number) => {
   ctx.clearRect(0, 0, width, height);
 
   const beam = width / 2;
-  ctx.strokeStyle = '#FF5A1F';
+  const cw = cardWidth.value;
+  const c = cut.value;
+  // Card is centered on the beam via left = beam - cut.
+  const cardLeft = beam - c;
+  const cardTop = slot.value
+    ? slot.value.getBoundingClientRect().top - root.getBoundingClientRect().top
+    : height * 0.18;
+  const cardH = slot.value?.offsetHeight || height * 0.7;
+
+  ctx.strokeStyle = HOT;
   ctx.lineWidth = 2;
-  ctx.globalAlpha = reduced.value ? 0.55 : 0.92;
+  ctx.globalAlpha = reduced.value ? 0.55 : 0.95;
   ctx.beginPath();
   ctx.moveTo(beam, 0);
   ctx.lineTo(beam, height);
@@ -256,84 +150,96 @@ const paintDissolve = (ts: number) => {
 
   if (reduced.value) return;
 
-  const glow = ctx.createLinearGradient(beam - 36, 0, beam + 36, 0);
-  glow.addColorStop(0, 'rgba(255,90,31,0)');
-  glow.addColorStop(0.45, 'rgba(255,90,31,0.16)');
-  glow.addColorStop(0.5, 'rgba(255,90,31,0.5)');
-  glow.addColorStop(0.55, 'rgba(255,90,31,0.16)');
-  glow.addColorStop(1, 'rgba(255,90,31,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(beam - 36, 0, 72, height);
+  const haze = ctx.createLinearGradient(beam - 42, 0, beam + 42, 0);
+  haze.addColorStop(0, 'rgba(255,90,31,0)');
+  haze.addColorStop(0.42, 'rgba(255,90,31,0.2)');
+  haze.addColorStop(0.5, 'rgba(255,90,31,0.58)');
+  haze.addColorStop(0.58, 'rgba(255,90,31,0.2)');
+  haze.addColorStop(1, 'rgba(255,90,31,0)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(beam - 42, 0, 84, height);
 
-  for (const sample of samples) {
-    if (sample.cut <= 1 || sample.cut >= sample.width - 1) continue;
-    const edgeX = sample.left + sample.cut;
-    for (let i = 0; i < 70; i++) {
-      const seed = i * 19.7 + sample.cut * 0.13 + Math.floor(ts / 36);
-      const px = edgeX + (hash(seed) - 0.5) * 28;
-      const py = sample.top + hash(seed + 4.2) * sample.height;
-      const size = hash(seed + 8) > 0.8 ? 3 : 1.5;
-      const alpha = 0.22 + hash(seed + 11) * 0.55;
-      ctx.fillStyle = `rgba(255,${90 + Math.floor(hash(seed + 2) * 90)},31,${alpha})`;
-      ctx.fillRect(Math.floor(px), Math.floor(py), size, size);
-    }
-    for (let i = 0; i < 8; i++) {
-      const seed = i * 53.1 + ts * 0.018 + sample.cut;
-      const sparkY =
-        sample.top +
-        ((hash(seed) + ts * 0.00018 * (0.35 + hash(seed + 1))) % 1) *
-          sample.height;
-      const sparkX = edgeX + (hash(seed + 6) - 0.5) * 12;
-      ctx.fillStyle = `rgba(255,220,180,${0.35 + hash(seed + 9) * 0.5})`;
-      ctx.fillRect(sparkX, sparkY, 2, 5);
-    }
+  if (c <= 1 || c >= cw - 1) return;
+  const edgeX = cardLeft + c;
+
+  // Dense dithered particles fixed to the card surface along the cut.
+  for (let i = 0; i < 160; i++) {
+    const seed = i * 17.3 + Math.floor(c) * 0.37 + Math.floor(ts / 48);
+    const px = edgeX + (hash(seed) - 0.5) * 22;
+    const py = cardTop + hash(seed + 4.1) * cardH;
+    const twinkle = reduced.value
+      ? 1
+      : 0.55 + 0.45 * Math.sin(ts * 0.02 + seed);
+    const alpha = (0.28 + hash(seed + 9) * 0.55) * twinkle;
+    const size = hash(seed + 8) > 0.78 ? 3 : hash(seed + 2) > 0.5 ? 2 : 1;
+    ctx.fillStyle = `rgba(255,${88 + Math.floor(hash(seed + 3) * 100)},31,${alpha})`;
+    ctx.fillRect(Math.floor(px), Math.floor(py), size, size);
   }
+
+  // Free sparks along the beam.
+  for (let i = 0; i < 14; i++) {
+    const seed = i * 41.7 + ts * 0.02;
+    const sparkY =
+      ((hash(seed) + ts * 0.0002 * (0.35 + hash(seed + 1))) % 1) * height;
+    const sparkX = beam + (hash(seed + 5) - 0.5) * 16;
+    ctx.fillStyle = `rgba(255,225,190,${0.35 + hash(seed + 8) * 0.55})`;
+    ctx.fillRect(sparkX, sparkY, 2, 6);
+  }
+};
+
+const scrubBy = (deltaPx: number) => {
+  cut.value = clampCut(cut.value - deltaPx);
+  velocity = -deltaPx * 0.12;
 };
 
 const tick = (ts: number) => {
   if (!lastTs) lastTs = ts;
   const dt = Math.min(32, ts - lastTs);
   lastTs = ts;
+
   if (!dragging.value) {
     if (reduced.value) {
       velocity *= 0.86;
       if (Math.abs(velocity) < 0.02) velocity = 0;
     } else {
-      const target = hovering.value ? HOVER_SPEED : AUTO_SPEED;
+      const target = hovering.value ? AUTO_SPEED * HOVER_FACTOR : AUTO_SPEED;
       velocity += (target - velocity) * 0.08;
     }
-    if (velocity) {
-      offset.value = wrapOffset(offset.value - velocity * (dt / 16));
+    if (velocity) cut.value = clampCut(cut.value + velocity * (dt / 16));
+    // Loop: fully transformed → ease back to chat for another pass.
+    if (
+      !dragging.value &&
+      !reduced.value &&
+      cut.value >= cardWidth.value - 0.5
+    ) {
+      if (Math.abs(velocity) < 0.08) cut.value = 0;
     }
   }
-  applyCuts();
+
+  applyFaces();
   paintDissolve(ts);
   raf = requestAnimationFrame(tick);
-};
-
-const scrubBy = (deltaPx: number) => {
-  offset.value = wrapOffset(offset.value + deltaPx);
-  velocity = deltaPx * 0.08;
 };
 
 const onPointerDown = (event: PointerEvent) => {
   if (event.button !== 0) return;
   dragging.value = true;
   dragOriginX = event.clientX;
-  dragOriginOffset = offset.value;
+  dragOriginCut = cut.value;
   velocity = 0;
   try {
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   } catch {
-    /* synthetic events may omit capture */
+    /* synthetic */
   }
 };
 
 const onPointerMove = (event: PointerEvent) => {
   if (!dragging.value) return;
+  // Drag left → increase cut (chat→flow); drag right → rebuild chat.
   const delta = event.clientX - dragOriginX;
-  offset.value = wrapOffset(dragOriginOffset + delta);
-  velocity = event.movementX * 0.4;
+  cut.value = clampCut(dragOriginCut - delta);
+  velocity = -event.movementX * 0.35;
 };
 
 const onPointerUp = (event: PointerEvent) => {
@@ -354,27 +260,22 @@ const onWheel = (event: WheelEvent) => {
       : event.deltaY;
   if (!dominant) return;
   event.preventDefault();
-  // Scroll forward (down/right) advances chat→flow (cards move left).
-  // Reverse rebuilds the chat face.
-  scrubBy(-dominant * 0.7);
+  scrubBy(-dominant * 0.55);
 };
 
 const ariaLabel = computed(() =>
   en.value
-    ? 'Illustration: one Hyperion card crosses a center scanner. Right of the beam it is chat; through the dissolve it becomes the same work as a guided flow. Scroll or drag forward to transform; reverse to restore chat. Decorative; not a live agent run.'
-    : 'Ilustración: una tarjeta Hyperion cruza un escáner central. A la derecha del haz es chat; al disolverse se vuelve el mismo trabajo como flujo guiado. Avanza con scroll o arrastre para transformar; al revés recuperas el chat. Decorativo; no es una ejecución en vivo.',
+    ? 'Illustration: one card crosses a center scanner. Right of the beam it is chat; through the dissolve it becomes the same work as a Hyperion flow. Scroll or drag forward to transform; reverse restores chat. Decorative; not a live agent run.'
+    : 'Ilustración: una sola tarjeta cruza un escáner central. A la derecha del haz es chat; al disolverse se vuelve el mismo trabajo como flujo Hyperion. Avanza con scroll o arrastre; al revés recuperas el chat. Decorativo; no es una ejecución en vivo.',
 );
 
 onMounted(async () => {
   mediaMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  mediaNarrow = window.matchMedia('(max-width: 767px)');
   syncMotion();
-  syncNarrow();
   mediaMotion.addEventListener('change', syncMotion);
-  mediaNarrow.addEventListener('change', syncNarrow);
   await nextTick();
   measure();
-  offset.value = wrapOffset(-(cardWidth + CARD_GAP) * 0.15);
+  cut.value = cardWidth.value * 0.28;
   window.addEventListener('resize', measure);
   (
     window as Window & {
@@ -387,7 +288,6 @@ onMounted(async () => {
 onUnmounted(() => {
   cancelAnimationFrame(raf);
   mediaMotion?.removeEventListener('change', syncMotion);
-  mediaNarrow?.removeEventListener('change', syncNarrow);
   window.removeEventListener('resize', measure);
   delete (
     window as Window & {
@@ -395,22 +295,14 @@ onUnmounted(() => {
     }
   ).__hyperionScanner;
 });
-
-watch(cards, async () => {
-  crossed.clear();
-  visibleState.value = 0;
-  await nextTick();
-  measure();
-});
 </script>
 
 <template>
   <figure
-    class="landscape-diagram landscape-compare scanner-compare"
+    class="landscape-diagram landscape-compare scanner-compare one-card"
     :class="{
       compact: props.compact,
       'motion-ready': !reduced,
-      narrow,
       dragging,
     }"
     role="img"
@@ -433,6 +325,7 @@ watch(cards, async () => {
       ref="stage"
       class="scanner-stage"
       data-scanner="distill"
+      data-cards="1"
       @pointerenter="hovering = true"
       @pointerleave="hovering = false"
       @pointerdown="onPointerDown"
@@ -451,66 +344,58 @@ watch(cards, async () => {
       <canvas ref="canvasEl" class="scanner-fx" aria-hidden="true"></canvas>
 
       <div
-        ref="track"
-        class="scanner-track"
+        ref="slot"
+        class="scanner-slot single"
         aria-hidden="true"
-        :style="{ transform: `translate3d(${offset}px,0,0)` }"
+        :style="{
+          transform: `translate3d(-${cut}px, 0, 0)`,
+        }"
       >
-        <template v-for="copy in 2" :key="`copy-${copy}`">
-          <div
-            v-for="card in cards"
-            :key="`${copy}-${card.id}`"
-            class="scanner-slot"
-            :data-id="`${copy}-${card.id}`"
-            :data-steps="String(card.flow.length)"
-          >
-            <article class="scanner-card chat-face">
-              <p class="card-label">{{ en ? 'Chat' : 'Chat' }}</p>
-              <p class="card-title">{{ card.chatTitle }}</p>
-              <div class="chat-stack">
-                <span
-                  v-for="(line, index) in card.chatLines"
-                  :key="index"
-                  class="bubble"
-                  :class="line.side"
-                  >{{ line.text }}</span
-                >
-              </div>
-              <p class="panel-foot">
-                {{ en ? 'The thread is the map' : 'El hilo es el mapa' }}
-              </p>
-            </article>
-            <article class="scanner-card flow-face">
-              <p class="card-label">
-                {{ en ? 'Hyperion canvas' : 'Canvas Hyperion' }}
-              </p>
-              <p class="card-title">{{ card.chatTitle }}</p>
-              <ol class="mini-flow">
-                <li
-                  v-for="(step, index) in card.flow"
-                  :key="step"
-                  :class="{ decision: index === card.decisionIndex }"
-                >
-                  <span>{{ step }}</span>
-                  <small v-if="index === card.decisionIndex">{{
-                    en ? 'You' : 'Tú'
-                  }}</small>
-                </li>
-              </ol>
-              <p class="panel-foot">
-                {{ en ? 'The process is the map' : 'El proceso es el mapa' }}
-              </p>
-            </article>
+        <article ref="chatEl" class="scanner-card chat-face">
+          <p class="card-label">Chat</p>
+          <p class="card-title">{{ card.chatTitle }}</p>
+          <div class="chat-stack">
+            <span
+              v-for="(line, index) in card.chatLines"
+              :key="index"
+              class="bubble"
+              :class="line.side"
+              >{{ line.text }}</span
+            >
           </div>
-        </template>
+          <p class="panel-foot">
+            {{ en ? 'The thread is the map' : 'El hilo es el mapa' }}
+          </p>
+        </article>
+        <article ref="flowEl" class="scanner-card flow-face">
+          <p class="card-label">
+            {{ en ? 'Hyperion canvas' : 'Canvas Hyperion' }}
+          </p>
+          <p class="card-title">{{ card.chatTitle }}</p>
+          <ol class="mini-flow">
+            <li
+              v-for="(step, index) in card.flow"
+              :key="step"
+              :class="{ decision: index === card.decisionIndex }"
+            >
+              <span>{{ step }}</span>
+              <small v-if="index === card.decisionIndex">{{
+                en ? 'You' : 'Tú'
+              }}</small>
+            </li>
+          </ol>
+          <p class="panel-foot">
+            {{ en ? 'The process is the map' : 'El proceso es el mapa' }}
+          </p>
+        </article>
       </div>
     </div>
 
     <figcaption>
       {{
         en
-          ? 'One card at a time: right of the beam is chat; through the scanner the same work becomes a Hyperion path. Scroll forward to transform; reverse restores chat. The counter is an illustration, not a live run.'
-          : 'Una tarjeta a la vez: a la derecha del haz es chat; al cruzar el escáner el mismo trabajo se vuelve un recorrido Hyperion. Avanza para transformar; al revés recuperas el chat. El contador es ilustración, no una ejecución en vivo.'
+          ? 'One card: right of the beam is chat; through the scanner the same work becomes a Hyperion path. Scroll forward to transform; reverse restores chat. The counter is an illustration, not a live run.'
+          : 'Una sola tarjeta: a la derecha del haz es chat; al cruzar el escáner el mismo trabajo se vuelve un recorrido Hyperion. Avanza para transformar; al revés recuperas el chat. El contador es ilustración, no una ejecución en vivo.'
       }}
     </figcaption>
   </figure>

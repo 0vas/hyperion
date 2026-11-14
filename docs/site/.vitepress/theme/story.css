@@ -193,26 +193,20 @@
   height: 100%;
   pointer-events: none;
 }
-.scanner-track {
+.scanner-slot.single {
   position: absolute;
-  inset: 0;
+  top: 56px;
+  bottom: 24px;
+  left: 50%;
   z-index: 2;
-  display: flex;
-  align-items: stretch;
-  gap: 36px;
-  height: 100%;
-  width: max-content;
-  padding: 56px max(18vw, 48px) 24px;
+  width: min(420px, 72vw);
+  min-width: 0;
   will-change: transform;
 }
-.scanner-slot {
-  position: relative;
-  flex: 0 0 min(420px, 78vw);
-  min-width: 0;
-  height: calc(100% - 8px);
-}
-.scanner-compare.compact .scanner-slot {
-  flex-basis: min(300px, 74vw);
+.scanner-compare.compact .scanner-slot.single {
+  top: 48px;
+  bottom: 16px;
+  width: min(320px, 78vw);
 }
 .scanner-card {
   position: absolute;
@@ -427,12 +421,10 @@
   .scanner-compare.compact .scanner-stage {
     height: min(36vh, 240px);
   }
-  .scanner-track {
-    padding: 52px max(8vw, 20px) 20px;
-    gap: 22px;
-  }
-  .scanner-slot {
-    flex-basis: min(86vw, 340px);
+  .scanner-slot.single {
+    top: 52px;
+    bottom: 16px;
+    width: min(86vw, 340px);
   }
   .scanner-hint {
     width: 100%;
