@@ -136,7 +136,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 50%;
+  left: 0;
   z-index: 3;
   width: 2px;
   transform: translateX(-50%);
@@ -151,6 +151,7 @@
     0 0 18px #ff5a1f99,
     0 0 40px #ff5a1f33;
   pointer-events: none;
+  will-change: left;
 }
 .scanner-fx {
   position: absolute;
@@ -168,7 +169,7 @@
   z-index: 2;
   width: min(820px, 94%);
   min-width: 0;
-  will-change: transform;
+  transform: translateX(-50%);
 }
 .scanner-compare.compact .scanner-slot.single {
   top: 14px;
