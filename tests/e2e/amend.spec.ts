@@ -133,6 +133,15 @@ test('happy amend updates typed outputs without irreversible dialog', async ({
   await panel
     .getByRole('combobox', { name: 'Opción elegida', exact: true })
     .selectOption('second');
+  await expect(
+    panel.getByRole('button', { name: 'Guardar corrección' }),
+  ).toBeDisabled();
+  await panel
+    .getByLabel('Motivo de la corrección')
+    .fill('Elegí la opción incorrecta');
+  await expect(
+    panel.getByRole('button', { name: 'Guardar corrección' }),
+  ).toBeEnabled();
   await panel.getByRole('button', { name: 'Guardar corrección' }).click();
   await expect(
     page.getByRole('dialog', { name: 'Confirmar efectos irreversibles' }),
@@ -161,6 +170,9 @@ test('policy C shows irreversible list and requires confirm before amend', async
   await panel
     .getByRole('combobox', { name: 'Opción elegida', exact: true })
     .selectOption('second');
+  await panel
+    .getByLabel('Motivo de la corrección')
+    .fill('Necesito reabrir el trabajo del agente');
   await panel.getByRole('button', { name: 'Guardar corrección' }).click();
   const dialog = page.getByRole('dialog', {
     name: 'Confirmar efectos irreversibles',
@@ -209,6 +221,9 @@ test('amend surfaces revision conflict when the run changed', async ({
   await panel
     .getByRole('combobox', { name: 'Opción elegida', exact: true })
     .selectOption('second');
+  await panel
+    .getByLabel('Motivo de la corrección')
+    .fill('Intento con revisión obsoleta');
   const bumped = await request.post(`/api/runs/${run.id}/commands`, {
     headers: humanHeaders(),
     data: {

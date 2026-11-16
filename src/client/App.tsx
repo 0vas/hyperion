@@ -1745,10 +1745,7 @@ export function App() {
         ...(outputs ? { outputs } : {}),
         ...(target ? { stepId: target } : {}),
         ...(type === 'amend'
-          ? {
-              message:
-                answer.trim() || t('Corrección de la respuesta guardada.'),
-            }
+          ? { message: answer.trim() }
           : answer.trim()
             ? { message: answer.trim() }
             : {}),
@@ -1809,7 +1806,7 @@ export function App() {
     }
   }
   function requestAmend() {
-    if (!run || !step) return;
+    if (!run || !step || !answer.trim()) return;
     amendDraftRef.current = { ...outputDraft };
     const irreversible = irreversibleAmendTargets(run, step.id);
     if (irreversible.length > 0) setConfirmation('amend');

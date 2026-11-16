@@ -52,12 +52,16 @@ export function HumanForm({
         'Los valores tipados se actualizarán. El historial conserva la respuesta anterior. Hyperion no deshace efectos externos del agente.',
       )
     : step.interaction?.context || step.description;
-  const invalid =
-    ports.some((p) => fieldError(p, values[p.name] || '')) ||
-    (manual &&
+  const missingDecision = amending
+    ? !answer.trim() ||
+      (ports.length > 0 && !Object.values(values).some((v) => v.trim()))
+    : manual &&
       (ports.length
         ? !Object.values(values).some((v) => v.trim())
-        : !answer.trim())) ||
+        : !answer.trim());
+  const invalid =
+    ports.some((p) => fieldError(p, values[p.name] || '')) ||
+    !!missingDecision ||
     !!amendBlocked;
   return (
     <form
@@ -87,7 +91,7 @@ export function HumanForm({
           singleQuestion={!!step.interaction?.question}
         />
       )}
-      {manual && !ports.length && (
+      {manual && !ports.length && !amending && (
         <div className="free-answer">
           <label htmlFor="human-answer">{t('Tu respuesta')}</label>
           <textarea
@@ -101,7 +105,21 @@ export function HumanForm({
           />
         </div>
       )}
-      {!manual && (
+      {amending && (
+        <div className="free-answer">
+          <label htmlFor="amend-reason">{t('Motivo de la corrección')}</label>
+          <textarea
+            id="amend-reason"
+            value={answer}
+            onChange={(e) => onAnswer(e.target.value)}
+            maxLength={8000}
+            rows={2}
+            required
+            placeholder={t('Explica por qué corriges la respuesta guardada…')}
+          />
+        </div>
+      )}
+      {!manual && !amending && (
         <details className="optional-fields">
           <summary>
             {t('Añadir comentario')} <small>{t('Opcional')}</small>
