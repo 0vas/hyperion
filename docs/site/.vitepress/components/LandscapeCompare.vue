@@ -70,11 +70,11 @@ const copy = computed(() =>
         evidence: 'Evidence · digests pending your call',
         footChat: 'The thread is the map',
         footFlow: 'The process is the map',
-        hint: 'Scroll when the stage is in view · beam left→right · drag optional',
+        hint: 'Scroll at reading height · beam left→right · drag optional',
         kicker: 'Guided as a process',
         caption:
-          'One card: once the stage sits in view, a slower beam sweeps left to right — chat becomes a full Hyperion canvas without leaving the frame. Drag is optional. Decorative — not a live agent run.',
-        aria: 'Illustration: a beam sweeps left to right across one card. After the stage reaches reading height, page scroll transforms chat into a full Hyperion canvas ending with the beam on the right while the card stays in view; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
+          'One card: the beam starts only once the stage is at reading height and finishes while it is still there — chat becomes a full Hyperion canvas left to right. Drag is optional. Decorative — not a live agent run.',
+        aria: 'Illustration: a beam sweeps left to right across one card. Scrub starts only when the stage sits at reading height and reaches full Hyperion while the stage is still at that height; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
       }
     : {
         chatTitle: 'Publicar los instaladores',
@@ -129,11 +129,11 @@ const copy = computed(() =>
         evidence: 'Evidencia · digests pendientes de tu decisión',
         footChat: 'El hilo es el mapa',
         footFlow: 'El proceso es el mapa',
-        hint: 'Scroll cuando el escenario esté a la vista · haz izquierda→derecha · arrastre opcional',
+        hint: 'Scroll a la altura de lectura · haz izquierda→derecha · arrastre opcional',
         kicker: 'Guiado como proceso',
         caption:
-          'Una sola tarjeta: cuando el escenario está a la altura de lectura, un haz más lento barre de izquierda a derecha y el chat se vuelve un canvas Hyperion completo sin salir del marco. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
-        aria: 'Ilustración: un haz barre de izquierda a derecha sobre una sola tarjeta. Tras la altura de lectura, el scroll transforma el chat en un canvas Hyperion completo con el haz a la derecha mientras la tarjeta sigue a la vista; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
+          'Una sola tarjeta: el haz empieza solo cuando el escenario está a la altura de lectura y termina mientras sigue ahí — el chat se vuelve un canvas Hyperion de izquierda a derecha. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
+        aria: 'Ilustración: un haz barre de izquierda a derecha sobre una sola tarjeta. El scrub empieza solo a la altura de lectura y llega al Hyperion completo mientras el escenario sigue a esa altura; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
       },
 );
 
@@ -172,12 +172,12 @@ const scrubArmed = ref(false);
 const FADE = 28;
 const HOT = '#FF5A1F';
 /**
- * Gate then finish while the stage is still in the reading frame
- * (do not require scrolling past the component to reach 100%).
- * Span kept wide enough to feel slower.
+ * Reading-height band: progress stays 0 while the stage is still
+ * approaching, then reaches 1 without leaving that band.
+ * Stage top as a fraction of viewport height.
  */
-const SCRUB_GATE = 0.55;
-const SCRUB_END = 0.2;
+const SCRUB_GATE = 0.36;
+const SCRUB_END = 0.28;
 
 let mediaMotion: MediaQueryList | undefined;
 let raf = 0;
@@ -223,8 +223,8 @@ const measure = () => {
 };
 
 /**
- * Page-scroll progress — gated until the stage sits at reading height
- * (hero no longer fills the view). Longer travel = slower scrub.
+ * Page-scroll progress — 0 until stage top hits reading height (gate),
+ * then 1 by SCRUB_END while the stage is still at reading height.
  */
 const scrollProgress = () => {
   const el = stage.value;
@@ -584,6 +584,7 @@ onUnmounted(() => {
       class="scanner-immersion"
       data-scrub="page"
       data-scrub-gate="viewport"
+      data-scrub-reading="band"
       data-beam-dir="ltr"
     >
       <div
@@ -593,6 +594,9 @@ onUnmounted(() => {
         data-cards="1"
         data-scrub="page"
         data-beam-dir="ltr"
+        data-scrub-reading="band"
+        :data-scrub-gate="String(SCRUB_GATE)"
+        :data-scrub-end="String(SCRUB_END)"
         :data-scrub-armed="scrubArmed ? 'true' : 'false'"
         :data-beam-x="String(Math.round(beamX))"
         :data-scanned="String(Math.round(cut))"
