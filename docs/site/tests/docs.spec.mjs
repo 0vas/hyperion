@@ -491,13 +491,13 @@ test('birth story page and home teaser ship in both languages with static diagra
   const immersion = teaser.locator('.scanner-immersion');
   await expect(immersion).toHaveAttribute('data-scrub', 'page');
   await expect(immersion).toHaveAttribute('data-scrub-gate', 'viewport');
-  await expect(immersion).toHaveAttribute('data-beam-dir', 'rtl');
+  await expect(immersion).toHaveAttribute('data-beam-dir', 'ltr');
   const stage = teaser.locator('.scanner-stage');
   await expect(stage).toBeVisible();
   await expect(stage).toHaveAttribute('data-scanner', 'distill');
   await expect(stage).toHaveAttribute('data-cards', '1');
   await expect(stage).toHaveAttribute('data-scrub', 'page');
-  await expect(stage).toHaveAttribute('data-beam-dir', 'rtl');
+  await expect(stage).toHaveAttribute('data-beam-dir', 'ltr');
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
   await expect(teaser.locator('.scanner-badge')).toHaveCount(0);
   await expect(teaser.getByText('Estado visible')).toHaveCount(0);
@@ -535,6 +535,9 @@ test('birth story page and home teaser ship in both languages with static diagra
     .toBeGreaterThan(Number(before || 0));
   const mid = await stage.getAttribute('data-scanned');
   const midBeam = await stage.getAttribute('data-beam-x');
+  await expect
+    .poll(async () => Number(await stage.getAttribute('data-beam-x')))
+    .toBeGreaterThan(Number(before || 0));
   await page.evaluate(() => {
     window.__hyperionScanner?.scrubBy(440);
   });
@@ -543,8 +546,8 @@ test('birth story page and home teaser ship in both languages with static diagra
     .not.toBe(mid);
   await expect
     .poll(async () => Number(await stage.getAttribute('data-beam-x')))
-    .toBeGreaterThan(Number(midBeam || 0));
-  // Gated page scroll: above the gate scanned resets; past the gate beam moves left.
+    .toBeLessThan(Number(midBeam || 9999));
+  // Gated page scroll: above the gate scanned resets; past the gate beam moves right.
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect
     .poll(async () =>
@@ -571,18 +574,51 @@ test('birth story page and home teaser ship in both languages with static diagra
     .toBe('true');
   await expect
     .poll(async () => Number(await stage.getAttribute('data-beam-x')))
-    .toBeLessThan(Number(atTopBeam || 9999));
+    .toBeGreaterThan(Number(atTopBeam || 0));
   await expect
     .poll(async () => Number(await stage.getAttribute('data-scanned')))
     .toBeGreaterThan(0);
-  // End state keeps the card fixed — full Hyperion with beam on the left.
+  // End state: full Hyperion with beam on the right; card still fixed in frame.
   await page.evaluate(() => {
     window.__hyperionScanner?.scrubBy(-5000);
   });
   await expect
-    .poll(async () => Number(await stage.getAttribute('data-beam-x')))
-    .toBeLessThanOrEqual(2);
+    .poll(async () => {
+      const bx = Number(await stage.getAttribute('data-beam-x'));
+      const scanned = Number(await stage.getAttribute('data-scanned'));
+      return { bx, scanned, near: Math.abs(bx - scanned) <= 2 && bx > 100 };
+    })
+    .toMatchObject({ near: true });
   await expect(slot).toHaveCSS('transform', /matrix|translate/);
+  // End-of-scrub via page scroll still leaves the Distill stage in the reading viewport.
+  await page.evaluate(() => {
+    const stageNode = document.querySelector('.scanner-stage');
+    if (!stageNode) return;
+    const endTop = window.innerHeight * 0.2;
+    const y =
+      window.scrollY + stageNode.getBoundingClientRect().top - endTop;
+    window.scrollTo(0, Math.max(0, y));
+  });
+  await expect
+    .poll(async () => Number(await stage.getAttribute('data-scanned')))
+    .toBeGreaterThan(100);
+  const endFrame = await page.evaluate(() => {
+    const stageNode = document.querySelector('.scanner-stage');
+    if (!stageNode) return null;
+    const rect = stageNode.getBoundingClientRect();
+    return {
+      top: rect.top,
+      bottom: rect.bottom,
+      vh: window.innerHeight,
+      scanned: stageNode.getAttribute('data-scanned'),
+      beamX: stageNode.getAttribute('data-beam-x'),
+    };
+  });
+  expect(endFrame).not.toBeNull();
+  expect(endFrame.top).toBeGreaterThanOrEqual(-8);
+  expect(endFrame.top).toBeLessThan(endFrame.vh * 0.35);
+  expect(endFrame.bottom).toBeGreaterThan(endFrame.vh * 0.35);
+  expect(Number(endFrame.beamX)).toBeGreaterThan(100);
   await teaser
     .getByRole('link', { name: 'Leer el paisaje', exact: true })
     .click();
