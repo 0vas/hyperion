@@ -595,8 +595,7 @@ test('birth story page and home teaser ship in both languages with static diagra
     const stageNode = document.querySelector('.scanner-stage');
     if (!stageNode) return;
     const endTop = window.innerHeight * 0.2;
-    const y =
-      window.scrollY + stageNode.getBoundingClientRect().top - endTop;
+    const y = window.scrollY + stageNode.getBoundingClientRect().top - endTop;
     window.scrollTo(0, Math.max(0, y));
   });
   await expect
