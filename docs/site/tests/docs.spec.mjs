@@ -519,12 +519,23 @@ test('birth story page and home teaser ship in both languages with static diagra
   await expect(
     teaser.locator('.scanner-slot .flow-face.sim-canvas'),
   ).toBeAttached();
+  await expect(teaser.locator('.sim-canvas')).toHaveAttribute(
+    'data-canvas-compose',
+    'dense',
+  );
   await expect(teaser.locator('.sim-composer')).toBeVisible();
+  await expect(teaser.locator('.sim-canvas-chrome')).toBeAttached();
   await expect(teaser.locator('.sim-canvas-lane li')).toHaveCount(5);
   await expect(teaser.locator('.sim-event.start')).toBeAttached();
   await expect(teaser.locator('.sim-event.end')).toBeAttached();
+  await expect(teaser.locator('.sim-bpmn-event')).toHaveCount(2);
   await expect(teaser.locator('.sim-task-card')).toHaveCount(3);
+  await expect(teaser.locator('.sim-ribbon')).toHaveCount(4);
   await expect(teaser.locator('.sim-evidence')).toBeAttached();
+  // #96 scrub walls stay intact.
+  await expect(stage).toHaveAttribute('data-scrub-gate', '0.42');
+  await expect(stage).toHaveAttribute('data-scrub-end', '0.24');
+  await expect(stage).toHaveAttribute('data-beam-dir', 'ltr');
   await expect(teaser.locator('.scanner-hint')).toContainText(/Scroll/i);
   await expect(teaser.locator('.sim-canvas-lane li').first()).toHaveCSS(
     'animation-name',

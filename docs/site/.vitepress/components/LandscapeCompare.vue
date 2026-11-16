@@ -643,7 +643,11 @@ onUnmounted(() => {
             <p class="panel-foot">{{ copy.footChat }}</p>
           </article>
 
-          <article ref="flowEl" class="scanner-card flow-face sim-canvas">
+          <article
+            ref="flowEl"
+            class="scanner-card flow-face sim-canvas"
+            data-canvas-compose="dense"
+          >
             <header class="sim-bar">
               <span class="sim-dot accent" aria-hidden="true"></span>
               <span class="sim-bar-meta">{{ copy.flowMeta }}</span>
@@ -652,7 +656,16 @@ onUnmounted(() => {
               }}</span>
             </header>
             <p class="card-title">{{ copy.flowTitle }}</p>
-            <div class="sim-canvas-board">
+            <div class="sim-canvas-board" aria-hidden="true">
+              <div class="sim-canvas-chrome">
+                <span class="sim-canvas-chip">{{
+                  en ? 'Process' : 'Proceso'
+                }}</span>
+                <span class="sim-canvas-chip muted">{{
+                  en ? 'Evidence open' : 'Evidencia abierta'
+                }}</span>
+                <span class="sim-canvas-fit">{{ en ? 'Fit' : 'Ajustar' }}</span>
+              </div>
               <ol class="sim-canvas-lane">
                 <li
                   v-for="(node, index) in copy.nodes"
@@ -667,11 +680,17 @@ onUnmounted(() => {
                   ]"
                 >
                   <span v-if="node.kind === 'start'" class="sim-event start">
-                    <i aria-hidden="true"></i>
+                    <i class="sim-bpmn-event" aria-hidden="true"></i>
+                    <span class="sim-event-label">{{
+                      en ? 'START' : 'INICIO'
+                    }}</span>
                     <strong>{{ node.label }}</strong>
                   </span>
                   <span v-else-if="node.kind === 'end'" class="sim-event end">
-                    <i aria-hidden="true"></i>
+                    <i class="sim-bpmn-event" aria-hidden="true"></i>
+                    <span class="sim-event-label">{{
+                      en ? 'END' : 'FIN'
+                    }}</span>
                     <strong>{{ node.label }}</strong>
                   </span>
                   <span v-else class="sim-task-card" :data-state="node.state">
@@ -681,14 +700,36 @@ onUnmounted(() => {
                       <small class="sim-task-status">{{ node.status }}</small>
                     </span>
                     <strong>{{ node.label }}</strong>
-                    <small v-if="node.role" class="sim-task-role">{{
-                      node.role
-                    }}</small>
+                    <span class="sim-task-foot">
+                      <small v-if="node.role" class="sim-task-role">{{
+                        node.role
+                      }}</small>
+                      <small class="sim-task-phase">{{
+                        node.state === 'done'
+                          ? en
+                            ? 'Done'
+                            : 'Hecho'
+                          : node.state === 'wait'
+                            ? en
+                              ? 'Waiting'
+                              : 'Espera'
+                            : en
+                              ? 'Next'
+                              : 'Siguiente'
+                      }}</small>
+                    </span>
+                  </span>
+                  <span
+                    v-if="index < copy.nodes.length - 1"
+                    class="sim-ribbon"
+                    aria-hidden="true"
+                  >
+                    <i></i><i></i><i></i>
                   </span>
                 </li>
               </ol>
+              <p class="sim-evidence">{{ copy.evidence }}</p>
             </div>
-            <p class="sim-evidence">{{ copy.evidence }}</p>
             <p class="panel-foot">{{ copy.footFlow }}</p>
           </article>
         </div>
