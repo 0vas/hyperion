@@ -751,5 +751,11 @@
   "Volver al canvas": "Back to canvas",
   "Vuelve a comprobar. Este resultado no confirma que falte un archivo.": "Recheck. This result does not establish that a file is missing.",
   "Ya existe otra conexión Hyperion en {0}. No se sobrescribió: {1}": "Another Hyperion connection already exists in {0}. It was not overwritten: {1}",
-  "Ya existe otra conexión Hyperion en {0}. No se sobrescribió.": "Another Hyperion connection already exists in {0}. It was not overwritten."
+  "Ya existe otra conexión Hyperion en {0}. No se sobrescribió.": "Another Hyperion connection already exists in {0}. It was not overwritten.",
+  "Entrega aceptada por el conector {0}. Eso no prueba que el agente haya ejecutado el trabajo ni que MCP haya despertado el chat.": "Delivery accepted by connector {0}. That does not prove the agent executed the work or that MCP woke the chat.",
+  "La entrega al conector {0} falló. Hyperion no inventa una respuesta del agente; revisa el conector o usa Copiar.": "Delivery to connector {0} failed. Hyperion does not invent an agent reply; check the connector or use Copy.",
+  "Entrega ambigua al conector {0}. Hay que reconciliar antes de reintentar; no se reenvía a ciegas ni se marca el paso como hecho.": "Ambiguous delivery to connector {0}. Reconcile before retrying; Hyperion does not blindly resend or mark the step done.",
+  "Recibo de entrega": "Delivery receipt",
+  "Todavía no hay handoffs registrados en este panel. Escribe abajo: Copiar pega en tu chat; Enviar solo con conector real (Desktop: outbound-send.json). Configurado no implica herramientas cargadas; MCP solo no despierta el chat.": "No handoffs are recorded in this panel yet. Write below: Copy pastes into your chat; Send only with a real connector (Desktop: outbound-send.json). Configured does not mean tools are loaded; MCP alone cannot wake the chat.",
+  "Enviar al chat estará disponible cuando configures un conector de envío para esta conexión (Desktop: outbound-send.json / ResumeConnector). Mientras tanto, copia y pega la petición. Copiar no equivale a entregar; MCP solo no despierta el chat.": "Send to chat will be available when you configure a send connector for this connection (Desktop: outbound-send.json / ResumeConnector). Meanwhile, copy and paste the request. Copying is not delivery; MCP alone cannot wake the chat."
 }

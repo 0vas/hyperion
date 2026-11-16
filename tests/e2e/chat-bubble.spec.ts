@@ -206,6 +206,131 @@ test('Desktop Enviar enqueues when ResumeConnector matches configured primary ha
           'Continuación encolada para el conector. Eso no significa que el agente haya ejecutado el trabajo.',
         ),
     ).toBeVisible();
+
+    const afterEnqueue = await (
+      await request.get(`/api/runs/${run.id}`, {
+        headers: { authorization: `Bearer ${agentToken}` },
+      })
+    ).json();
+    expect(afterEnqueue.outboundPrompt?.status).toBe('queued');
+    const claim = await request.post('/api/outbound-prompts/claim', {
+      headers: { authorization: `Bearer ${agentToken}` },
+      data: { connectorId: 'e2e-bubble-bridge' },
+    });
+    expect(claim.status()).toBe(200);
+    const delivery = await claim.json();
+    const settled = await request.post(
+      `/api/outbound-prompts/${delivery.id}/settle`,
+      {
+        headers: { authorization: `Bearer ${agentToken}` },
+        data: {
+          leaseToken: delivery.leaseToken,
+          outcome: 'accepted',
+        },
+      },
+    );
+    expect(settled.status()).toBe(200);
+    const afterSettle = await (
+      await request.get(`/api/runs/${run.id}`, {
+        headers: { authorization: `Bearer ${agentToken}` },
+      })
+    ).json();
+    expect(afterSettle.outboundPrompt?.status).toBe('delivered');
+    expect(afterSettle.steps[0].status).toBe('ready');
+    // Remount picks up settled outboundPrompt and appends a delivery receipt row.
+    await page.reload();
+    await page.getByRole('button', { name: 'Abrir chat con tu IA' }).click();
+    const after = page.getByRole('dialog');
+    await expect(
+      after.getByTestId('chat-bubble-msg-system').filter({
+        hasText: /Entrega aceptada por el conector/,
+      }),
+    ).toBeVisible();
+    await expect(after.getByText(/Recibo de entrega/)).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test('Desktop chat thread rebinds when runId changes', async ({
+  browser,
+  request,
+}) => {
+  const { agentToken, agentId } = credentials();
+  const harness = agentId || 'codex';
+  const headers = { authorization: `Bearer ${agentToken}` };
+  const makeRun = async (title: string) => {
+    const created = await request.post('/api/runs', {
+      headers,
+      data: {
+        commandId: crypto.randomUUID(),
+        plan: {
+          title,
+          steps: [{ id: 'work', title: 'Agent work', kind: 'agent' }],
+        },
+      },
+    });
+    expect(created.status()).toBe(201);
+    return created.json();
+  };
+  const first = await makeRun('Bubble rebind A');
+  const second = await makeRun('Bubble rebind B');
+  const inventory = {
+    ...connectionInventory,
+    integrations: connectionInventory.integrations.map((row) =>
+      row.id === harness
+        ? { ...row, status: 'configured' as const }
+        : { ...row, status: 'missing' as const },
+    ),
+    summary: { configured: 1, conflicts: 0, total: 5 },
+  };
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+    viewport: { width: 1280, height: 800 },
+    permissions: ['clipboard-read', 'clipboard-write'],
+  });
+  const page = await context.newPage();
+  try {
+    await page.route('**/api/connections', (route) =>
+      route.fulfill({ json: inventory }),
+    );
+    await setAppearance(page, 'light', 'es');
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'hyperionDesktop', {
+        configurable: true,
+        value: {
+          getLanguage: async () => ({ preference: 'es', locale: 'es' }),
+          onLanguageChanged: () => () => {},
+          setLanguage: async () => {},
+        },
+      });
+    });
+    await page.goto(`/?run=${first.id}`);
+    await page.getByRole('button', { name: 'Abrir chat con tu IA' }).click();
+    const panel = page.getByRole('dialog');
+    await panel.getByTestId('chat-bubble-harness').selectOption(harness);
+    await panel
+      .getByLabel('Petición para el agente')
+      .fill('mensaje del primer flujo');
+    await panel.getByTestId('chat-bubble-copy').click();
+    await expect(
+      panel
+        .getByTestId('chat-bubble-msg-you')
+        .getByText('mensaje del primer flujo'),
+    ).toBeVisible();
+    // Soft-select another run without remounting Desktop ChatBubble.
+    await page.getByRole('button', { name: 'Mis flujos', exact: true }).click();
+    await page
+      .locator('.popup-run-list button')
+      .filter({ hasText: second.title })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: second.title }),
+    ).toBeVisible();
+    // Bubble stays mounted; thread must clear for the new runId.
+    const rebound = page.getByRole('dialog');
+    await expect(rebound.getByTestId('chat-bubble-empty')).toBeVisible();
+    await expect(rebound.getByText('mensaje del primer flujo')).toHaveCount(0);
   } finally {
     await context.close();
   }
