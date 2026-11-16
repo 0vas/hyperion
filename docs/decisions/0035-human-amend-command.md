@@ -18,4 +18,4 @@ Add human command `amend` in the domain:
 
 ## Consequences
 
-Protocol and process-contract document the command. Canvas/Desktop amend UI and in-app chat remain later cuts. Linked cycles remain the path after a completed run. Domain tests cover happy path, principal checks, revision/commandId, terminal rejection, and policy C acknowledge.
+Protocol and process-contract document the command. Canvas/Desktop expose **Corregir respuesta** with a required reason, typed DecisionForm `mode=amend`, and policy C acknowledge when irreversible descendants exist; ChatBubble must never send `amend` / `acknowledgeIrreversible`. Linked cycles remain the path after a completed run. Domain and e2e tests cover happy path, principal checks, revision/commandId, terminal rejection, policy C acknowledge, and the chat deny-list.
