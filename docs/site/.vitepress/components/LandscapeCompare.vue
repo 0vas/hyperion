@@ -70,11 +70,11 @@ const copy = computed(() =>
         evidence: 'Evidence · digests pending your call',
         footChat: 'The thread is the map',
         footFlow: 'The process is the map',
-        hint: 'Scroll when the stage is in view · beam right→left · drag optional',
+        hint: 'Scroll when the stage is in view · beam left→right · drag optional',
         kicker: 'Guided as a process',
         caption:
-          'One card: once the stage sits in view, a slower beam sweeps right to left — chat becomes a full Hyperion canvas. Drag is optional. Decorative — not a live agent run.',
-        aria: 'Illustration: a beam sweeps right to left across one card. After the stage reaches reading height, page scroll transforms chat into a full Hyperion canvas ending with the beam on the left; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
+          'One card: once the stage sits in view, a slower beam sweeps left to right — chat becomes a full Hyperion canvas without leaving the frame. Drag is optional. Decorative — not a live agent run.',
+        aria: 'Illustration: a beam sweeps left to right across one card. After the stage reaches reading height, page scroll transforms chat into a full Hyperion canvas ending with the beam on the right while the card stays in view; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
       }
     : {
         chatTitle: 'Publicar los instaladores',
@@ -129,11 +129,11 @@ const copy = computed(() =>
         evidence: 'Evidencia · digests pendientes de tu decisión',
         footChat: 'El hilo es el mapa',
         footFlow: 'El proceso es el mapa',
-        hint: 'Scroll cuando el escenario esté a la vista · haz derecha→izquierda · arrastre opcional',
+        hint: 'Scroll cuando el escenario esté a la vista · haz izquierda→derecha · arrastre opcional',
         kicker: 'Guiado como proceso',
         caption:
-          'Una sola tarjeta: cuando el escenario está a la altura de lectura, un haz más lento barre de derecha a izquierda y el chat se vuelve un canvas Hyperion completo. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
-        aria: 'Ilustración: un haz barre de derecha a izquierda sobre una sola tarjeta. Tras la altura de lectura, el scroll transforma el chat en un canvas Hyperion completo con el haz a la izquierda; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
+          'Una sola tarjeta: cuando el escenario está a la altura de lectura, un haz más lento barre de izquierda a derecha y el chat se vuelve un canvas Hyperion completo sin salir del marco. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
+        aria: 'Ilustración: un haz barre de izquierda a derecha sobre una sola tarjeta. Tras la altura de lectura, el scroll transforma el chat en un canvas Hyperion completo con el haz a la derecha mientras la tarjeta sigue a la vista; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
       },
 );
 
@@ -156,12 +156,12 @@ const flowEl = ref<HTMLElement | null>(null);
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
 /**
- * Scanned amount from the right: 0 = beam at right (full chat),
- * cw = beam at left (full Hyperion). Beam sweeps right → left.
+ * Scanned amount from the left: 0 = beam at left (full chat),
+ * cw = beam at right (full Hyperion). Beam sweeps left → right.
  */
 const cut = ref(0);
 const cardWidth = ref(520);
-const beamX = ref(520);
+const beamX = ref(0);
 /** Beam X within the stage (card left + beamX). */
 const beamLeft = ref(0);
 const dragging = ref(false);
@@ -171,9 +171,13 @@ const scrubArmed = ref(false);
 
 const FADE = 28;
 const HOT = '#FF5A1F';
-/** Gate + longer travel so scrub feels a bit slower. */
-const SCRUB_GATE = 0.42;
-const SCRUB_END = -0.1;
+/**
+ * Gate then finish while the stage is still in the reading frame
+ * (do not require scrolling past the component to reach 100%).
+ * Span kept wide enough to feel slower.
+ */
+const SCRUB_GATE = 0.55;
+const SCRUB_END = 0.2;
 
 let mediaMotion: MediaQueryList | undefined;
 let raf = 0;
@@ -199,7 +203,7 @@ const clampCut = (value: number) => {
 };
 
 const syncBeam = () => {
-  beamX.value = Math.max(0, cardWidth.value - cut.value);
+  beamX.value = clampCut(cut.value);
   const root = stage.value;
   const card = slot.value;
   if (!root || !card) {
@@ -247,29 +251,29 @@ const applyFaces = () => {
   const bx = beamX.value;
   if (!chat || !flow || !cw) return;
 
-  // Left of beam = chat (unscanned); right of beam = Hyperion (scanned).
-  if (bx >= cw - 0.5) {
+  // Left of beam = Hyperion (scanned); right of beam = chat (unscanned).
+  if (bx <= 0.5) {
     chat.style.visibility = 'visible';
     chat.style.clipPath = 'none';
     chat.style.webkitMaskImage = '';
     chat.style.maskImage = '';
     flow.style.visibility = 'hidden';
-    flow.style.clipPath = 'inset(0 0 0 100%)';
-  } else if (bx <= 0.5) {
+    flow.style.clipPath = 'inset(0 100% 0 0)';
+  } else if (bx >= cw - 0.5) {
     chat.style.visibility = 'hidden';
-    chat.style.clipPath = 'inset(0 100% 0 0)';
+    chat.style.clipPath = 'inset(0 0 0 100%)';
     chat.style.webkitMaskImage = '';
     chat.style.maskImage = '';
     flow.style.visibility = 'visible';
     flow.style.clipPath = 'none';
   } else {
     chat.style.visibility = 'visible';
-    chat.style.clipPath = `inset(0 ${Math.max(0, cw - bx)}px 0 0 round 18px 0 0 18px)`;
-    const fade = `linear-gradient(90deg, #000 ${Math.max(0, bx - FADE)}px, transparent ${bx}px)`;
+    chat.style.clipPath = `inset(0 0 0 ${bx}px round 0 18px 18px 0)`;
+    const fade = `linear-gradient(90deg, transparent ${bx}px, #000 ${bx + FADE}px)`;
     chat.style.webkitMaskImage = fade;
     chat.style.maskImage = fade;
     flow.style.visibility = 'visible';
-    flow.style.clipPath = `inset(0 0 0 ${bx}px round 0 18px 18px 0)`;
+    flow.style.clipPath = `inset(0 ${Math.max(0, cw - bx)}px 0 0 round 18px 0 0 18px)`;
   }
 };
 
@@ -287,7 +291,7 @@ const spawnSpecks = (
     cut.value < cardWidth.value - 8 &&
     hash(cut.value * 0.19 + speckSeed) > 0.55;
   if (!active && !ambient) return;
-  // cut↑ = beam moves left (advance); chat breaks on the left, Hyperion forms on the right.
+  // cut↑ = beam moves right (advance); chat breaks on the right, Hyperion forms on the left.
   const advancing = active ? delta > 0 : true;
   const burst = active ? Math.min(36, 8 + Math.ceil(Math.abs(delta) * 1.1)) : 5;
   for (let i = 0; i < burst; i++) {
@@ -298,29 +302,6 @@ const spawnSpecks = (
     const outward = 0.6 + hash(seed + 3) * 2.4;
     const lateral = (hash(seed + 4) - 0.5) * 1.6;
     if (advancing) {
-      specks.push({
-        x: edgeX + (hash(seed + 5) - 0.5) * 4,
-        y,
-        size,
-        vx: -outward,
-        vy: lateral,
-        life: 0,
-        maxLife: 18 + hash(seed + 6) * 28,
-        kind: 'break',
-        tone: hash(seed + 7),
-      });
-      specks.push({
-        x: edgeX + 4 + hash(seed + 8) * 10,
-        y: y + (hash(seed + 9) - 0.5) * 8,
-        size: 1 + hash(seed + 10) * 2.2,
-        vx: outward * 0.85,
-        vy: (hash(seed + 11) - 0.5) * 1.4,
-        life: 0,
-        maxLife: 16 + hash(seed + 12) * 24,
-        kind: 'form',
-        tone: hash(seed + 13),
-      });
-    } else {
       specks.push({
         x: edgeX + (hash(seed + 5) - 0.5) * 4,
         y,
@@ -337,6 +318,29 @@ const spawnSpecks = (
         y: y + (hash(seed + 9) - 0.5) * 8,
         size: 1 + hash(seed + 10) * 2.2,
         vx: -outward * 0.85,
+        vy: (hash(seed + 11) - 0.5) * 1.4,
+        life: 0,
+        maxLife: 16 + hash(seed + 12) * 24,
+        kind: 'form',
+        tone: hash(seed + 13),
+      });
+    } else {
+      specks.push({
+        x: edgeX + (hash(seed + 5) - 0.5) * 4,
+        y,
+        size,
+        vx: -outward,
+        vy: lateral,
+        life: 0,
+        maxLife: 18 + hash(seed + 6) * 28,
+        kind: 'break',
+        tone: hash(seed + 7),
+      });
+      specks.push({
+        x: edgeX + 4 + hash(seed + 8) * 10,
+        y: y + (hash(seed + 9) - 0.5) * 8,
+        size: 1 + hash(seed + 10) * 2.2,
+        vx: outward * 0.85,
         vy: (hash(seed + 11) - 0.5) * 1.4,
         life: 0,
         maxLife: 16 + hash(seed + 12) * 24,
@@ -501,9 +505,9 @@ const onPointerDown = (event: PointerEvent) => {
 
 const onPointerMove = (event: PointerEvent) => {
   if (!dragging.value) return;
-  // Drag left advances (beam → left); drag right restores chat.
+  // Drag right advances (beam → right); drag left restores chat.
   const delta = event.clientX - dragOriginX;
-  cut.value = clampCut(dragOriginCut - delta);
+  cut.value = clampCut(dragOriginCut + delta);
   syncBeam();
 };
 
@@ -580,7 +584,7 @@ onUnmounted(() => {
       class="scanner-immersion"
       data-scrub="page"
       data-scrub-gate="viewport"
-      data-beam-dir="rtl"
+      data-beam-dir="ltr"
     >
       <div
         ref="stage"
@@ -588,7 +592,7 @@ onUnmounted(() => {
         data-scanner="distill"
         data-cards="1"
         data-scrub="page"
-        data-beam-dir="rtl"
+        data-beam-dir="ltr"
         :data-scrub-armed="scrubArmed ? 'true' : 'false'"
         :data-beam-x="String(Math.round(beamX))"
         :data-scanned="String(Math.round(cut))"
