@@ -503,8 +503,11 @@ test('birth story page and home teaser ship in both languages with static diagra
   const scrubGate = Number(await stage.getAttribute('data-scrub-gate'));
   const scrubEnd = Number(await stage.getAttribute('data-scrub-end'));
   expect(scrubGate).toBeGreaterThan(scrubEnd);
-  expect(scrubGate - scrubEnd).toBeLessThanOrEqual(0.12);
+  // Slower dissolve needs a wider reading-height band than #95's ~0.08.
+  expect(scrubGate - scrubEnd).toBeGreaterThanOrEqual(0.14);
+  expect(scrubGate - scrubEnd).toBeLessThanOrEqual(0.22);
   expect(scrubEnd).toBeGreaterThanOrEqual(0.22);
+  expect(scrubGate).toBeLessThanOrEqual(0.48);
   await expect(teaser.locator('.scanner-beam')).toBeVisible();
   await expect(teaser.locator('.scanner-badge')).toHaveCount(0);
   await expect(teaser.getByText('Estado visible')).toHaveCount(0);

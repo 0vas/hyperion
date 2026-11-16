@@ -73,8 +73,8 @@ const copy = computed(() =>
         hint: 'Scroll at reading height · beam left→right · drag optional',
         kicker: 'Guided as a process',
         caption:
-          'One card: the beam starts only once the stage is at reading height and finishes while it is still there — chat becomes a full Hyperion canvas left to right. Drag is optional. Decorative — not a live agent run.',
-        aria: 'Illustration: a beam sweeps left to right across one card. Scrub starts only when the stage sits at reading height and reaches full Hyperion while the stage is still at that height; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
+          'One card: at reading height a slower left-to-right beam turns chat into a full Hyperion canvas, and finishes while the stage is still there. Drag is optional. Decorative — not a live agent run.',
+        aria: 'Illustration: a slower beam sweeps left to right across one card. Scrub starts only when the stage sits at reading height and reaches full Hyperion while the stage is still at that height; scrolling back restores chat. Optional drag. Decorative; not a live agent run.',
       }
     : {
         chatTitle: 'Publicar los instaladores',
@@ -132,8 +132,8 @@ const copy = computed(() =>
         hint: 'Scroll a la altura de lectura · haz izquierda→derecha · arrastre opcional',
         kicker: 'Guiado como proceso',
         caption:
-          'Una sola tarjeta: el haz empieza solo cuando el escenario está a la altura de lectura y termina mientras sigue ahí — el chat se vuelve un canvas Hyperion de izquierda a derecha. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
-        aria: 'Ilustración: un haz barre de izquierda a derecha sobre una sola tarjeta. El scrub empieza solo a la altura de lectura y llega al Hyperion completo mientras el escenario sigue a esa altura; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
+          'Una sola tarjeta: a la altura de lectura un haz más lento de izquierda a derecha convierte el chat en un canvas Hyperion completo y termina mientras el escenario sigue ahí. Arrastre opcional. Decorativo — no es una ejecución en vivo.',
+        aria: 'Ilustración: un haz más lento barre de izquierda a derecha sobre una sola tarjeta. El scrub empieza solo a la altura de lectura y llega al Hyperion completo mientras el escenario sigue a esa altura; al subir se recupera el chat. Arrastre opcional. Decorativo; no es una ejecución en vivo.',
       },
 );
 
@@ -174,10 +174,11 @@ const HOT = '#FF5A1F';
 /**
  * Reading-height band: progress stays 0 while the stage is still
  * approaching, then reaches 1 without leaving that band.
+ * Span (~0.18 vh) is wide enough for a readable L→R dissolve.
  * Stage top as a fraction of viewport height.
  */
-const SCRUB_GATE = 0.36;
-const SCRUB_END = 0.28;
+const SCRUB_GATE = 0.42;
+const SCRUB_END = 0.24;
 
 let mediaMotion: MediaQueryList | undefined;
 let raf = 0;
