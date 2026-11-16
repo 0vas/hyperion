@@ -14,6 +14,11 @@ import {
 } from './chat-bubble-handoff';
 import { readHostResumeConnector } from './host-resume-connector';
 import type { OutboundPromptState } from '../domain/outbound-prompt';
+import {
+  isOutboundReceiptStatus,
+  outboundReceiptKey,
+  outboundReceiptMessage,
+} from './chat-bubble-outbound-receipt';
 
 type ThreadMessage = {
   id: string;
@@ -66,15 +71,42 @@ export function ChatBubble({
   const closeRef = useRef<HTMLButtonElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
+  const lastReceiptKey = useRef<string | null>(null);
   const options = bubbleConnectionOptions(inventory);
   const pickerReady = options.length > 0;
   const hostConnector =
     resumeConnector !== undefined ? resumeConnector : readHostResumeConnector();
 
   useEffect(() => {
+    setThread([]);
+    lastReceiptKey.current = null;
+  }, [runId]);
+
+  useEffect(() => {
     if (!selected) return;
     if (!options.some((row) => row.id === selected)) setSelected('');
   }, [options, selected]);
+
+  useEffect(() => {
+    if (!outboundPrompt || !isOutboundReceiptStatus(outboundPrompt.status))
+      return;
+    const key = outboundReceiptKey(outboundPrompt);
+    if (lastReceiptKey.current === key) return;
+    lastReceiptKey.current = key;
+    const text = t(outboundReceiptMessage(outboundPrompt), {
+      0: outboundPrompt.harness,
+      1: outboundPrompt.status,
+    });
+    setThread((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: 'system',
+        text,
+        meta: t('Recibo de entrega'),
+      },
+    ]);
+  }, [outboundPrompt]);
 
   useEffect(() => {
     if (!open) return;
@@ -263,7 +295,7 @@ export function ChatBubble({
             {thread.length === 0 && !outboundStatusLabel && (
               <p className="chat-bubble-empty" data-testid="chat-bubble-empty">
                 {t(
-                  'Todavía no hay handoffs registrados en este panel. Escribe abajo: Copiar pega en tu chat; Enviar solo con conector real. Configurado no implica herramientas cargadas.',
+                  'Todavía no hay handoffs registrados en este panel. Escribe abajo: Copiar pega en tu chat; Enviar solo con conector real (Desktop: outbound-send.json). Configurado no implica herramientas cargadas; MCP solo no despierta el chat.',
                 )}
               </p>
             )}
