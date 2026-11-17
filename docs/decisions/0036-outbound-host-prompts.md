@@ -1,6 +1,6 @@
 # ADR 0036 — Outbound host prompts (send connector / outbox)
 
-Status: **accepted in source** (PR1 outbox; PR2 continuation Enviar; PR3 generic bridge `send` worker for `continuation_prompt`, synthetic in CI; Desktop W1 optional `clipboard-open` send via `userData/outbound-send.json`). `linked_cycle_prompt`, provider-native chat injection, and Desktop local executor (W2) remain follow-up.
+Status: **accepted in source** (PR1 outbox; PR2 continuation Enviar; PR3 generic bridge `send` worker for `continuation_prompt`, synthetic in CI; Desktop W1 optional `clipboard-open` and Desktop W2 `harness-cli` local executor via `userData/outbound-send.json`). `linked_cycle_prompt` and provider-native chat-pane injection remain follow-up. Cursor CLI is the W2 path proven in synthetic Desktop tests; Codex App Server and Claude Code Agent SDK stay documented, not certified, until real-session evidence.
 Date: 2026-10-26.
 
 Parents: Phase 0 notes `1e160c0f`, `42fab25a`, Architect gate `ffcdba70`; product design `027c9591`.
@@ -62,7 +62,7 @@ Do not overload `Store.continuations` human-answer rows with linked-cycle create
 - **PR1 landed:** domain schema, `OutboundPromptQueue`, HTTP enqueue/claim/settle, synthetic tests, protocol + send-column honesty.
 - **PR2:** continuation **Enviar** wires to enqueue when the host supplies a real ResumeConnector; without it Enviar stays hidden and Copiar remains primary.
 - **PR3:** `dispatchOutboundOnce` / bridge `send` claims outbound jobs with prompt text; synthetic connector tests only. Linked-cycle Enviar and native connectors remain later.
-- Host spikes (Claude Code session, Cursor CLI, Codex App Server, Desktop helper) stay Phase 2; each must prove idempotent delivery before product claims.
+- Desktop W2 `harness-cli` ships as the local executor: spawn an installed CLI with the prompt (no shell; inherited env only). Cursor `agent --resume … --print` is the certified example in CI (synthetic spawn). Claude Code / Codex stay schema-ready until real-session certification.
 - Docs and capability matrices gain an explicit **send** column distinct from MCP and from human-answer resume.
 - Risk: conflating “Enviar succeeded” with “child run exists” or “step completed” — UI and receipts must separate delivery from execution.
 
@@ -76,6 +76,6 @@ Do not overload `Store.continuations` human-answer rows with linked-cycle create
 
 ## Out of scope for this ADR text
 
-- Shipping a native provider send connector.
-- Changing Phase 0 Copiar-primary honesty.
-- HTML artifact preview, Preview channel release, or live-run mutation for this draft.
+- Claiming Codex / Claude Code / Claude Desktop chat-pane injection without real-session certification.
+- Changing Phase 0 Copiar-primary honesty when no send connector is configured.
+- HTML artifact preview, Stable channel, or live-run mutation for this draft.
