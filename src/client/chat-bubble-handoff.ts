@@ -85,7 +85,7 @@ export function bubbleSendBlockedReason(options: {
       options.selectedClientId,
     )
   ) {
-    return 'Enviar al chat estará disponible cuando configures un conector de envío para esta conexión (Desktop: outbound-send.json / ResumeConnector). Mientras tanto, copia y pega la petición. Copiar no equivale a entregar; MCP solo no despierta el chat.';
+    return 'Enviar al chat estará disponible cuando configures un conector de envío para esta conexión (Desktop: outbound-send.json / ResumeConnector; W1 clipboard-open o W2 harness-cli). Mientras tanto, copia y pega la petición. Copiar no equivale a entregar; MCP solo no despierta el chat.';
   }
   return '';
 }

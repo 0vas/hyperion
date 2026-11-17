@@ -295,7 +295,7 @@ export function ChatBubble({
             {thread.length === 0 && !outboundStatusLabel && (
               <p className="chat-bubble-empty" data-testid="chat-bubble-empty">
                 {t(
-                  'Todavía no hay handoffs registrados en este panel. Escribe abajo: Copiar pega en tu chat; Enviar solo con conector real (Desktop: outbound-send.json). Configurado no implica herramientas cargadas; MCP solo no despierta el chat.',
+                  'Todavía no hay handoffs registrados en este panel. Escribe abajo: Copiar pega en tu chat; Enviar solo con conector real (Desktop: outbound-send.json, W1 clipboard-open o W2 harness-cli). Configurado no implica herramientas cargadas; MCP solo no despierta el chat.',
                 )}
               </p>
             )}

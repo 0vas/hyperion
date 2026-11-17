@@ -64,7 +64,7 @@ La web usa `docs/site/.vitepress/release.json` como registro de la última relea
 
 ## Entregables, Trabajos y recorridos enlazados (2026.11.16.2352)
 
-Esta preview incluye español e inglés, artefactos por paso (vista previa HTML/SVG en `iframe` con `sandbox=""`, aviso inerte y toggle a código; descarga autenticada), el interruptor visible **Trabajos** en el canvas y vínculos entre un flujo completado y un nuevo recorrido. Usa un marco estándar, **Ampliar** a pantalla completa con **Volver**, notas como papel, CSV/TSV como tabla sencilla y burbujas SVG descargables para Office. No renderiza Office ni afirma WYSIWYG. **Copiar petición para el chat** es el camino de Phase 0; **Enviar** permanece oculto sin conector de envío. Los archivos permanecen asociados a su intento; la continuación conserva el historial anterior. La publicación no añade notarización.
+Esta preview incluye español e inglés, artefactos por paso (vista previa HTML/SVG en `iframe` con `sandbox=""`, aviso inerte y toggle a código; descarga autenticada), el interruptor visible **Trabajos** en el canvas y vínculos entre un flujo completado y un nuevo recorrido. Usa un marco estándar, **Ampliar** a pantalla completa con **Volver**, notas como papel, CSV/TSV como tabla sencilla y burbujas SVG descargables para Office. No renderiza Office ni afirma WYSIWYG. **Copiar petición para el chat** es el camino cooperativo; **Enviar** requiere `userData/outbound-send.json` (W1 `clipboard-open` o W2 `harness-cli`; Cursor CLI certificado en CI sintético). Entrega ≠ ejecución. Los archivos permanecen asociados a su intento; la continuación conserva el historial anterior. La publicación no añade notarización.
 
 ## Interface language
 

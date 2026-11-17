@@ -9,10 +9,13 @@ import {
   parseDesktopOutboundConfig,
   publicResumeConnector,
   createDesktopClipboardSendConnector,
+  createDesktopHarnessCliSendConnector,
+  createDesktopOutboundSendConnector,
+  expandHarnessCliArgs,
 } from '../src/adapters/desktop-outbound-send.js';
 import { outboundSendConfiguredFromResumeConnector } from '../src/client/next-cycle-send.js';
 
-const baseConfig = {
+const clipboardConfig = {
   id: 'desktop-clipboard-send',
   harness: 'cursor',
   sessionId: 'user-configured-session',
@@ -21,35 +24,80 @@ const baseConfig = {
   transport: 'clipboard-open' as const,
 };
 
-test('Desktop outbound config parses only clipboard-open + connectorSchema', () => {
-  const ok = parseDesktopOutboundConfig(baseConfig);
-  assert.ok(ok);
-  assert.equal(ok!.transport, 'clipboard-open');
+const harnessCliConfig = {
+  id: 'desktop-cursor-cli-send',
+  harness: 'cursor',
+  sessionId: 'cursor-chat-session',
+  scope: 'managed-session' as const,
+  capabilities: { resume: true as const, idempotentDelivery: true as const },
+  transport: 'harness-cli' as const,
+  command: 'agent',
+  args: ['--resume', '{{sessionId}}', '--print'],
+  prompt: 'arg' as const,
+};
+
+test('Desktop outbound config parses clipboard-open and harness-cli', () => {
+  const clipboard = parseDesktopOutboundConfig(clipboardConfig);
+  assert.ok(clipboard);
+  assert.equal(clipboard!.transport, 'clipboard-open');
+
+  const harness = parseDesktopOutboundConfig(harnessCliConfig);
+  assert.ok(harness);
+  assert.equal(harness!.transport, 'harness-cli');
+  if (harness!.transport !== 'harness-cli')
+    throw new Error('expected harness-cli');
+  assert.equal(harness.command, 'agent');
+  assert.deepEqual(harness.args, ['--resume', '{{sessionId}}', '--print']);
+
   assert.equal(
-    parseDesktopOutboundConfig({ ...baseConfig, transport: 'mcp' }),
+    parseDesktopOutboundConfig({ ...clipboardConfig, transport: 'mcp' }),
     null,
   );
   assert.equal(
-    parseDesktopOutboundConfig({ ...baseConfig, sessionId: '' }),
+    parseDesktopOutboundConfig({ ...harnessCliConfig, command: '' }),
     null,
   );
   assert.equal(
     parseDesktopOutboundConfig({
-      id: baseConfig.id,
-      harness: baseConfig.harness,
-      sessionId: baseConfig.sessionId,
-      scope: baseConfig.scope,
-      capabilities: baseConfig.capabilities,
+      id: clipboardConfig.id,
+      harness: clipboardConfig.harness,
+      sessionId: clipboardConfig.sessionId,
+      scope: clipboardConfig.scope,
+      capabilities: clipboardConfig.capabilities,
     }),
     null,
   );
 });
 
-test('public ResumeConnector strips transport and enables Enviar gate', () => {
-  const pub = publicResumeConnector(baseConfig);
-  assert.equal('transport' in pub, false);
-  assert.equal(outboundSendConfiguredFromResumeConnector(pub, 'cursor'), true);
-  assert.equal(outboundSendConfiguredFromResumeConnector(pub, 'codex'), false);
+test('public ResumeConnector strips transport fields and enables Enviar gate', () => {
+  const pubClipboard = publicResumeConnector(clipboardConfig);
+  assert.equal('transport' in pubClipboard, false);
+  assert.equal(
+    outboundSendConfiguredFromResumeConnector(pubClipboard, 'cursor'),
+    true,
+  );
+
+  const pubHarness = publicResumeConnector(harnessCliConfig);
+  assert.equal('transport' in pubHarness, false);
+  assert.equal('command' in pubHarness, false);
+  assert.equal(
+    outboundSendConfiguredFromResumeConnector(pubHarness, 'cursor'),
+    true,
+  );
+  assert.equal(
+    outboundSendConfiguredFromResumeConnector(pubHarness, 'codex'),
+    false,
+  );
+});
+
+test('expandHarnessCliArgs substitutes session and text without a shell', () => {
+  assert.deepEqual(
+    expandHarnessCliArgs(
+      ['--resume', '{{sessionId}}', '--print', 'prefix {{text}}'],
+      { sessionId: 'abc', text: 'hello world' },
+    ),
+    ['--resume', 'abc', '--print', 'prefix hello world'],
+  );
 });
 
 test('clipboard-open send settles accepted without starting agent steps', async () => {
@@ -76,12 +124,12 @@ test('clipboard-open send settles accepted without starting agent steps', async 
       expectedRevision: run.revision,
       commandId: randomUUID(),
       text,
-      connector: publicResumeConnector(baseConfig),
+      connector: publicResumeConnector(clipboardConfig),
     });
 
     const written: string[] = [];
     const remembered = new Set<string>();
-    const connector = createDesktopClipboardSendConnector(baseConfig, {
+    const connector = createDesktopClipboardSendConnector(clipboardConfig, {
       writeText: (value) => written.push(value),
       rememberDelivery: (id) => remembered.add(id),
       wasDelivered: (id) => remembered.has(id),
@@ -104,7 +152,7 @@ test('clipboard-open send settles accepted without starting agent steps', async 
 });
 
 test('clipboard-open send fails closed when text cannot be written', async () => {
-  const connector = createDesktopClipboardSendConnector(baseConfig, {
+  const connector = createDesktopClipboardSendConnector(clipboardConfig, {
     writeText: () => {
       throw new Error('clipboard denied');
     },
@@ -119,9 +167,9 @@ test('clipboard-open send fails closed when text cannot be written', async () =>
       revision: 1,
       commandId: randomUUID(),
       text: 'hello',
-      connectorId: baseConfig.id,
+      connectorId: clipboardConfig.id,
       harness: 'cursor',
-      sessionId: baseConfig.sessionId,
+      sessionId: clipboardConfig.sessionId,
       scope: 'managed-session',
       leaseToken: randomUUID(),
       leaseUntil: Date.now() + 10_000,
@@ -130,4 +178,108 @@ test('clipboard-open send fails closed when text cannot be written', async () =>
   );
   assert.equal(result.outcome, 'failed');
   assert.match(result.message || '', /clipboard denied/);
+});
+
+test('harness-cli send settles accepted via synthetic Cursor CLI spawn', async () => {
+  const store = new Store(':memory:');
+  const app = createApp({
+    store,
+    agentToken: 'agent',
+    humanToken: 'human',
+    agentId: 'cursor',
+  });
+  const url = await app.listen(0);
+  const client = new HyperionClient({ url, token: 'agent' });
+  const human = new HyperionClient({ url, token: 'human' });
+  try {
+    const run = await client.create({
+      title: 'Desktop W2 harness-cli',
+      steps: [{ id: 'alpha', title: 'Continuar', kind: 'agent' }],
+    });
+    const text = `Continúa ${run.id}: Continuar (alpha)`;
+    await human.enqueueOutboundPrompt(run.id, {
+      expectedRevision: run.revision,
+      commandId: randomUUID(),
+      text,
+      connector: publicResumeConnector(harnessCliConfig),
+    });
+
+    const spawns: Array<{ command: string; args: string[] }> = [];
+    const remembered = new Set<string>();
+    const connector = createDesktopHarnessCliSendConnector(harnessCliConfig, {
+      writeText: () => {
+        throw new Error('clipboard must not run for harness-cli');
+      },
+      rememberDelivery: (id) => remembered.add(id),
+      wasDelivered: (id) => remembered.has(id),
+      spawn: async (request) => {
+        spawns.push({ command: request.command, args: request.args });
+        return { started: true, exitCode: 0, signal: null };
+      },
+    });
+
+    assert.equal(await dispatchOutboundOnce(client, connector), true);
+    assert.equal(spawns.length, 1);
+    assert.equal(spawns[0]?.command, 'agent');
+    assert.deepEqual(spawns[0]?.args, [
+      '--resume',
+      harnessCliConfig.sessionId,
+      '--print',
+      text,
+    ]);
+    assert.equal((await human.get(run.id)).outboundPrompt?.status, 'delivered');
+    assert.equal((await human.get(run.id)).steps[0]?.status, 'ready');
+    assert.equal((await human.get(run.id)).steps[0]?.attempt, 0);
+    assert.equal(await dispatchOutboundOnce(client, connector), false);
+  } finally {
+    await app.close();
+    store.close();
+  }
+});
+
+test('harness-cli fails when CLI cannot start; uncertain when exit is ambiguous', async () => {
+  const remembered = new Set<string>();
+  const baseIo = {
+    writeText: () => {},
+    rememberDelivery: (id: string) => remembered.add(id),
+    wasDelivered: (id: string) => remembered.has(id),
+  };
+  const delivery = {
+    id: randomUUID(),
+    kind: 'continuation_prompt' as const,
+    runId: 'run',
+    revision: 1,
+    commandId: randomUUID(),
+    text: 'hello',
+    connectorId: harnessCliConfig.id,
+    harness: 'cursor',
+    sessionId: harnessCliConfig.sessionId,
+    scope: 'managed-session' as const,
+    leaseToken: randomUUID(),
+    leaseUntil: Date.now() + 10_000,
+  };
+  const run = { status: 'active', steps: [] } as never;
+
+  const missing = createDesktopHarnessCliSendConnector(harnessCliConfig, {
+    ...baseIo,
+    spawn: async () => ({
+      started: false,
+      exitCode: null,
+      signal: null,
+      error: new Error('ENOENT agent'),
+    }),
+  });
+  const missingResult = await missing.send(delivery, run);
+  assert.equal(missingResult.outcome, 'failed');
+  assert.match(missingResult.message || '', /ENOENT/);
+
+  const ambiguous = createDesktopOutboundSendConnector(harnessCliConfig, {
+    ...baseIo,
+    spawn: async () => ({ started: true, exitCode: 2, signal: null }),
+  });
+  await assert.rejects(
+    () => ambiguous.send(delivery, run),
+    /exited 2; reconcile before retry/,
+  );
+  assert.equal(remembered.size, 0);
 });
