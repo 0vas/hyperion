@@ -4,6 +4,10 @@ Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local 
 
 La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.11.18.0021) incluye instaladores para macOS Apple Silicon (notarizado) y Windows x64.
 
+## Chat local de Codex (fuentes, no instalador publicado)
+
+La navegación **Chat** de Desktop abre una vista separada del canvas para un hilo local de Codex App Server del flujo activo. Solo se habilita después de que el servicio local, App Server, MCP y el hilo estén realmente listos. Electron busca un ejecutable absoluto de Codex en su entorno y ubicaciones locales conocidas, o acepta una ruta elegida explícitamente mediante el diálogo nativo. Una ruta ausente u obsoleta deja el chat desconectado y ofrece elegir o reintentar; no instala Codex, no usa una shell y no muestra `spawn ... ENOENT` al renderer. Esta vía sigue limitada a Codex local; el canvas mantiene formularios, aprobaciones, amend e irreversibles.
+
 ## Desarrollo y distribución
 
 - `npm ci` y `npm run desktop` abren el cliente de desarrollo.
@@ -19,6 +23,8 @@ Los binarios pertenecen a GitHub Releases, no al historial Git. `release/` está
 El renderizador tiene sandbox, aislamiento de contexto y Node deshabilitado; navegación y ventanas se limitan al origen local autenticado. Los enlaces HTTP(S) de artefactos se abren en el navegador del sistema; el renderizador sigue limitado al origen local. La aplicación empaqueta archivos sin ASAR para que su proceso Node independiente pueda servir los assets y sobrevivir al cierre de la ventana. No hay bridge IPC de filesystem expuesto al renderizador.
 
 Si otro Hyperion (otra cuenta o instalación) ocupa el puerto predeterminado, Desktop no lo detiene: arranca este instalador en otro puerto libre de loopback, persiste esa URL en `workspace.json` y abre ahí. Si el puerto pertenece a otro programa no Hyperion o no puede recuperarse, informa con un mensaje accionable; no toma control de esa instancia. Tras una actualización, Desktop detiene solo servidores **propios** de la misma instalación que aún tienen abierta la misma carpeta de datos (zombies en otros puertos); nunca mata procesos de otra cuenta ni borra `hyperion.sqlite`. Si la carpeta sigue bloqueada, el diálogo muestra un mensaje claro en lugar de `INTERNAL`. Un `workspace.json` portable recordado se ignora al sticky-remap a `~/.hyperion` (también su puerto alterno). Para apuntar a otro servicio hay que cerrar la ventana actual. El servidor continúa al cerrar Desktop para que split y el chat conserven acceso.
+
+Si un servicio propio termina después de que el canvas ya cargó, Desktop marca el estado como sin conexión y solicita al proceso principal hasta tres recuperaciones acotadas. El proceso principal reutiliza `ensureServer`: autentica el loopback y solo reinicia esta instalación con la misma carpeta de datos; una URL alternativa solo se carga después de esa comprobación. Mientras falla, el canvas no afirma estar conectado y no reinicia tareas ni un turno de chat.
 
 Referencias de implementación: [aislamiento en Electron](https://www.electronjs.org/docs/latest/tutorial/security), [runtime Node integrado](https://www.electronjs.org/docs/latest/api/environment-variables), [DMG](https://www.electron.build/v26/docs/dmg/) y [NSIS](https://www.electron.build/docs/nsis/).
 

@@ -107,10 +107,12 @@ declare global {
       setLanguage(value: LanguagePreference): Promise<void>;
       onLanguageChanged(callback: (value: LanguageSnapshot) => void): void;
       checkForUpdates?(): Promise<void>;
+      recoverLocalService?(): Promise<{ ready: boolean }>;
       liveChat?: {
         connect(runId: string): Promise<{
           connected: boolean;
           uncertain?: boolean;
+          setup?: 'missing' | 'invalid-selection' | 'authentication';
         }>;
         send(runId: string, text: string): Promise<void>;
         stop(runId: string): Promise<void>;
@@ -120,6 +122,7 @@ declare global {
           decision: 'allow' | 'deny',
         ): Promise<void>;
         resolveUncertain(runId: string): Promise<void>;
+        chooseCodex(): Promise<{ selected: boolean; status?: string }>;
         onEvent(callback: (event: unknown) => void): () => void;
       };
       /** Host-configured connectorSchema object for outbound Enviar; never invent in UI. */

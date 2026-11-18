@@ -22,7 +22,7 @@ La cabecera muestra el **servicio local** Hyperion y un único **Menú** (sin ic
 
 La vista **Conexiones** muestra el catálogo compatible (Codex, Cursor, Claude Desktop, Claude Code, Antigravity), el resultado disponible de su configuración local y la CalVer sin buscarla en Ajustes. Hyperion no sobrescribe una entrada distinta: el conflicto se muestra para que la resuelvas en el cliente (con **Reemplazar…** confirmado si eliges sobrescribir). Tras **Actualizar y reiniciar** en Desktop, Hyperion refresca automáticamente solo las entradas Hyperion de _esta_ instalación que chocan porque el update cambió rutas o argumentos (con respaldo del archivo); las entradas ajenas o desconocidas siguen en conflicto y requieren el Resolver. Un arranque normal sin update no reemplaza nada. Tras configurar, reinicia esa aplicación y abre un chat nuevo.
 
-En **Hyperion Desktop**, el botón flotante **Chat con tu IA** abre un panel cooperativo estilo Intent (BYO harness): elige una fila del inventario de Conexiones (estados honestos: configurada / sin configurar / conflicto / no comprobada; nunca «conectada» ni herramientas cargadas), escribe la petición y usa **Copiar petición para el chat**. **Enviar** solo aparece cuando hay un flujo abierto y un conector de envío (`outbound-send.json` / ResumeConnector, transporte Desktop `clipboard-open` o `harness-cli`) cuyo harness coincide con la conexión elegida y esa fila está configurada localmente; al asentarse la entrega, el hilo muestra un **recibo** (aceptada / fallida / ambigua) que no equivale a ejecución del paso ni a despertar el chat por MCP. Al cambiar de flujo, el hilo se reinicia. Las decisiones tipadas (incluidas correcciones e irreversibles) siguen en el canvas, no en el panel.
+En las fuentes de **Hyperion Desktop**, **Chat** en la barra superior abre una pantalla dedicada para el chat literal de Codex del flujo activo; **Volver al canvas** regresa al workflow, sin cubrirlo. La pantalla permanece desconectada hasta que el servicio local, el ejecutable Codex, App Server, MCP y el hilo real estén listos. Si no encuentra Codex o una ruta elegida ya no es válida, ofrece **Elegir Codex** y **Reintentar** con una guía clara; no instala nada ni muestra el error interno `ENOENT`. Los mensajes, deltas, tarjetas de acciones y decisiones de proveedor proceden del protocolo; las decisiones tipadas, incluidos formularios, correcciones, aprobaciones e irreversibles, siguen exclusivamente en el canvas.
 
 En las fuentes de desarrollo, **Menú → Conexiones** muestra una lista compacta de aplicaciones. El menú reúne Conexiones y Ajustes, las opciones de ayuda y las acciones de ventana (web) o actualizaciones (Desktop), seguidas de Acerca de Hyperion. Si hay un flujo abierto, **Este flujo** incluye Petición original, Actividad y Pausar o Reanudar cuando está permitido. La CalVer completa y el canal aparecen al pie del menú y en la cabecera de Conexiones. Si **Buscar actualizaciones…** no está disponible o falla, su aviso se puede leer y cerrar tanto en Inicio como en el canvas; sigue el idioma elegido sin volver a solicitar la comprobación.
 
@@ -114,19 +114,19 @@ Los títulos y decisiones se generan para tu actividad; este ejemplo no es una p
 
 ## Controles útiles
 
-| Control                    | Uso                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Vista del flujo (Ajustes)  | Alternar pasos detallados y resumen de trabajos                                                                     |
-| Ir a tarea / Enfocar tarea | Centrar un paso, incluso si ya terminó                                                                              |
-| Seguir actividad           | Acompañar la tarea que requiere atención                                                                            |
-| Vista general              | Volver al flujo completo                                                                                            |
-| I/O                        | Ver lo que recibe y entrega un paso                                                                                 |
-| Logs                       | Consultar acciones y resultados que registró el agente                                                              |
-| Actividad                  | Revisar el historial del proceso                                                                                    |
-| Ajustes                    | Idioma, apariencia, enlace a **Conexiones** y navegación                                                            |
-| Cabecera · Servicio local  | «Conectado» / «Sin conexión» del proceso Hyperion en este equipo — no implica que tu IA tenga herramientas cargadas |
-| Cabecera · Menú            | Un solo control: CalVer al pie, Conexiones, Ajustes, Guía, Ayuda y Acerca de (sin iconos sueltos)                   |
-| Pausar                     | Evitar que se inicien nuevas tareas hasta reanudar                                                                  |
+| Control                    | Uso                                                                                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vista del flujo (Ajustes)  | Alternar pasos detallados y resumen de trabajos                                                                                                    |
+| Ir a tarea / Enfocar tarea | Centrar un paso, incluso si ya terminó                                                                                                             |
+| Seguir actividad           | Acompañar la tarea que requiere atención                                                                                                           |
+| Vista general              | Volver al flujo completo                                                                                                                           |
+| I/O                        | Ver lo que recibe y entrega un paso                                                                                                                |
+| Logs                       | Consultar acciones y resultados que registró el agente                                                                                             |
+| Actividad                  | Revisar el historial del proceso                                                                                                                   |
+| Ajustes                    | Idioma, apariencia, enlace a **Conexiones** y navegación                                                                                           |
+| Cabecera · Servicio local  | «Conectado», «Restaurando servicio local…» o «Sin conexión» del proceso Hyperion en este equipo — no implica que tu IA tenga herramientas cargadas |
+| Cabecera · Menú            | Un solo control: CalVer al pie, Conexiones, Ajustes, Guía, Ayuda y Acerca de (sin iconos sueltos)                                                  |
+| Pausar                     | Evitar que se inicien nuevas tareas hasta reanudar                                                                                                 |
 
 Los ajustes se guardan en este navegador. No alteran tus decisiones ni conceden permisos al agente. Escape cierra un popup o el panel **Resultado** sin responder.
 

@@ -85,6 +85,7 @@ async function startWithRecovery(args) {
 let target;
 const pending = [];
 let connecting = false;
+let recoveringLocalService;
 /** True while openRun is loading the service URL (did-fail-load defers to its throw). */
 let loadingRun = false;
 /** Serialize menu remount / failed-load recovery so dialogs do not stack. */
@@ -128,6 +129,52 @@ async function remountDesktopRun() {
     if (!ok) app.quit();
   } finally {
     remountBusy = false;
+  }
+}
+
+/**
+ * The renderer may stay alive after the detached loopback service exits. Keep
+ * recovery in the main process: it owns the data directory, authenticates the
+ * service, and is the only process allowed to start it.
+ */
+async function recoverLocalService() {
+  if (!target)
+    throw new Error('Hyperion Desktop is not connected to a local service.');
+  if (recoveringLocalService) return recoveringLocalService;
+  const requested = target;
+  recoveringLocalService = (async () => {
+    const startup = await ensureServer({
+      directory: requested.directory,
+      url: requested.service,
+    });
+    const service = startup.url || requested.service;
+    // A new Desktop target won while the probe was in flight. Do not reload its
+    // canvas or claim that this older target recovered.
+    if (target !== requested) return { ready: false };
+    target = {
+      ...requested,
+      service,
+      url: desktopWindowUrl(requested, service),
+    };
+    rememberWorkspace(target);
+    if (service !== requested.service && window && !window.isDestroyed()) {
+      // An alternate port is reachable only after a main-owned authenticated
+      // ensureServer result. Rebind the page and live chat to that real origin.
+      liveCodexChat?.dispose();
+      liveCodexChat = undefined;
+      loadingRun = true;
+      try {
+        await window.loadURL(target.url);
+      } finally {
+        loadingRun = false;
+      }
+    }
+    return { ready: true };
+  })();
+  try {
+    return await recoveringLocalService;
+  } finally {
+    recoveringLocalService = undefined;
   }
 }
 
@@ -282,6 +329,10 @@ if (!app.requestSingleInstanceLock()) {
         validateDesktopSender(event);
         await updater.check(true);
       });
+      ipcMain.handle('hyperion:local-service:recover', async (event) => {
+        validateDesktopSender(event);
+        return recoverLocalService();
+      });
       const liveChatEvent = (message) => {
         if (window && !window.isDestroyed())
           window.webContents.send('hyperion:live-chat:event', message);
@@ -350,6 +401,21 @@ if (!app.requestSingleInstanceLock()) {
           getLiveChat().resolveUncertain(runId);
         },
       );
+      ipcMain.handle('hyperion:live-chat:choose-codex', async (event) => {
+        validateDesktopSender(event);
+        const selection = await dialog.showOpenDialog(window, {
+          title: t('Elegir aplicación Codex'),
+          properties: ['openFile'],
+          filters:
+            process.platform === 'win32'
+              ? [{ name: 'Codex', extensions: ['exe'] }]
+              : [],
+        });
+        if (selection.canceled || selection.filePaths.length !== 1)
+          return { selected: false };
+        const saved = getLiveChat().chooseExecutable(selection.filePaths[0]);
+        return { selected: saved.saved === true, status: saved.status };
+      });
       // Sync preload read: expose ResumeConnector only when outbound-send.json is valid.
       // Preload may run before the frame URL is local — still require our BrowserWindow sender.
       ipcMain.on('hyperion:outbound-send:resume-connector-sync', (event) => {

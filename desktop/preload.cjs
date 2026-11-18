@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
     );
   },
   checkForUpdates: () => ipcRenderer.invoke('hyperion:updates:check'),
+  // Main-owned, authenticated recovery only. The renderer never receives a
+  // command, path, token, or arbitrary service URL.
+  recoverLocalService: () =>
+    ipcRenderer.invoke('hyperion:local-service:recover'),
   liveChat: {
     connect: (runId) => ipcRenderer.invoke('hyperion:live-chat:connect', runId),
     send: (runId, text) =>
@@ -22,6 +26,7 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
       ipcRenderer.invoke('hyperion:live-chat:approve', runId, token, decision),
     resolveUncertain: (runId) =>
       ipcRenderer.invoke('hyperion:live-chat:resolve-uncertain', runId),
+    chooseCodex: () => ipcRenderer.invoke('hyperion:live-chat:choose-codex'),
     onEvent: (callback) => {
       const listener = (_event, payload) => callback(payload);
       ipcRenderer.on('hyperion:live-chat:event', listener);

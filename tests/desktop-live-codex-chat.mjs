@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -9,6 +15,85 @@ import {
   LiveTurnStore,
   prepareLiveCodexHome,
 } from '../desktop/live-codex-chat.mjs';
+import {
+  LiveCodexLauncherStore,
+  resolveCodexExecutable,
+  saveCodexExecutable,
+} from '../desktop/codex-launcher.mjs';
+
+function executable(directory, name = 'codex') {
+  const path = join(directory, name);
+  writeFileSync(path, '#!/bin/sh\nexit 0\n');
+  chmodSync(path, 0o755);
+  return path;
+}
+
+test('Codex launcher discovers a binary with a minimal Electron PATH', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hyperion-codex-launcher-'));
+  try {
+    const codex = executable(directory);
+    const result = resolveCodexExecutable({
+      userData: join(directory, 'user-data'),
+      options: {
+        env: { PATH: '/not-a-shell-path' },
+        platform: 'darwin',
+        extraCandidates: [codex],
+      },
+    });
+    assert.deepEqual(result, {
+      status: 'ready',
+      executable: codex,
+      source: 'discovered',
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('Codex launcher persists a valid explicit selection and fails closed when stale', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hyperion-codex-selection-'));
+  try {
+    const userData = join(directory, 'user-data');
+    const store = new LiveCodexLauncherStore(userData);
+    store.save('/missing/codex');
+    assert.equal(
+      resolveCodexExecutable({ userData, store }).status,
+      'invalid-selection',
+    );
+    const codex = executable(directory);
+    assert.deepEqual(
+      saveCodexExecutable({ userData, executable: codex, store }),
+      { saved: true, status: 'ready' },
+    );
+    assert.equal(resolveCodexExecutable({ userData, store }).executable, codex);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('missing Codex stays disconnected with setup guidance and never spawns', async () => {
+  const events = [];
+  let spawned = false;
+  const chat = new LiveCodexChat({
+    userData: '/private/user-data',
+    directory: '/private/hyperion',
+    url: 'http://127.0.0.1:4317',
+    onEvent: (event) => events.push(event),
+    onError: () => {},
+    resolveExecutable: () => ({ status: 'missing', executable: null }),
+    spawnImpl: () => {
+      spawned = true;
+      throw new Error('must not spawn');
+    },
+  });
+  assert.deepEqual(await chat.connect('run-1'), {
+    connected: false,
+    setup: 'missing',
+  });
+  assert.equal(spawned, false);
+  assert.match(events.at(-1)?.message || '', /install Codex locally/i);
+  assert.doesNotMatch(events.at(-1)?.message || '', /ENOENT/i);
+});
 
 function chatWithWrites() {
   const writes = [];

@@ -61,13 +61,16 @@ test('forbidden list covers domain human actions plus irreversible ack', () => {
   );
 });
 
-test('ChatBubble shell has no human command or API commit path', () => {
-  const source = readFileSync(join(root, 'src/client/ChatBubble.tsx'), 'utf8');
+test('live chat page has no human command or API commit path', () => {
+  const source = readFileSync(
+    join(root, 'src/client/LiveChatPage.tsx'),
+    'utf8',
+  );
   for (const forbidden of BUBBLE_FORBIDDEN_COMMANDS) {
     assert.equal(
       source.includes(`'${forbidden}'`) || source.includes(`"${forbidden}"`),
       false,
-      `ChatBubble must not mention forbidden command ${forbidden}`,
+      `live chat must not mention forbidden command ${forbidden}`,
     );
   }
   assert.equal(source.includes('/commands'), false);
@@ -76,29 +79,21 @@ test('ChatBubble shell has no human command or API commit path', () => {
   assert.match(source, /hyperionDesktop\?\.liveChat/);
   assert.match(source, /liveChat\.connect/);
   assert.match(source, /liveChat\.stop/);
-  // Handoff may enqueue outbound prompts only — never human commands.
-  assert.match(source, /Copiar petición para el chat/);
-  assert.doesNotMatch(source, /\b(Conectado|Connected)\b/);
-  assert.match(
-    source,
-    /Configurado en Conexiones no implica herramientas cargadas/,
-  );
-  assert.match(source, /MCP solo no despierta el chat/);
-  assert.match(source, /chat-bubble-thread/);
-  assert.match(source, /chat-bubble-composer/);
-  assert.match(source, /sin fabricar respuestas del agente/);
+  assert.match(source, /hyperionDesktop\?\.liveChat/);
+  assert.match(source, /liveChat\.connect/);
+  assert.match(source, /liveChat\.stop/);
+  assert.match(source, /live-chat-thread/);
+  assert.match(source, /live-chat-composer/);
+  assert.match(source, /canvas conserva formularios/);
 });
 
-test('Desktop mount gates the bubble on Electron only and passes inventory', () => {
+test('Desktop mounts the dedicated chat page only in its navbar view', () => {
   const app = readFileSync(join(root, 'src/client/App.tsx'), 'utf8');
-  assert.match(app, /isElectron && \(\s*<ChatBubble/);
-  assert.match(app, /reduceMotion=\{preferences\.reduceMotion\}/);
-  assert.match(app, /disabled=\{dialogOpen\}/);
-  assert.match(app, /inventory=\{connections\.inventory\}/);
-  assert.match(app, /onEnqueueOutbound/);
-  assert.match(app, /outbound-prompts/);
+  assert.match(app, /isElectron && desktopView === 'chat'/);
+  assert.match(app, /<LiveChatPage/);
+  assert.doesNotMatch(app, /<ChatBubble/);
   assert.doesNotMatch(
-    app.slice(app.indexOf('<ChatBubble'), app.indexOf('</ChatBubble>') + 14),
+    app.slice(app.indexOf('<LiveChatPage'), app.indexOf('/>') + 2),
     /type:\s*'(submit|approve|reject|amend)'/,
   );
 });
