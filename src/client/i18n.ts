@@ -107,6 +107,21 @@ declare global {
       setLanguage(value: LanguagePreference): Promise<void>;
       onLanguageChanged(callback: (value: LanguageSnapshot) => void): void;
       checkForUpdates?(): Promise<void>;
+      liveChat?: {
+        connect(runId: string): Promise<{
+          connected: boolean;
+          uncertain?: boolean;
+        }>;
+        send(runId: string, text: string): Promise<void>;
+        stop(runId: string): Promise<void>;
+        approve(
+          runId: string,
+          token: string,
+          decision: 'allow' | 'deny',
+        ): Promise<void>;
+        resolveUncertain(runId: string): Promise<void>;
+        onEvent(callback: (event: unknown) => void): () => void;
+      };
       /** Host-configured connectorSchema object for outbound Enviar; never invent in UI. */
       resumeConnector?: unknown;
     };

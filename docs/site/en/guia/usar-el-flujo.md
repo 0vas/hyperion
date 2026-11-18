@@ -94,3 +94,5 @@ Positions are saved in this browser per workflow, orientation and steps/jobs vie
 :::
 
 Available in **2026.11.17.1919 UTC · Preview** installers. [Download](primeros-pasos.md).
+
+> The next Hyperion Desktop cut adds **Connect local Codex** for a literal chat only on the active workflow. Responses arrive from the local Codex App Server protocol, not Copy or Send. Desktop creates a private profile containing only Hyperion MCP, turns off web search plus shell, browser, editable-file, network, app, and plugin feature families, and launches with strict configuration; an incompatible policy stays disconnected. Each MCP call raised by Codex is allowed or denied through a redacted Desktop card. The canvas retains forms, approvals, amendments, and irreversible confirmations. If Desktop closes before a terminal state, an opaque marker blocks another send until explicitly resolved; there is no automatic resume. It is not included in the 2026.11.17.1919 installer.

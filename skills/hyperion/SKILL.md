@@ -21,6 +21,8 @@ When the user works in **Claude Code** (especially with local folders, scripts o
 
 Claude Desktop is a different host: MCP+skill there still has no native Hyperion pane, and it is not the preferred path for project file/shell work. Canvas owns decisions on every host.
 
+Hyperion Desktop may offer a separate local Codex App Server chat for the active run. It is not MCP setup, a clipboard handoff, or an outbound connector: it streams real protocol events and retains only a bounded Hyperion tool set. Desktop uses a private `CODEX_HOME` with only Hyperion MCP, disables generic shell/browser/computer/apps/plugins and web search with strict configuration, and makes each turn read-only with no network; do not weaken this to a prompt or permission callback. A provider-raised MCP call requires a redacted per-call Desktop allow/deny decision; it is not a canvas form or approval. The canvas still owns all human forms, approvals, amendments, retries and irreversible acknowledgements. An opaque unsettled-turn marker blocks another send after restart until explicitly resolved; do not claim a resume path or the capability for Cursor, Claude or ChatGPT.
+
 ## Start from a request
 
 When the user says **Usa Hyperion**, **Use Hyperion**, **quiero usar Hyperion**, or asks to guide an activity through Hyperion, **call Hyperion first**. With MCP: invoke `hyperion_create_run` (or `hyperion_list_runs` / `hyperion_get_run` to resume) before answering in free text. **Never** claim a missing filesystem, Cowork, Browser or other connector instead of Hyperion when `hyperion_*` tools are loaded in this chat. Do not regenerate an old non-Hyperion thread as a substitute for creating or continuing a run.

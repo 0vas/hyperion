@@ -98,3 +98,5 @@ Las posiciones se conservan en este navegador por flujo, orientación y vista de
 :::
 
 Disponible en los instaladores **2026.11.17.1919 UTC · Preview**. [Descargar](primeros-pasos.md).
+
+> El siguiente corte de Hyperion Desktop añade **Conectar Codex local** para iniciar un chat literal solo para el flujo activo. Las respuestas llegan del protocolo local de Codex App Server, no de Copiar ni de Enviar. Desktop crea un perfil privado con solo Hyperion MCP, sin búsqueda web ni features de shell, navegador, archivos editables, red, apps o plugins, y arranca con configuración estricta; una incompatibilidad queda desconectada. Cada llamada MCP elevada por Codex se permite o deniega en una tarjeta Desktop redactada. El canvas conserva formularios, aprobaciones, cambios y confirmaciones irreversibles. Si Desktop se cierra antes del estado terminal, un marcador opaco bloquea otro envío hasta que se resuelva explícitamente; no hay reanudación automática. No está incluido en el instalador 2026.11.17.1919.

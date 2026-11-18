@@ -13,6 +13,16 @@ import type { Run } from '../domain/workflow.js';
 import { outputValuesSchema, traceSchema } from '../domain/contracts.js';
 import { planSchema } from '../domain/workflow.js';
 const client = new HyperionClient();
+const interactiveChat = process.env.HYPERION_INTERACTIVE_CHAT === '1';
+const interactiveTools = new Set([
+  'hyperion_create_run',
+  'hyperion_add_artifact',
+  'hyperion_open',
+  'hyperion_list_runs',
+  'hyperion_get_run',
+  'hyperion_step',
+  'hyperion_wait',
+]);
 const server = new McpServer(
   { name: 'hyperion', version: VERSION },
   {
@@ -20,6 +30,18 @@ const server = new McpServer(
       'When the user says Usa Hyperion / Use Hyperion / quiere usar Hyperion (or asks to guide work through Hyperion), call hyperion_create_run (or resume via hyperion_get_run / hyperion_list_runs) before free-text refusals. Hard rule: once any hyperion_* tool is used, or those tools are loaded and the user invokes Hyperion, do NOT collect scope, paths, choices, approvals or clarifying Q&A in chat—encode every missing fact as a manual/approval canvas step with typed forms (form.options for known choices), share the URL, then hyperion_wait (or verified durable suspend); read answers only from the run. Allowed in chat: URL/how to open, short progress, logged evidence summaries, which run to resume when ambiguous, and the objective only when Hyperion was invoked with zero activity. Forbidden in chat: Which folders?, path/root choices, form yes/no, typing options that belong in form.options, collecting answers to paste into submit/complete, or parallel clarifying threads while the canvas waits. Do not claim a missing filesystem, Cowork or other connector instead of Hyperion when hyperion_* tools are loaded. Turn the request into a specific plan, preserve the original text in plan.request, and show the returned URL. Do not require the human to write JSON or reuse a canned demo. Start only ready agent steps, execute actual work, then report evidence. Hard rule: while a step you started is running and you do host/computer-use/shell work, emit public hyperion_step log before the first material action, after each material observation, and at least one heartbeat log every ~60s during long work (>~30s)—chat-only narration is not mirrored progress; always send the attempt from start. Hard rule: if host/OS permission, missing entitlement, or host/tool timeout blocks work, hyperion_step action=fail with a public message naming the block before ending the turn—a log alone is not enough; do not leave a step you started running unless you still hold hyperion_wait or a verified durable suspend. Safety net: Hyperion may auto-fail an orphan running attempt after ~180s without progress when no wait/continuation owns the turn (abandon event); still log and fail yourself. Human input and approvals must happen in the Hyperion UI. If an installed resumable connector supplies its session reference, use hyperion_suspend and end the turn. Otherwise, after showing the canvas URL in a progress message, use hyperion_wait to receive human decisions during a bounded waiting period of at most ten minutes. Do not end a turn after a human handoff without hyperion_wait (or a verified durable suspension). Do not repeat unchanged waiting announcements or renew an expired period indefinitely; re-read state before a final handoff. On a changed revision, continue ready work in the same turn. If you end your turn, explain that an idle chat needs the canvas continuation message. hyperion_open with presentation split only returns a browser URL; it does not open a native pane inside Claude Desktop—after returning the URL, instruct opening it in the host Browse/split side panel so the pane is not left blank. For known choices use string output form.options [{value,label}], never a free-text list. Never impersonate the human or bypass a blocked step. This server does not execute the work for you.',
   },
 );
+/** Desktop live chat gets a narrower MCP server, not an instruction-only wall. */
+const originalRegisterTool = server.registerTool.bind(server) as (
+  name: string,
+  ...args: unknown[]
+) => unknown;
+if (interactiveChat)
+  (
+    server as unknown as { registerTool: (...args: unknown[]) => unknown }
+  ).registerTool = (name: unknown, ...args: unknown[]) =>
+    typeof name === 'string' && interactiveTools.has(name)
+      ? originalRegisterTool(name, ...args)
+      : undefined;
 const output = (value: unknown) => ({
   content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
 });
@@ -154,8 +176,10 @@ server.registerTool(
     },
   },
   ({ runId, stepId, action, message, commandId, outputs, trace, attempt }) =>
-    safe(() =>
-      client.command(runId, {
+    safe(() => {
+      if (interactiveChat && action === 'retry')
+        throw new Error('Live Desktop chat cannot retry work; use the canvas.');
+      return client.command(runId, {
         type: action,
         stepId,
         message,
@@ -163,8 +187,8 @@ server.registerTool(
         outputs,
         trace,
         attempt,
-      }),
-    ),
+      });
+    }),
 );
 server.registerTool(
   'hyperion_revise_plan',

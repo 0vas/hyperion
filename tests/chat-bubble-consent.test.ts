@@ -73,7 +73,9 @@ test('ChatBubble shell has no human command or API commit path', () => {
   assert.equal(source.includes('/commands'), false);
   assert.equal(source.includes('acknowledgeIrreversible'), false);
   assert.equal(source.includes('fetch('), false);
-  assert.equal(source.includes('hyperionDesktop'), false);
+  assert.match(source, /hyperionDesktop\?\.liveChat/);
+  assert.match(source, /liveChat\.connect/);
+  assert.match(source, /liveChat\.stop/);
   // Handoff may enqueue outbound prompts only — never human commands.
   assert.match(source, /Copiar petición para el chat/);
   assert.doesNotMatch(source, /\b(Conectado|Connected)\b/);

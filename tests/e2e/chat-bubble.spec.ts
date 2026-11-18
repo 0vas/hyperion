@@ -19,6 +19,142 @@ test('browser SPA does not show the Desktop chat bubble', async ({ page }) => {
   await expect(page.getByTestId('chat-bubble')).toHaveCount(0);
 });
 
+test('Desktop live Codex chat renders protocol events and sends a real stop request', async ({
+  browser,
+  request,
+}) => {
+  const { agentToken } = credentials();
+  const created = await request.post('/api/runs', {
+    headers: { authorization: `Bearer ${agentToken}` },
+    data: {
+      commandId: crypto.randomUUID(),
+      plan: {
+        title: 'Live chat UI',
+        steps: [{ id: 'work', title: 'Agent work', kind: 'agent' }],
+      },
+    },
+  });
+  expect(created.status()).toBe(201);
+  const run = await created.json();
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+    viewport: { width: 1280, height: 800 },
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'es');
+    await page.addInitScript(() => {
+      let listener: ((event: unknown) => void) | undefined;
+      Object.defineProperty(window, 'hyperionDesktop', {
+        configurable: true,
+        value: {
+          getLanguage: async () => ({ preference: 'es', locale: 'es' }),
+          onLanguageChanged: () => () => {},
+          setLanguage: async () => {},
+          liveChat: {
+            connect: async (runId: string) => {
+              listener?.({ type: 'connection', status: 'connected' });
+              listener?.({ type: 'thread', runId, threadId: 'thread-live' });
+            },
+            send: async () => {
+              listener?.({
+                type: 'user-message',
+                threadId: 'thread-live',
+                text: 'Inicia la tarea',
+              });
+              listener?.({
+                type: 'turn',
+                threadId: 'thread-live',
+                turnId: 'turn-live',
+                status: 'running',
+              });
+              listener?.({
+                type: 'approval',
+                threadId: 'thread-live',
+                token: 'approval-1',
+                label:
+                  'Codex requests permission to use the bounded Hyperion action.',
+                arguments: { forbidden: 'not rendered' },
+              });
+            },
+            approve: async (
+              _runId: string,
+              token: string,
+              decision: string,
+            ) => {
+              listener?.({
+                type: 'approval-resolved',
+                threadId: 'thread-live',
+                token,
+                decision: decision === 'allow' ? 'allowed' : 'denied',
+              });
+              if (decision !== 'allow') return;
+              listener?.({
+                type: 'action',
+                threadId: 'thread-live',
+                itemId: 'action-live',
+                status: 'running',
+                label: 'Hyperion: hyperion_step',
+                arguments: { forbidden: 'not rendered' },
+              });
+              listener?.({
+                type: 'assistant-delta',
+                threadId: 'thread-live',
+                itemId: 'assistant-live',
+                text: 'La tarea empezó.',
+              });
+            },
+            resolveUncertain: async () => {},
+            stop: async () =>
+              listener?.({
+                type: 'turn',
+                threadId: 'thread-live',
+                turnId: 'turn-live',
+                status: 'interrupted',
+              }),
+            onEvent: (callback: (event: unknown) => void) => {
+              listener = callback;
+              return () => {
+                listener = undefined;
+              };
+            },
+          },
+        },
+      });
+    });
+    await page.goto(`/?run=${run.id}`);
+    await page.getByRole('button', { name: 'Abrir chat con tu IA' }).click();
+    const panel = page.getByRole('dialog');
+    await panel.getByTestId('live-chat-connect').click();
+    await expect(panel.getByTestId('live-chat-status')).toContainText(
+      'hilo local activo',
+    );
+    await panel.getByLabel('Petición para el agente').fill('Inicia la tarea');
+    await panel.getByTestId('live-chat-send').click();
+    await expect(panel.getByTestId('chat-bubble-msg-you')).toContainText(
+      'Inicia la tarea',
+    );
+    await expect(panel.getByTestId('live-chat-approval-allow')).toBeVisible();
+    await expect(panel.getByTestId('live-chat-approval-deny')).toBeVisible();
+    await expect(panel).not.toContainText('not rendered');
+    await panel.getByTestId('live-chat-approval-allow').click();
+    await expect(panel.getByTestId('chat-bubble-msg-assistant')).toContainText(
+      'La tarea empezó.',
+    );
+    await expect(panel.getByText('Hyperion: hyperion_step')).toBeVisible();
+    await panel.getByTestId('live-chat-stop').click();
+    await expect(panel.getByTestId('chat-bubble-msg-assistant')).toContainText(
+      'interrupted',
+    );
+    await expect(panel.getByTestId('live-chat-status')).toContainText(
+      'hilo local activo',
+    );
+  } finally {
+    await context.close();
+  }
+});
+
 for (const locale of ['es', 'en'] as const) {
   test(`Desktop picker honesty and Copiar without Enviar (${locale})`, async ({
     browser,
