@@ -106,6 +106,7 @@ test('Desktop live Codex chat renders protocol events and sends a real stop requ
               });
             },
             resolveUncertain: async () => {},
+            chooseCodex: async () => ({ selected: true }),
             stop: async () =>
               listener?.({
                 type: 'turn',
@@ -126,6 +127,7 @@ test('Desktop live Codex chat renders protocol events and sends a real stop requ
     await page.goto(`/?run=${run.id}`);
     await page.getByRole('button', { name: 'Abrir chat con tu IA' }).click();
     const panel = page.getByRole('dialog');
+    await expect(panel.getByTestId('live-chat-choose-codex')).toBeVisible();
     await panel.getByTestId('live-chat-connect').click();
     await expect(panel.getByTestId('live-chat-status')).toContainText(
       'hilo local activo',
@@ -149,6 +151,83 @@ test('Desktop live Codex chat renders protocol events and sends a real stop requ
     );
     await expect(panel.getByTestId('live-chat-status')).toContainText(
       'hilo local activo',
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test('Desktop keeps Codex chat disconnected with setup and retry guidance', async ({
+  browser,
+  request,
+}) => {
+  const { agentToken } = credentials();
+  const created = await request.post('/api/runs', {
+    headers: { authorization: `Bearer ${agentToken}` },
+    data: {
+      commandId: crypto.randomUUID(),
+      plan: {
+        title: 'Codex setup',
+        steps: [{ id: 'work', title: 'Work', kind: 'agent' }],
+      },
+    },
+  });
+  expect(created.status()).toBe(201);
+  const run = await created.json();
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+    viewport: { width: 1280, height: 800 },
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'es');
+    await page.addInitScript(() => {
+      let listener: ((event: unknown) => void) | undefined;
+      Object.defineProperty(window, 'hyperionDesktop', {
+        configurable: true,
+        value: {
+          getLanguage: async () => ({ preference: 'es', locale: 'es' }),
+          onLanguageChanged: () => () => {},
+          setLanguage: async () => {},
+          liveChat: {
+            connect: async () => {
+              listener?.({
+                type: 'connection',
+                status: 'disconnected',
+                message:
+                  'Codex is not installed or is not available to Hyperion Desktop. Install Codex locally, then choose its executable and retry.',
+              });
+              return { connected: false, setup: 'missing' };
+            },
+            chooseCodex: async () => ({ selected: true }),
+            send: async () => {},
+            stop: async () => {},
+            approve: async () => {},
+            resolveUncertain: async () => {},
+            onEvent: (callback: (event: unknown) => void) => {
+              listener = callback;
+              return () => {
+                listener = undefined;
+              };
+            },
+          },
+        },
+      });
+    });
+    await page.goto(`/?run=${run.id}`);
+    await page.getByRole('button', { name: 'Abrir chat con tu IA' }).click();
+    const panel = page.getByRole('dialog');
+    await panel.getByTestId('live-chat-connect').click();
+    await expect(panel.getByTestId('live-chat-status')).toContainText(
+      'Codex is not installed',
+    );
+    await panel.getByTestId('live-chat-choose-codex').click();
+    await expect(panel.getByTestId('live-chat-status')).toContainText(
+      'Codex seleccionado',
+    );
+    await expect(panel.getByTestId('live-chat-connect')).toContainText(
+      'Reintentar Codex local',
     );
   } finally {
     await context.close();

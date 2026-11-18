@@ -12,6 +12,11 @@ import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { projectAppServerEvent } from '../dist/adapters/live-codex-chat.js';
+import {
+  codexLauncherGuidance,
+  resolveCodexExecutable,
+  saveCodexExecutable,
+} from './codex-launcher.mjs';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const mcpLauncher = resolve(appRoot, 'dist/adapters/mcp-launcher.js');
@@ -164,6 +169,9 @@ export class LiveCodexChat {
     onError,
     spawnImpl = spawn,
     turnStore = new LiveTurnStore(userData),
+    resolveExecutable = () => resolveCodexExecutable({ userData }),
+    saveExecutable = (executable) =>
+      saveCodexExecutable({ userData, executable }),
   }) {
     this.userData = userData;
     this.directory = directory;
@@ -172,6 +180,8 @@ export class LiveCodexChat {
     this.onError = onError;
     this.spawnImpl = spawnImpl;
     this.turnStore = turnStore;
+    this.resolveExecutable = resolveExecutable;
+    this.saveExecutable = saveExecutable;
     this.child = null;
     this.buffer = '';
     this.nextId = 1;
@@ -220,13 +230,37 @@ export class LiveCodexChat {
       return { connected: false, uncertain: true };
     }
     this.emit({ type: 'connection', status: 'connecting' });
-    const { home: codexHome, workspace } = prepareLiveCodexHome({
-      userData: this.userData,
-      directory: this.directory,
-      url: this.url,
-    });
+    const launcher = this.resolveExecutable();
+    if (!launcher?.executable) {
+      const message = codexLauncherGuidance(launcher?.status);
+      this.emit({
+        type: 'connection',
+        status: 'disconnected',
+        setup: launcher?.status || 'missing',
+        message,
+      });
+      return { connected: false, setup: launcher?.status || 'missing' };
+    }
+    let profile;
+    try {
+      profile = prepareLiveCodexHome({
+        userData: this.userData,
+        directory: this.directory,
+        url: this.url,
+      });
+    } catch {
+      this.emit({
+        type: 'connection',
+        status: 'disconnected',
+        setup: 'authentication',
+        message:
+          'Codex needs a local signed-in session before Hyperion Desktop can start live chat.',
+      });
+      return { connected: false, setup: 'authentication' };
+    }
+    const { home: codexHome, workspace } = profile;
     const child = this.spawnImpl(
-      'codex',
+      launcher.executable,
       ['app-server', '--strict-config', '--listen', 'stdio://'],
       {
         cwd: this.directory,
@@ -241,7 +275,13 @@ export class LiveCodexChat {
     child.stdout.on('data', (chunk) => this.onStdout(chunk));
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', () => undefined); // Never forward process output to the renderer.
-    child.once('error', (error) => this.disconnect(error));
+    child.once('error', () =>
+      this.disconnect(
+        new Error(
+          'Codex App Server could not start. Check the selected Codex application and retry.',
+        ),
+      ),
+    );
     child.once('exit', () => this.disconnect());
     try {
       await this.request('initialize', {
@@ -275,6 +315,12 @@ export class LiveCodexChat {
       this.disconnect(error);
       throw error;
     }
+  }
+
+  chooseExecutable(executable) {
+    if (this.child)
+      throw new Error('Close the current live chat before changing Codex.');
+    return this.saveExecutable(executable);
   }
 
   waitForHyperionMcp() {

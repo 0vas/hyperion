@@ -350,6 +350,21 @@ if (!app.requestSingleInstanceLock()) {
           getLiveChat().resolveUncertain(runId);
         },
       );
+      ipcMain.handle('hyperion:live-chat:choose-codex', async (event) => {
+        validateDesktopSender(event);
+        const selection = await dialog.showOpenDialog(window, {
+          title: t('Elige el ejecutable de Codex'),
+          properties: ['openFile'],
+          filters:
+            process.platform === 'win32'
+              ? [{ name: 'Codex', extensions: ['exe'] }]
+              : [],
+        });
+        if (selection.canceled || selection.filePaths.length !== 1)
+          return { selected: false };
+        const saved = getLiveChat().chooseExecutable(selection.filePaths[0]);
+        return { selected: saved.saved === true, status: saved.status };
+      });
       // Sync preload read: expose ResumeConnector only when outbound-send.json is valid.
       // Preload may run before the frame URL is local — still require our BrowserWindow sender.
       ipcMain.on('hyperion:outbound-send:resume-connector-sync', (event) => {

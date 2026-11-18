@@ -74,6 +74,7 @@ export function ChatBubble({
   const [liveTurn, setLiveTurn] = useState(false);
   const [liveBusy, setLiveBusy] = useState(false);
   const [liveUncertain, setLiveUncertain] = useState(false);
+  const [liveSetupMessage, setLiveSetupMessage] = useState<string | null>(null);
   const liveThreadId = useRef<string | null>(null);
   const [thread, setThread] = useState<ThreadMessage[]>([]);
   const panelId = useId();
@@ -95,6 +96,7 @@ export function ChatBubble({
     setLiveStatus('disconnected');
     setLiveTurn(false);
     setLiveUncertain(false);
+    setLiveSetupMessage(null);
     liveThreadId.current = null;
   }, [runId]);
 
@@ -106,6 +108,12 @@ export function ChatBubble({
         setLiveStatus(event.status as typeof liveStatus);
         if (event.status === 'disconnected') setLiveTurn(false);
         if (event.status === 'connected') setLiveUncertain(false);
+        if (event.status === 'connected') setLiveSetupMessage(null);
+        if (
+          event.status === 'disconnected' &&
+          typeof event.message === 'string'
+        )
+          setLiveSetupMessage(event.message);
         return;
       }
       if (event.type === 'uncertain' && event.runId === runId) {
@@ -381,6 +389,22 @@ export function ChatBubble({
     }
   }
 
+  async function chooseLiveCodex() {
+    if (!liveChat || liveBusy) return;
+    setLiveBusy(true);
+    try {
+      const result = await liveChat.chooseCodex();
+      if (result.selected)
+        setLiveSetupMessage(
+          t('Codex seleccionado. Usa Reintentar para iniciar el hilo local.'),
+        );
+    } catch {
+      onError?.(t('No se pudo guardar la aplicación de Codex seleccionada.'));
+    } finally {
+      setLiveBusy(false);
+    }
+  }
+
   async function sendLiveChat() {
     if (!liveChat || !runId || !prompt.trim() || liveTurn || liveBusy) return;
     setLiveBusy(true);
@@ -638,7 +662,8 @@ export function ChatBubble({
                   : t(
                       liveUncertain
                         ? 'Un turno previo quedó incierto. Resuélvelo antes de iniciar un turno nuevo.'
-                        : 'Codex no está conectado. Elige Conectar para iniciar un hilo local.',
+                        : liveSetupMessage ||
+                            'Codex no está conectado. Elige Conectar para iniciar un hilo local.',
                     )}
               </p>
             ) : (
@@ -730,24 +755,39 @@ export function ChatBubble({
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    className="primary full"
-                    data-testid="live-chat-connect"
-                    disabled={!runId || busy || liveBusy}
-                    onClick={() =>
-                      void (liveUncertain
-                        ? resolveUncertainLiveTurn()
-                        : connectLiveChat())
-                    }
-                  >
-                    <MessageSquareText size={16} />
-                    {t(
-                      liveUncertain
-                        ? 'Resolver turno incierto'
-                        : 'Conectar Codex local',
+                  <>
+                    <button
+                      type="button"
+                      className="primary full"
+                      data-testid="live-chat-connect"
+                      disabled={!runId || busy || liveBusy}
+                      onClick={() =>
+                        void (liveUncertain
+                          ? resolveUncertainLiveTurn()
+                          : connectLiveChat())
+                      }
+                    >
+                      <MessageSquareText size={16} />
+                      {t(
+                        liveUncertain
+                          ? 'Resolver turno incierto'
+                          : liveSetupMessage
+                            ? 'Reintentar Codex local'
+                            : 'Conectar Codex local',
+                      )}
+                    </button>
+                    {!liveUncertain && (
+                      <button
+                        type="button"
+                        className="secondary full"
+                        data-testid="live-chat-choose-codex"
+                        disabled={liveBusy}
+                        onClick={() => void chooseLiveCodex()}
+                      >
+                        {t('Elegir aplicación Codex')}
+                      </button>
                     )}
-                  </button>
+                  </>
                 )
               ) : (
                 <button
