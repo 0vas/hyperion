@@ -26,7 +26,7 @@
     "desktop": "npm run build && electron desktop/main.mjs",
     "desktop:pack": "npm run build && electron-builder --config desktop/builder.config.cjs --dir --publish never",
     "desktop:dist": "npm run build && electron-builder --config desktop/builder.config.cjs --publish never",
-    "test:desktop": "node --test tests/desktop-smoke.mjs tests/desktop-runtime.mjs tests/desktop-upgrade.mjs",
+    "test:desktop": "node --test tests/desktop-smoke.mjs tests/desktop-runtime.mjs tests/desktop-upgrade.mjs tests/desktop-service-recovery.mjs",
     "release:sync": "node scripts/sync-release.mjs"
   },
   "dependencies": {

@@ -126,7 +126,7 @@ While an agent step you started is `running` and you perform host / computer-use
 
 If host/OS permission, a missing entitlement or a host/tool timeout blocks agent work, the harness must `hyperion_step` with `action: fail` and a public message naming the block before ending the turn. A log alone is not enough; do not leave a started step `running` without an active `hyperion_wait` or verified durable suspend. After fail, share the canvas URL and Copiar continuación; the human uses Reintentar once access is fixed or the tool can be retried, or Recuperar tarea if a step is still marked running.
 
-The executable registration is local to the current user (`~/.hyperion/desktop.json`); it contains paths, not agent credentials. A development installation can override its home using `HYPERION_HOME`. Desktop includes Electron's Node runtime to start the service when absent. Closing the client preserves the service for chat/split continuation.
+The executable registration is local to the current user (`~/.hyperion/desktop.json`); it contains paths, not agent credentials. A development installation can override its home using `HYPERION_HOME`. Desktop includes Electron's Node runtime to start the service when absent. If its own authenticated service exits after the canvas has loaded, Desktop makes up to three bounded main-process recovery attempts through `ensureServer`; it authenticates the same data directory and only rebinds an alternate loopback URL after that check. The UI remains offline until health/auth succeeds. This does not restart workflow tasks or chat turns. Closing the client preserves the service for chat/split continuation.
 
 ## When the conversation changes the remaining plan
 

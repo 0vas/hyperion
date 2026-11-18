@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
     );
   },
   checkForUpdates: () => ipcRenderer.invoke('hyperion:updates:check'),
+  // Main-owned, authenticated recovery only. The renderer never receives a
+  // command, path, token, or arbitrary service URL.
+  recoverLocalService: () =>
+    ipcRenderer.invoke('hyperion:local-service:recover'),
   liveChat: {
     connect: (runId) => ipcRenderer.invoke('hyperion:live-chat:connect', runId),
     send: (runId, text) =>
