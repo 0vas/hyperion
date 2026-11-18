@@ -120,6 +120,11 @@ select:focus-visible {
   font-size: 12px;
   padding: 10px 16px;
 }
+.desktop-chat-nav.active {
+  border-color: #b89b59;
+  background: #f8efd7;
+  color: #5d451d;
+}
 .canvas-title {
   border-left: 1px solid #d6d3c9;
   padding-left: 22px;

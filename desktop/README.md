@@ -4,6 +4,10 @@ Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local 
 
 La [preview descargable](https://github.com/0vas/hyperion/releases/tag/v2026.11.17.1919) incluye instaladores para macOS Apple Silicon (notarizado) y Windows x64.
 
+## Chat local de Codex (fuentes, no instalador publicado)
+
+La navegación **Chat** de Desktop abre una vista separada del canvas para un hilo local de Codex App Server del flujo activo. Solo se habilita después de que el servicio local, App Server, MCP y el hilo estén realmente listos. Electron busca un ejecutable absoluto de Codex en su entorno y ubicaciones locales conocidas, o acepta una ruta elegida explícitamente mediante el diálogo nativo. Una ruta ausente u obsoleta deja el chat desconectado y ofrece elegir o reintentar; no instala Codex, no usa una shell y no muestra `spawn ... ENOENT` al renderer. Esta vía sigue limitada a Codex local; el canvas mantiene formularios, aprobaciones, amend e irreversibles.
+
 ## Desarrollo y distribución
 
 - `npm ci` y `npm run desktop` abren el cliente de desarrollo.

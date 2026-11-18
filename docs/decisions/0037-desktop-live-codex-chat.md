@@ -5,7 +5,9 @@ Fecha: 2026-11-17.
 
 ## Decisión
 
-Hyperion Desktop puede iniciar un único `codex app-server --listen stdio://` local para el flujo activo. El proceso principal de Electron conserva el hijo, la autenticación y el mapeo efímero `runId → threadId`; el renderer recibe únicamente eventos tipados: mensaje humano, delta del asistente, estado terminal del turno y tarjeta de acción redactada.
+Hyperion Desktop puede iniciar un único `codex app-server --listen stdio://` local para el flujo activo. **Chat** es una navegación Desktop dedicada, no un panel que cubra el canvas. El proceso principal de Electron conserva el hijo, la autenticación y el mapeo efímero `runId → threadId`; el renderer recibe únicamente eventos tipados: mensaje humano, delta del asistente, estado terminal del turno y tarjeta de acción redactada.
+
+El proceso principal resuelve un ejecutable Codex absoluto, primero desde una ruta explícita escogida en el diálogo nativo y persistida como una ruta sin credenciales, y después desde su entorno y ubicaciones locales conocidas. Valida que sea un archivo ejecutable antes de iniciar App Server. Una selección obsoleta falla cerrada; la vista permanece desconectada y ofrece elegir o reintentar. No instala Codex, no invoca una shell para buscarlo y no proyecta errores internos de `spawn` al renderer.
 
 El perfil privado de Codex contiene solo el MCP de Hyperion. Electron genera ese `CODEX_HOME` con `web_search = "disabled"` y `[features]` con `shell_tool`, `apps`, `browser_use`, `browser_use_external`, `computer_use`, `image_generation`, `multi_agent`, `plugins`, `skill_search`, `unified_exec` y `view_image` en `false`; además inicia `codex app-server` con `--strict-config`. Una clave no admitida hace que el arranque falle cerrado, en vez de ignorar la política. Cada turno usa sandbox `readOnly` y red desactivada. Es la barrera de producto que evita shell, navegador, archivos editables, red y plugins; la denegación de solicitudes de aprobación en Electron queda como defensa adicional, no como la única barrera.
 
@@ -18,6 +20,7 @@ El adaptador expone lectura, crear flujo, artefactos y `hyperion_step` limitado 
 - `Stop` envía `turn/interrupt`; `completed`, `failed` e `interrupted` se muestran por separado.
 - Antes de escribir `turn/start`, Desktop guarda un marcador local opaco por flujo. Si Desktop se cierra antes del estado terminal, el siguiente arranque lo muestra como **incierto**, bloquea un nuevo envío y exige que la persona lo resuelva explícitamente; no hay reanudación ni reenvío automático. Sin `thread/resume` con reconciliación probada, no se restaura el hilo.
 - Codex es el único harness de este corte. Cursor, Claude y ChatGPT no obtienen chat literal por identidad o por W1/W2.
+- La detección de ejecutable no prueba autenticación ni disponibilidad del servicio: la vista solo se habilita después de `initialize`, MCP listo y la creación real del hilo. Las pruebas de un entorno Desktop con PATH mínimo cubren descubrimiento, ruta elegida válida/obsoleta y ausencia de Codex; la certificación con el instalador firmado sigue siendo necesaria antes de publicar.
 - La contención depende de las claves estables del Codex App Server instalado. La prueba de certificación se ejecuta contra esa versión autenticada y `--strict-config`; si una versión futura cambia o rechaza esas claves, el chat queda desconectado. No se presume paridad para otro proveedor ni se convierte esta configuración en una sandbox del sistema operativo para procesos ajenos a Codex.
 
 ## Validación realizada y requerida antes de publicar

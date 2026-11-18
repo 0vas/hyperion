@@ -9,7 +9,7 @@ import './flow.css';
 import './workspace.css';
 import './process.css';
 import './resultado.css';
-import './chat-bubble.css';
+import './live-chat.css';
 void initializeLanguage()
   .catch(() => {
     // The canvas remains usable if a desktop preference cannot be read.

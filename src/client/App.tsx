@@ -137,7 +137,7 @@ import {
   type ConnectionMessage,
 } from './connection-messages';
 import { AppMenu, type AppMenuAction } from './AppMenu';
-import { ChatBubble } from './ChatBubble';
+import { LiveChatPage } from './LiveChatPage';
 import { requestDesktopUpdateCheck } from './desktop-updates';
 import { usePreferences } from './preferences';
 import { RELEASE_CHANNEL, VERSION } from '../version';
@@ -850,6 +850,7 @@ export function App() {
   >(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const isElectron = navigator.userAgent.includes('Electron/');
+  const [desktopView, setDesktopView] = useState<'canvas' | 'chat'>('canvas');
   useEffect(() => {
     document.documentElement.classList.toggle('electron', isElectron);
   }, [isElectron]);
@@ -2109,6 +2110,23 @@ export function App() {
               <Workflow size={15} />
               <span className="flows-label">{t('Mis flujos')}</span>
             </button>
+            {isElectron && (
+              <button
+                type="button"
+                className={`secondary desktop-chat-nav${
+                  desktopView === 'chat' ? ' active' : ''
+                }`}
+                aria-pressed={desktopView === 'chat'}
+                onClick={() => {
+                  setPopup(null);
+                  setHelp(false);
+                  setDesktopView('chat');
+                }}
+              >
+                <MessageSquareText size={15} />
+                {t('Chat')}
+              </button>
+            )}
             {run && (
               <div className="canvas-title">
                 <h1 title={run.title}>{run.title}</h1>
@@ -2171,370 +2189,353 @@ export function App() {
             />
           </div>
         </header>
-        <main className="canvas-main">
-          {!loaded ? (
-            <div className="empty-state">
-              <LoaderCircle className="spin" />
-              <h1>{t('Cargando tu espacio…')}</h1>
-            </div>
-          ) : !run ? (
-            <div className="empty-state">
-              <span className="empty-symbol">
-                <Workflow size={34} />
-              </span>
-              <span className="eyebrow">
-                {t('DE LA INTENCIÓN A LA ACCIÓN')}
-              </span>
-              <h1>
-                {runId
-                  ? t('No encontramos ese flujo')
-                  : t('Tu trabajo, paso a paso.')}
-              </h1>
-              <p>
-                {runId
-                  ? t('Comprueba el enlace o vuelve a tus flujos recientes.')
-                  : t(
-                      'Conecta tu herramienta de IA y transforma una petición en un proceso que puedes ver, guiar y aprobar.',
-                    )}
-              </p>
-              <div className="empty-actions">
-                <button
-                  className="primary"
-                  onClick={() => {
-                    if (runId) selectRun('');
-                    else openConnections();
-                  }}
-                >
-                  {runId
-                    ? t('Ver mis flujos')
-                    : (connections.inventory?.summary.configured || 0) > 0 ||
-                        (connections.inventory?.summary.conflicts || 0) > 0
-                      ? t('Ver conexiones')
-                      : t('Conectar mi agente')}{' '}
-                  <ArrowUpRight size={16} />
-                </button>
-                {!runId &&
-                  ((connections.inventory?.summary.configured || 0) > 0 ||
-                    (connections.inventory?.summary.conflicts || 0) > 0) && (
-                    <button className="secondary" onClick={() => setHelp(true)}>
-                      {t('Conectar otra')}
-                    </button>
-                  )}
+        {isElectron && desktopView === 'chat' ? (
+          <LiveChatPage
+            runId={run?.id}
+            serviceOnline={online}
+            busy={busy || dialogOpen}
+            onBack={() => setDesktopView('canvas')}
+          />
+        ) : (
+          <main className="canvas-main">
+            {!loaded ? (
+              <div className="empty-state">
+                <LoaderCircle className="spin" />
+                <h1>{t('Cargando tu espacio…')}</h1>
               </div>
-              {typeof notice !== 'string' && noticeView}
-              {!online && (
-                <p role="alert">
-                  {t(
-                    'No pudimos conectar con Hyperion. Comprueba que el servidor está activo.',
-                  )}
+            ) : !run ? (
+              <div className="empty-state">
+                <span className="empty-symbol">
+                  <Workflow size={34} />
+                </span>
+                <span className="eyebrow">
+                  {t('DE LA INTENCIÓN A LA ACCIÓN')}
+                </span>
+                <h1>
+                  {runId
+                    ? t('No encontramos ese flujo')
+                    : t('Tu trabajo, paso a paso.')}
+                </h1>
+                <p>
+                  {runId
+                    ? t('Comprueba el enlace o vuelve a tus flujos recientes.')
+                    : t(
+                        'Conecta tu herramienta de IA y transforma una petición en un proceso que puedes ver, guiar y aprobar.',
+                      )}
                 </p>
-              )}
-            </div>
-          ) : (
-            <section
-              className={`canvas-workspace${resultadoOpen && (step || selectedJob) ? ' has-resultado' : ''}`}
-              aria-label={t('Canvas del workflow')}
-              data-resultado-breakpoint={resultadoDock.breakpoint}
-            >
-              {runTools}
-              <div className="graph">
-                <ReactFlow
-                  key={run.id}
-                  nodes={graph.nodes}
-                  onNodesChange={onNodesChange}
-                  edges={graph.edges}
-                  nodeTypes={nodeTypes}
-                  edgeTypes={edgeTypes}
-                  fitView
-                  ariaLabelConfig={{
-                    'node.a11yDescription.default': t(
-                      'Pulsa Intro para seleccionar y usa las flechas para mover. Escape cancela la selección.',
-                    ),
-                    'node.a11yDescription.keyboardDisabled': t(
-                      'Pulsa Intro para seleccionar y usa las flechas para mover. Escape cancela la selección.',
-                    ),
-                    'node.a11yDescription.ariaLiveMessage': ({ x, y }) =>
-                      t('Nodo movido a {0}, {1}', { 0: x, 1: y }),
-                    'controls.zoomIn.ariaLabel': t('Acercar'),
-                    'controls.zoomOut.ariaLabel': t('Alejar'),
-                  }}
-                  fitViewOptions={{ padding: 0.12, maxZoom: 1 }}
-                  minZoom={0.15}
-                  maxZoom={1.5}
-                  deleteKeyCode={null}
-                  nodesConnectable={false}
-                  nodesDraggable
-                  onNodeDragStart={(_event, node) => {
-                    setFollowing(false);
-                    if (node.type === 'preview')
+                <div className="empty-actions">
+                  <button
+                    className="primary"
+                    onClick={() => {
+                      if (runId) selectRun('');
+                      else openConnections();
+                    }}
+                  >
+                    {runId
+                      ? t('Ver mis flujos')
+                      : (connections.inventory?.summary.configured || 0) > 0 ||
+                          (connections.inventory?.summary.conflicts || 0) > 0
+                        ? t('Ver conexiones')
+                        : t('Conectar mi agente')}{' '}
+                    <ArrowUpRight size={16} />
+                  </button>
+                  {!runId &&
+                    ((connections.inventory?.summary.configured || 0) > 0 ||
+                      (connections.inventory?.summary.conflicts || 0) > 0) && (
+                      <button
+                        className="secondary"
+                        onClick={() => setHelp(true)}
+                      >
+                        {t('Conectar otra')}
+                      </button>
+                    )}
+                </div>
+                {typeof notice !== 'string' && noticeView}
+                {!online && (
+                  <p role="alert">
+                    {t(
+                      'No pudimos conectar con Hyperion. Comprueba que el servidor está activo.',
+                    )}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <section
+                className={`canvas-workspace${resultadoOpen && (step || selectedJob) ? ' has-resultado' : ''}`}
+                aria-label={t('Canvas del workflow')}
+                data-resultado-breakpoint={resultadoDock.breakpoint}
+              >
+                {runTools}
+                <div className="graph">
+                  <ReactFlow
+                    key={run.id}
+                    nodes={graph.nodes}
+                    onNodesChange={onNodesChange}
+                    edges={graph.edges}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    fitView
+                    ariaLabelConfig={{
+                      'node.a11yDescription.default': t(
+                        'Pulsa Intro para seleccionar y usa las flechas para mover. Escape cancela la selección.',
+                      ),
+                      'node.a11yDescription.keyboardDisabled': t(
+                        'Pulsa Intro para seleccionar y usa las flechas para mover. Escape cancela la selección.',
+                      ),
+                      'node.a11yDescription.ariaLiveMessage': ({ x, y }) =>
+                        t('Nodo movido a {0}, {1}', { 0: x, 1: y }),
+                      'controls.zoomIn.ariaLabel': t('Acercar'),
+                      'controls.zoomOut.ariaLabel': t('Alejar'),
+                    }}
+                    fitViewOptions={{ padding: 0.12, maxZoom: 1 }}
+                    minZoom={0.15}
+                    maxZoom={1.5}
+                    deleteKeyCode={null}
+                    nodesConnectable={false}
+                    nodesDraggable
+                    onNodeDragStart={(_event, node) => {
+                      setFollowing(false);
+                      if (node.type === 'preview')
+                        setPreviewDragPositions((previous) => ({
+                          ...previous,
+                          [node.id]: node.position,
+                        }));
+                    }}
+                    onNodeDrag={(_event, node) => {
+                      if (node.type !== 'preview') return;
                       setPreviewDragPositions((previous) => ({
                         ...previous,
                         [node.id]: node.position,
                       }));
-                  }}
-                  onNodeDrag={(_event, node) => {
-                    if (node.type !== 'preview') return;
-                    setPreviewDragPositions((previous) => ({
-                      ...previous,
-                      [node.id]: node.position,
-                    }));
-                  }}
-                  onNodeDragStop={(_event, node) => {
-                    if (node.type !== 'preview' || !run) return;
-                    const data = node.data as Partial<PreviewNodeData>;
-                    const producerStepId = data.producerStepId;
-                    const uiKey = data.uiKey || producerStepId;
-                    if (!producerStepId || !uiKey) return;
-                    const current = readPreviewTileUiState(run.id, uiKey);
-                    writePreviewTileUiState(run.id, uiKey, {
-                      ...current,
-                      x: node.position.x,
-                      y: node.position.y,
-                    });
-                    setPreviewDragPositions((previous) => {
-                      const next = { ...previous };
-                      delete next[node.id];
-                      return next;
-                    });
-                    setPreviewTileUiTick((n) => n + 1);
-                  }}
-                  elementsSelectable
-                  zoomOnDoubleClick={false}
-                  onPaneClick={() => clearResultado()}
-                  onMoveStart={(event) => {
-                    if (event) setFollowing(false);
-                  }}
-                >
-                  <FitCanvas
-                    view={`${preferences.view}:${preferences.orientation}:${layoutReset}:${resultadoOpen ? 'resultado' : 'full'}`}
-                  />
-                  <Background color="#c6c0b2" gap={28} size={0.8} />
-                  <TaskNavigation
-                    canReset={Object.keys(manualPositions).length > 0}
-                    onReset={() => {
-                      resetPositions();
-                      if (run) clearPreviewTileUiForRun(run.id);
+                    }}
+                    onNodeDragStop={(_event, node) => {
+                      if (node.type !== 'preview' || !run) return;
+                      const data = node.data as Partial<PreviewNodeData>;
+                      const producerStepId = data.producerStepId;
+                      const uiKey = data.uiKey || producerStepId;
+                      if (!producerStepId || !uiKey) return;
+                      const current = readPreviewTileUiState(run.id, uiKey);
+                      writePreviewTileUiState(run.id, uiKey, {
+                        ...current,
+                        x: node.position.x,
+                        y: node.position.y,
+                      });
+                      setPreviewDragPositions((previous) => {
+                        const next = { ...previous };
+                        delete next[node.id];
+                        return next;
+                      });
                       setPreviewTileUiTick((n) => n + 1);
-                      setFollowing(false);
-                      setLayoutReset((n) => n + 1);
                     }}
-                    orientation={preferences.orientation}
-                    onOrientation={() =>
-                      setPreferences((p) => ({
-                        ...p,
-                        orientation:
-                          p.orientation === 'vertical'
-                            ? 'horizontal'
-                            : 'vertical',
-                      }))
-                    }
-                    run={run}
-                    view={`${preferences.view}:${preferences.orientation}:${run.status}:${run.links?.next.map((link) => link.id).join()}`}
-                    following={following}
-                    onFollowing={setFollowing}
-                    suspended={dialogOpen}
-                    available={online}
-                    request={focusRequest}
-                    onSelect={selectStep}
-                    onFocused={setFocusedStepId}
-                  />
-                </ReactFlow>
-                {previewOpenShell && (
-                  <PreviewOpenShell
-                    runId={previewOpenShell.runId}
-                    artifact={previewOpenShell.artifact}
-                    siblings={previewOpenShell.siblings}
-                    onBack={() => {
-                      const producer = previewOpenShell.producerStepId;
-                      setPreviewOpenShell(null);
-                      if (producer) selectStep(producer);
+                    elementsSelectable
+                    zoomOnDoubleClick={false}
+                    onPaneClick={() => clearResultado()}
+                    onMoveStart={(event) => {
+                      if (event) setFollowing(false);
                     }}
-                  />
-                )}
-                {noticeView}
-                {error && !dialogOpen && (
-                  <div role="alert" className="canvas-alert popup-error">
-                    {error}
+                  >
+                    <FitCanvas
+                      view={`${preferences.view}:${preferences.orientation}:${layoutReset}:${resultadoOpen ? 'resultado' : 'full'}`}
+                    />
+                    <Background color="#c6c0b2" gap={28} size={0.8} />
+                    <TaskNavigation
+                      canReset={Object.keys(manualPositions).length > 0}
+                      onReset={() => {
+                        resetPositions();
+                        if (run) clearPreviewTileUiForRun(run.id);
+                        setPreviewTileUiTick((n) => n + 1);
+                        setFollowing(false);
+                        setLayoutReset((n) => n + 1);
+                      }}
+                      orientation={preferences.orientation}
+                      onOrientation={() =>
+                        setPreferences((p) => ({
+                          ...p,
+                          orientation:
+                            p.orientation === 'vertical'
+                              ? 'horizontal'
+                              : 'vertical',
+                        }))
+                      }
+                      run={run}
+                      view={`${preferences.view}:${preferences.orientation}:${run.status}:${run.links?.next.map((link) => link.id).join()}`}
+                      following={following}
+                      onFollowing={setFollowing}
+                      suspended={dialogOpen}
+                      available={online}
+                      request={focusRequest}
+                      onSelect={selectStep}
+                      onFocused={setFocusedStepId}
+                    />
+                  </ReactFlow>
+                  {previewOpenShell && (
+                    <PreviewOpenShell
+                      runId={previewOpenShell.runId}
+                      artifact={previewOpenShell.artifact}
+                      siblings={previewOpenShell.siblings}
+                      onBack={() => {
+                        const producer = previewOpenShell.producerStepId;
+                        setPreviewOpenShell(null);
+                        if (producer) selectStep(producer);
+                      }}
+                    />
+                  )}
+                  {noticeView}
+                  {error && !dialogOpen && (
+                    <div role="alert" className="canvas-alert popup-error">
+                      {error}
+                      <button
+                        aria-label={t('Cerrar error')}
+                        onClick={() => setError('')}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                  {run.status === 'paused' &&
+                    run.events.at(-1)?.type === 'revise' && (
+                      <button
+                        className="canvas-next"
+                        onClick={() => openPanel('activity')}
+                      >
+                        <History size={17} />
+                        <span>
+                          <strong>{t('El plan cambió')}</strong>
+                          {t('Revisa los cambios antes de reanudar')}
+                        </span>
+                        <ArrowUpRight size={16} />
+                      </button>
+                    )}
+                  {live && waiting > 0 && (
                     <button
-                      aria-label={t('Cerrar error')}
-                      onClick={() => setError('')}
+                      className="canvas-next human"
+                      onClick={() =>
+                        selectStep(
+                          run.steps.find((s) => s.status === 'waiting')!.id,
+                        )
+                      }
                     >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-                {run.status === 'paused' &&
-                  run.events.at(-1)?.type === 'revise' && (
-                    <button
-                      className="canvas-next"
-                      onClick={() => openPanel('activity')}
-                    >
-                      <History size={17} />
+                      <UserRound size={17} />
                       <span>
-                        <strong>{t('El plan cambió')}</strong>
-                        {t('Revisa los cambios antes de reanudar')}
+                        <strong>
+                          {t('Tu turno ·')} {waiting}{' '}
+                          {waiting === 1 ? t('paso') : t('pasos')}
+                        </strong>
+                        {t('Responder en el canvas')}
                       </span>
                       <ArrowUpRight size={16} />
                     </button>
                   )}
-                {live && waiting > 0 && (
-                  <button
-                    className="canvas-next human"
-                    onClick={() =>
-                      selectStep(
-                        run.steps.find((s) => s.status === 'waiting')!.id,
-                      )
+                  {live && permissionStall && waiting === 0 && (
+                    <button
+                      className="canvas-next"
+                      onClick={() => {
+                        const stalled = run.steps.find(
+                          (s) =>
+                            s.kind === 'agent' &&
+                            s.status === 'running' &&
+                            looksLikePermissionDenial(
+                              latestStepEvidence(run.events, s.id) ||
+                                s.result ||
+                                '',
+                            ),
+                        );
+                        if (stalled) selectStep(stalled.id);
+                      }}
+                    >
+                      <Bot size={17} />
+                      <span>
+                        <strong>{t('Posible atasco')}</strong>
+                        {t(
+                          'El agente se detuvo sin fallar este paso (p. ej. acceso denegado). No hay chat esperando. Usa Recuperar tarea o pega Copiar continuación en el chat conectado.',
+                        )}
+                      </span>
+                      <ArrowUpRight size={16} />
+                    </button>
+                  )}
+                  {live && !waiting && ready > 0 && run.continuation && (
+                    <button
+                      className="canvas-next"
+                      onClick={() =>
+                        selectStep(
+                          run.steps.find(
+                            (s) => s.kind === 'agent' && s.status === 'ready',
+                          )!.id,
+                        )
+                      }
+                    >
+                      <HarnessIcon name={run.coordinator} />
+                      <span>
+                        <strong>{continuationLabel(run.continuation)}</strong>
+                        {run.continuation.status === 'uncertain'
+                          ? t('El conector debe verificar si inició el turno')
+                          : run.continuation.status === 'failed'
+                            ? t('Abre la tarea para reintentar')
+                            : t('Ver estado de la tarea')}
+                      </span>
+                      <ArrowUpRight size={16} />
+                    </button>
+                  )}
+                  {wakeContinuationOpen && (
+                    <button
+                      type="button"
+                      className="canvas-next"
+                      onClick={copyPrompt}
+                    >
+                      <HarnessIcon name={run.coordinator} />
+                      <span>
+                        <strong>{t('Continuar desde el chat')}</strong>
+                        {copied
+                          ? t('Pégala en tu chat para continuar')
+                          : t(
+                              'Respuesta guardada · Copiar continuación (todos los pasos listos)',
+                            )}
+                      </span>
+                      <Copy size={15} />
+                    </button>
+                  )}
+                  {wakeContinuationOpen && canSendWakeContinuation && (
+                    <button
+                      type="button"
+                      className="canvas-next"
+                      disabled={busy || !online}
+                      onClick={() => void sendWakeContinuation()}
+                    >
+                      <Send size={15} />
+                      <span>
+                        <strong>{t('Enviar')}</strong>
+                        {t(
+                          'Encola la continuación en el conector configurado. La entrega no ejecuta el trabajo.',
+                        )}
+                      </span>
+                    </button>
+                  )}
+                </div>
+                {resultadoOpen && (step || selectedJob) && (
+                  <ResultadoStage
+                    run={run}
+                    step={step}
+                    job={step ? undefined : selectedJob}
+                    live={!!live}
+                    statusLabel={
+                      step
+                        ? step.status === 'running' && !run.agentWaiting
+                          ? `${labels.running} · ${t('chat desconectado')}`
+                          : labels[step.status]
+                        : selectedJob!.statusLabel
                     }
-                  >
-                    <UserRound size={17} />
-                    <span>
-                      <strong>
-                        {t('Tu turno ·')} {waiting}{' '}
-                        {waiting === 1 ? t('paso') : t('pasos')}
-                      </strong>
-                      {t('Responder en el canvas')}
-                    </span>
-                    <ArrowUpRight size={16} />
-                  </button>
-                )}
-                {live && permissionStall && waiting === 0 && (
-                  <button
-                    className="canvas-next"
-                    onClick={() => {
-                      const stalled = run.steps.find(
-                        (s) =>
-                          s.kind === 'agent' &&
-                          s.status === 'running' &&
-                          looksLikePermissionDenial(
-                            latestStepEvidence(run.events, s.id) ||
-                              s.result ||
-                              '',
-                          ),
-                      );
-                      if (stalled) selectStep(stalled.id);
-                    }}
-                  >
-                    <Bot size={17} />
-                    <span>
-                      <strong>{t('Posible atasco')}</strong>
-                      {t(
-                        'El agente se detuvo sin fallar este paso (p. ej. acceso denegado). No hay chat esperando. Usa Recuperar tarea o pega Copiar continuación en el chat conectado.',
-                      )}
-                    </span>
-                    <ArrowUpRight size={16} />
-                  </button>
-                )}
-                {live && !waiting && ready > 0 && run.continuation && (
-                  <button
-                    className="canvas-next"
-                    onClick={() =>
-                      selectStep(
-                        run.steps.find(
-                          (s) => s.kind === 'agent' && s.status === 'ready',
-                        )!.id,
-                      )
-                    }
-                  >
-                    <HarnessIcon name={run.coordinator} />
-                    <span>
-                      <strong>{continuationLabel(run.continuation)}</strong>
-                      {run.continuation.status === 'uncertain'
-                        ? t('El conector debe verificar si inició el turno')
-                        : run.continuation.status === 'failed'
-                          ? t('Abre la tarea para reintentar')
-                          : t('Ver estado de la tarea')}
-                    </span>
-                    <ArrowUpRight size={16} />
-                  </button>
-                )}
-                {wakeContinuationOpen && (
-                  <button
-                    type="button"
-                    className="canvas-next"
-                    onClick={copyPrompt}
-                  >
-                    <HarnessIcon name={run.coordinator} />
-                    <span>
-                      <strong>{t('Continuar desde el chat')}</strong>
-                      {copied
-                        ? t('Pégala en tu chat para continuar')
-                        : t(
-                            'Respuesta guardada · Copiar continuación (todos los pasos listos)',
-                          )}
-                    </span>
-                    <Copy size={15} />
-                  </button>
-                )}
-                {wakeContinuationOpen && canSendWakeContinuation && (
-                  <button
-                    type="button"
-                    className="canvas-next"
-                    disabled={busy || !online}
-                    onClick={() => void sendWakeContinuation()}
-                  >
-                    <Send size={15} />
-                    <span>
-                      <strong>{t('Enviar')}</strong>
-                      {t(
-                        'Encola la continuación en el conector configurado. La entrega no ejecuta el trabajo.',
-                      )}
-                    </span>
-                  </button>
-                )}
-              </div>
-              {resultadoOpen && (step || selectedJob) && (
-                <ResultadoStage
-                  run={run}
-                  step={step}
-                  job={step ? undefined : selectedJob}
-                  live={!!live}
-                  statusLabel={
-                    step
-                      ? step.status === 'running' && !run.agentWaiting
-                        ? `${labels.running} · ${t('chat desconectado')}`
-                        : labels[step.status]
-                      : selectedJob!.statusLabel
-                  }
-                  StatusIcon={StatusIcon}
-                  section={resultadoSection}
-                  onSection={setResultadoSection}
-                  onClose={clearResultado}
-                  onSelectStep={selectStep}
-                  eventLabels={eventLabels}
-                  reduceMotion={preferences.reduceMotion}
-                  waitingForm={
-                    step && live && step.status === 'waiting' ? (
-                      <div className="answering-step">
-                        <HumanForm
-                          key={step.id}
-                          step={step}
-                          answer={answer}
-                          onAnswer={setAnswer}
-                          values={outputDraft}
-                          onValues={setOutputDraft}
-                          busy={busy}
-                          online={online}
-                          agentWaiting={!!run.agentWaiting}
-                          continuation={run.continuation}
-                          onSubmit={() =>
-                            void act(
-                              step.kind === 'manual' ? 'submit' : 'approve',
-                              step.id,
-                            )
-                          }
-                          onReject={() => setConfirmation('reject')}
-                        />
-                      </div>
-                    ) : step &&
-                      live &&
-                      step.kind === 'manual' &&
-                      step.status === 'completed' &&
-                      !!step.outputs?.length ? (
-                      <div className="answering-step">
-                        {amending ? (
+                    StatusIcon={StatusIcon}
+                    section={resultadoSection}
+                    onSection={setResultadoSection}
+                    onClose={clearResultado}
+                    onSelectStep={selectStep}
+                    eventLabels={eventLabels}
+                    reduceMotion={preferences.reduceMotion}
+                    waitingForm={
+                      step && live && step.status === 'waiting' ? (
+                        <div className="answering-step">
                           <HumanForm
-                            key={`amend-${step.id}`}
-                            mode="amend"
+                            key={step.id}
                             step={step}
                             answer={answer}
                             onAnswer={setAnswer}
@@ -2544,272 +2545,308 @@ export function App() {
                             online={online}
                             agentWaiting={!!run.agentWaiting}
                             continuation={run.continuation}
-                            amendBlocked={
-                              transitiveDependents(run, step.id).some(
-                                (s) => s.status === 'running',
+                            onSubmit={() =>
+                              void act(
+                                step.kind === 'manual' ? 'submit' : 'approve',
+                                step.id,
                               )
-                                ? t(
-                                    'Espera a que terminen las tareas en curso antes de corregir.',
-                                  )
-                                : undefined
                             }
-                            onSubmit={requestAmend}
-                            onReject={() => undefined}
-                            onCancelAmend={() => {
-                              setAmending(false);
-                              setOutputDraft({});
-                              setAnswer('');
-                              setError('');
-                            }}
+                            onReject={() => setConfirmation('reject')}
                           />
-                        ) : (
-                          <button
-                            type="button"
-                            className="secondary full amend-button"
-                            disabled={busy || !online}
-                            onClick={() => {
-                              const draft = draftFromOutputValues(step);
-                              amendDraftRef.current = draft;
-                              setOutputDraft(draft);
-                              setAnswer('');
-                              setError('');
-                              setAmending(true);
-                            }}
-                          >
-                            <Pencil size={16} /> {t('Corregir respuesta')}
-                          </button>
-                        )}
-                      </div>
-                    ) : undefined
-                  }
-                  guidance={
-                    step ? (
-                      <>
-                        {step.status === 'running' &&
-                          (() => {
-                            const permissionLike = looksLikePermissionDenial(
-                              latestStepEvidence(run.events, step.id) ||
-                                step.result ||
-                                '',
-                            );
-                            const kind = stuckRunningKind({
-                              agentWaiting: !!run.agentWaiting,
-                              permissionLike,
-                            });
-                            return (
-                              <div className="step-hint">
-                                {kind === 'active-wait' ? (
-                                  <LoaderCircle className="spin" size={17} />
-                                ) : kind === 'permission' ? (
-                                  <LockKeyhole size={17} />
-                                ) : (
-                                  <Pause size={17} />
-                                )}
-                                <p>
-                                  {kind === 'active-wait'
-                                    ? t(
-                                        'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
-                                      )
-                                    : kind === 'permission'
-                                      ? t(
-                                          'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
-                                        )
-                                      : t(
-                                          'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
-                                        )}
-                                  {kind !== 'active-wait' && live && (
-                                    <>
-                                      <button
-                                        className="secondary"
-                                        disabled={busy || !online}
-                                        onClick={() => requestRetry(step.id)}
-                                      >
-                                        {t('Recuperar tarea')}
-                                      </button>
-                                      <button
-                                        className="secondary"
-                                        onClick={copyPrompt}
-                                      >
-                                        {copied
-                                          ? t('Pega la petición en tu chat')
-                                          : t('Copiar continuación')}
-                                      </button>
-                                    </>
+                        </div>
+                      ) : step &&
+                        live &&
+                        step.kind === 'manual' &&
+                        step.status === 'completed' &&
+                        !!step.outputs?.length ? (
+                        <div className="answering-step">
+                          {amending ? (
+                            <HumanForm
+                              key={`amend-${step.id}`}
+                              mode="amend"
+                              step={step}
+                              answer={answer}
+                              onAnswer={setAnswer}
+                              values={outputDraft}
+                              onValues={setOutputDraft}
+                              busy={busy}
+                              online={online}
+                              agentWaiting={!!run.agentWaiting}
+                              continuation={run.continuation}
+                              amendBlocked={
+                                transitiveDependents(run, step.id).some(
+                                  (s) => s.status === 'running',
+                                )
+                                  ? t(
+                                      'Espera a que terminen las tareas en curso antes de corregir.',
+                                    )
+                                  : undefined
+                              }
+                              onSubmit={requestAmend}
+                              onReject={() => undefined}
+                              onCancelAmend={() => {
+                                setAmending(false);
+                                setOutputDraft({});
+                                setAnswer('');
+                                setError('');
+                              }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              className="secondary full amend-button"
+                              disabled={busy || !online}
+                              onClick={() => {
+                                const draft = draftFromOutputValues(step);
+                                amendDraftRef.current = draft;
+                                setOutputDraft(draft);
+                                setAnswer('');
+                                setError('');
+                                setAmending(true);
+                              }}
+                            >
+                              <Pencil size={16} /> {t('Corregir respuesta')}
+                            </button>
+                          )}
+                        </div>
+                      ) : undefined
+                    }
+                    guidance={
+                      step ? (
+                        <>
+                          {step.status === 'running' &&
+                            (() => {
+                              const permissionLike = looksLikePermissionDenial(
+                                latestStepEvidence(run.events, step.id) ||
+                                  step.result ||
+                                  '',
+                              );
+                              const kind = stuckRunningKind({
+                                agentWaiting: !!run.agentWaiting,
+                                permissionLike,
+                              });
+                              return (
+                                <div className="step-hint">
+                                  {kind === 'active-wait' ? (
+                                    <LoaderCircle className="spin" size={17} />
+                                  ) : kind === 'permission' ? (
+                                    <LockKeyhole size={17} />
+                                  ) : (
+                                    <Pause size={17} />
                                   )}
-                                </p>
-                              </div>
-                            );
-                          })()}
-                        {showResultadoWakeContinuationCta({
-                          live,
-                          agentWaiting: !!run.agentWaiting,
-                          stepKind: step.kind,
-                          stepStatus: step.status,
-                        }) && (
-                          <div className="step-hint wake-continuation-cta">
-                            <Bot size={17} />
-                            <p>
-                              {t(
-                                'Hay trabajo de agente listo y el chat no está en espera. Copia la continuación (incluye todos los pasos listos) y pégala en el chat conectado. MCP solo no despierta el chat.',
-                              )}
-                              <button
-                                className="secondary"
-                                onClick={copyPrompt}
-                              >
-                                {copied
-                                  ? t('Pega la petición en tu chat')
-                                  : t('Copiar continuación')}
-                              </button>
-                              {canSendWakeContinuation ? (
-                                <button
-                                  type="button"
-                                  className="secondary"
-                                  disabled={busy || !online}
-                                  onClick={() => void sendWakeContinuation()}
-                                >
-                                  <Send size={15} />
-                                  {t('Enviar')}
-                                </button>
-                              ) : null}
-                            </p>
-                          </div>
-                        )}
-                        {step.status === 'ready' &&
-                          live &&
-                          !!run.agentWaiting &&
-                          step.kind === 'agent' && (
-                            <div className="step-hint">
+                                  <p>
+                                    {kind === 'active-wait'
+                                      ? t(
+                                          'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
+                                        )
+                                      : kind === 'permission'
+                                        ? t(
+                                            'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
+                                          )
+                                        : t(
+                                            'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
+                                          )}
+                                    {kind !== 'active-wait' && live && (
+                                      <>
+                                        <button
+                                          className="secondary"
+                                          disabled={busy || !online}
+                                          onClick={() => requestRetry(step.id)}
+                                        >
+                                          {t('Recuperar tarea')}
+                                        </button>
+                                        <button
+                                          className="secondary"
+                                          onClick={copyPrompt}
+                                        >
+                                          {copied
+                                            ? t('Pega la petición en tu chat')
+                                            : t('Copiar continuación')}
+                                        </button>
+                                      </>
+                                    )}
+                                  </p>
+                                </div>
+                              );
+                            })()}
+                          {showResultadoWakeContinuationCta({
+                            live,
+                            agentWaiting: !!run.agentWaiting,
+                            stepKind: step.kind,
+                            stepStatus: step.status,
+                          }) && (
+                            <div className="step-hint wake-continuation-cta">
                               <Bot size={17} />
                               <p>
                                 {t(
-                                  'Este paso está listo. El agente sigue en espera activa y lo retomará al confirmar en el canvas—sin escribir listo en el chat.',
+                                  'Hay trabajo de agente listo y el chat no está en espera. Copia la continuación (incluye todos los pasos listos) y pégala en el chat conectado. MCP solo no despierta el chat.',
                                 )}
+                                <button
+                                  className="secondary"
+                                  onClick={copyPrompt}
+                                >
+                                  {copied
+                                    ? t('Pega la petición en tu chat')
+                                    : t('Copiar continuación')}
+                                </button>
+                                {canSendWakeContinuation ? (
+                                  <button
+                                    type="button"
+                                    className="secondary"
+                                    disabled={busy || !online}
+                                    onClick={() => void sendWakeContinuation()}
+                                  >
+                                    <Send size={15} />
+                                    {t('Enviar')}
+                                  </button>
+                                ) : null}
                               </p>
                             </div>
                           )}
-                      </>
-                    ) : undefined
-                  }
-                  detalle={
-                    step ? (
-                      <div className="step-detail resultado-detalle">
-                        <button
-                          className="text-button focus-detail"
-                          onClick={() => {
-                            setFollowing(false);
-                            setFocusRequest({
-                              id: step.id,
-                              nonce: ++focusNonce.current,
-                            });
-                          }}
-                        >
-                          <Focus size={15} />
-                          {t('Enfocar tarea')}
-                        </button>
-                        <p className="step-description">
-                          {step.description ||
-                            (isControl(step)
-                              ? t(
-                                  'El motor aplica este nodo automáticamente al cumplirse sus condiciones y dependencias.',
-                                )
-                              : step.kind === 'manual'
+                          {step.status === 'ready' &&
+                            live &&
+                            !!run.agentWaiting &&
+                            step.kind === 'agent' && (
+                              <div className="step-hint">
+                                <Bot size={17} />
+                                <p>
+                                  {t(
+                                    'Este paso está listo. El agente sigue en espera activa y lo retomará al confirmar en el canvas—sin escribir listo en el chat.',
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                        </>
+                      ) : undefined
+                    }
+                    detalle={
+                      step ? (
+                        <div className="step-detail resultado-detalle">
+                          <button
+                            className="text-button focus-detail"
+                            onClick={() => {
+                              setFollowing(false);
+                              setFocusRequest({
+                                id: step.id,
+                                nonce: ++focusNonce.current,
+                              });
+                            }}
+                          >
+                            <Focus size={15} />
+                            {t('Enfocar tarea')}
+                          </button>
+                          <p className="step-description">
+                            {step.description ||
+                              (isControl(step)
                                 ? t(
-                                    'Comparte la información que necesita el agente para avanzar.',
+                                    'El motor aplica este nodo automáticamente al cumplirse sus condiciones y dependencias.',
                                   )
-                                : step.kind === 'approval'
+                                : step.kind === 'manual'
                                   ? t(
-                                      'Revisa los resultados anteriores y decide si el proceso puede continuar.',
+                                      'Comparte la información que necesita el agente para avanzar.',
                                     )
-                                  : t(
-                                      'El agente ejecutará este paso y registrará su resultado aquí.',
-                                    ))}
-                        </p>
-                        {step.kind === 'agent' &&
-                          ['failed', 'ready', 'running'].includes(
-                            step.status,
-                          ) &&
-                          live && (
-                            <button
-                              className="secondary full recovery-button"
-                              disabled={busy || !online}
-                              onClick={() => requestRetry(step.id)}
-                            >
-                              <RotateCcw size={16} />{' '}
-                              {step.status === 'running'
-                                ? t('Recuperar tarea')
-                                : t('Reintentar paso')}
-                            </button>
-                          )}
-                        <dl className="step-meta">
-                          <div>
-                            <dt>{t('Responsable')}</dt>
-                            <dd>
-                              {step.kind === 'agent' ? (
-                                <HarnessIcon name={run.coordinator} />
-                              ) : (
-                                <UserRound size={14} />
-                              )}{' '}
-                              {isControl(step)
-                                ? 'Hyperion'
-                                : step.kind === 'agent'
-                                  ? null
-                                  : t('Tú')}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt>{t('Tipo de paso')}</dt>
-                            <dd>{kindLabels[step.kind]}</dd>
-                          </div>
-                          {step.attempt > 0 && (
+                                  : step.kind === 'approval'
+                                    ? t(
+                                        'Revisa los resultados anteriores y decide si el proceso puede continuar.',
+                                      )
+                                    : t(
+                                        'El agente ejecutará este paso y registrará su resultado aquí.',
+                                      ))}
+                          </p>
+                          {step.kind === 'agent' &&
+                            ['failed', 'ready', 'running'].includes(
+                              step.status,
+                            ) &&
+                            live && (
+                              <button
+                                className="secondary full recovery-button"
+                                disabled={busy || !online}
+                                onClick={() => requestRetry(step.id)}
+                              >
+                                <RotateCcw size={16} />{' '}
+                                {step.status === 'running'
+                                  ? t('Recuperar tarea')
+                                  : t('Reintentar paso')}
+                              </button>
+                            )}
+                          <dl className="step-meta">
                             <div>
-                              <dt>{t('Intento')}</dt>
-                              <dd>#{step.attempt}</dd>
+                              <dt>{t('Responsable')}</dt>
+                              <dd>
+                                {step.kind === 'agent' ? (
+                                  <HarnessIcon name={run.coordinator} />
+                                ) : (
+                                  <UserRound size={14} />
+                                )}{' '}
+                                {isControl(step)
+                                  ? 'Hyperion'
+                                  : step.kind === 'agent'
+                                    ? null
+                                    : t('Tú')}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>{t('Tipo de paso')}</dt>
+                              <dd>{kindLabels[step.kind]}</dd>
+                            </div>
+                            {step.attempt > 0 && (
+                              <div>
+                                <dt>{t('Intento')}</dt>
+                                <dd>#{step.attempt}</dd>
+                              </div>
+                            )}
+                          </dl>
+                          {step.dependencies.length > 0 && (
+                            <div className="dependencies">
+                              <h3>{t('Depende de')}</h3>
+                              {step.dependencies.map((id) => {
+                                const dependency = run.steps.find(
+                                  (s) => s.id === id,
+                                )!;
+                                return (
+                                  <button
+                                    key={id}
+                                    onClick={() => selectStep(id)}
+                                  >
+                                    <span
+                                      className={`dependency-icon ${dependency.status}`}
+                                    >
+                                      <StatusIcon
+                                        status={dependency.status}
+                                        size={13}
+                                      />
+                                    </span>
+                                    <span>{dependency.title}</span>
+                                    <ChevronRight size={13} />
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
-                        </dl>
-                        {step.dependencies.length > 0 && (
-                          <div className="dependencies">
-                            <h3>{t('Depende de')}</h3>
-                            {step.dependencies.map((id) => {
-                              const dependency = run.steps.find(
-                                (s) => s.id === id,
-                              )!;
-                              return (
-                                <button key={id} onClick={() => selectStep(id)}>
-                                  <span
-                                    className={`dependency-icon ${dependency.status}`}
-                                  >
-                                    <StatusIcon
-                                      status={dependency.status}
-                                      size={13}
-                                    />
-                                  </span>
-                                  <span>{dependency.title}</span>
-                                  <ChevronRight size={13} />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {step.status === 'blocked' && (
-                          <div className="step-hint">
-                            <LockKeyhole size={16} />
-                            <p>
-                              {t('Este paso se habilitará cuando termine:')}{' '}
-                              {blockedReason}.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ) : undefined
-                  }
-                  io={step ? <ContractView step={step} run={run} /> : undefined}
-                  logs={step ? <TraceView step={step} run={run} /> : undefined}
-                />
-              )}
-            </section>
-          )}
-        </main>
+                          {step.status === 'blocked' && (
+                            <div className="step-hint">
+                              <LockKeyhole size={16} />
+                              <p>
+                                {t('Este paso se habilitará cuando termine:')}{' '}
+                                {blockedReason}.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : undefined
+                    }
+                    io={
+                      step ? <ContractView step={step} run={run} /> : undefined
+                    }
+                    logs={
+                      step ? <TraceView step={step} run={run} /> : undefined
+                    }
+                  />
+                )}
+              </section>
+            )}
+          </main>
+        )}
       </div>
       {popup && !confirmation && !help && (
         <Modal
@@ -3421,48 +3458,6 @@ export function App() {
             </div>
           </section>
         </Modal>
-      )}
-      {isElectron && (
-        <ChatBubble
-          reduceMotion={preferences.reduceMotion}
-          disabled={dialogOpen}
-          runUrl={run ? `${location.origin}/?run=${run.id}` : undefined}
-          runId={run?.id}
-          runCoordinator={run?.coordinator}
-          inventory={connections.inventory}
-          resumeConnector={hostResumeConnector}
-          outboundPrompt={run?.outboundPrompt}
-          busy={busy}
-          onNotice={(message) => setNotice(message)}
-          onError={(message) => setError(message)}
-          onEnqueueOutbound={
-            run
-              ? async (text) => {
-                  const parsed = connectorSchema.safeParse(
-                    readHostResumeConnector(),
-                  );
-                  if (
-                    !parsed.success ||
-                    parsed.data.harness !== run.coordinator
-                  ) {
-                    throw new Error(
-                      t(
-                        'No hay un conector de envío configurado para este harness. Usa Copiar continuación.',
-                      ),
-                    );
-                  }
-                  await api<Run>(`/api/runs/${run.id}/outbound-prompts`, {
-                    expectedRevision: run.revision,
-                    commandId: crypto.randomUUID(),
-                    text,
-                    connector: parsed.data,
-                    kind: 'continuation_prompt',
-                  });
-                  await refresh();
-                }
-              : undefined
-          }
-        />
       )}
     </div>
   );
