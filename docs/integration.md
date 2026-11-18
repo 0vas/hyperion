@@ -8,13 +8,16 @@ For setup in Codex, Claude Code, Claude Desktop, Cursor, Google Antigravity and 
 
 ### Host comparison (local)
 
-| Host           | Strength for Hyperion work                         | Hyperion UI                                 | Human decisions   | After a handoff                                                     |
-| -------------- | -------------------------------------------------- | ------------------------------------------- | ----------------- | ------------------------------------------------------------------- |
-| Claude Code    | Local files and shell in the project               | Canvas URL in browser or Desktop only       | Canvas forms only | `hyperion_wait` / durable suspend, or paste **Copiar continuación** |
-| Claude Desktop | Chat MCP + skill; OS permissions may block folders | Browse/URL only—**no** native Hyperion pane | Canvas forms only | Same; ending the turn without wait leaves ready work idle           |
-| Codex / Cursor | MCP or portable skill with local shell             | Canvas URL only                             | Canvas forms only | Active wait or continuation paste                                   |
+| Host           | Strength for Hyperion work                                      | Hyperion UI                                 | Human decisions   | After a handoff                                                     |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------- | ----------------- | ------------------------------------------------------------------- |
+| Claude Code    | Local files and shell in the project                            | Canvas URL in browser or Desktop only       | Canvas forms only | `hyperion_wait` / durable suspend, or paste **Copiar continuación** |
+| Claude Desktop | Chat MCP + skill; OS permissions may block folders              | Browse/URL only—**no** native Hyperion pane | Canvas forms only | Same; ending the turn without wait leaves ready work idle           |
+| Codex          | MCP or portable skill with local shell; Desktop App Server chat | Canvas URL, or literal local Desktop chat   | Canvas forms only | Active wait or continuation paste                                   |
+| Cursor         | MCP or portable skill with local shell                          | Canvas URL only                             | Canvas forms only | Active wait or continuation paste                                   |
 
 Never claim the host embedded Hyperion automatically. Listing tools or `/mcp` connected does not prove a prior chat already loaded them—use a new session and a read-only `hyperion_list_runs` when unsure.
+
+The Desktop-only Codex App Server cut is separate from MCP setup and from ADR 0036 delivery. It maps one active run to one ephemeral local thread, streams only protocol events, keeps credentials and process control in Electron main, and exposes only the bounded Hyperion MCP tool set. Desktop generates a private `CODEX_HOME` with only that MCP server, disables web search plus the generic shell/browser/computer/apps/plugins feature families, and launches App Server with `--strict-config`; an unsupported policy fails closed. Each turn also has read-only sandbox and no network. Provider-raised MCP calls require a per-call redacted Desktop allow/deny decision; host-level permission denial is a secondary defense, not proof of confinement. Canvas forms, approvals, plan amendment, retry and irreversible acknowledgement remain unavailable to chat. An opaque unsettled-turn marker survives a Desktop restart and blocks a fresh send until explicitly resolved; no `thread/resume` is claimed. Cursor, Claude and ChatGPT are not certified by this path.
 
 ## Minimal user request
 

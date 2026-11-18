@@ -28,6 +28,12 @@ Sin un conector de reanudación, continúa disponible la espera cooperativa de M
 
 El worker ADR 0036 asienta la **entrega**. Eso **no** equivale a ejecución de pasos ni a inyección en el panel de chat de Claude Desktop. No hay envío de `linked_cycle_prompt` en este corte.
 
+### Chat literal local de Codex en Desktop
+
+El panel Desktop puede abrir un chat local mediante Codex App Server, distinto de **Copiar** y de **Enviar** W1/W2. El proceso principal de Desktop crea un hilo para el flujo activo y muestra solo mensajes y estados realmente emitidos por ese protocolo. El chat puede usar el MCP reducido de Hyperion para lecturas, crear flujos, registrar artefactos y ejecutar `start`, `log`, `complete` o `fail`; formularios humanos, aprobar, amend, retry y confirmaciones irreversibles siguen siendo exclusivos del canvas. **Detener** solicita una interrupción real del turno.
+
+Cada llamada MCP elevada por el proveedor requiere una decisión Desktop redactada de permitir o denegar; no es una aprobación del canvas. Antes de iniciar Codex, Desktop genera un `CODEX_HOME` privado con solo ese MCP, desactiva búsqueda web y las features genéricas de shell, navegador, computer use, apps y plugins, y usa `--strict-config`; cada turno es de solo lectura y sin red. Rechazar solicitudes de permiso en el proceso principal es una defensa adicional, no la barrera primaria. Antes de `turn/start`, Desktop registra un marcador opaco: tras un cierre sin estado terminal, el panel queda incierto y bloquea otro envío hasta que la persona lo resuelva explícitamente. No se restaura ni reenvía texto hasta contar con `thread/resume` y reconciliación probada. Este camino es solo Codex local; Cursor, Claude y ChatGPT no quedan certificados por tener MCP, W1 o W2. Consulta [ADR 0037](decisions/0037-desktop-live-codex-chat.md) para los límites y la certificación pendiente.
+
 ## Cobertura actual por aplicación
 
 Esta versión incorpora la cola persistente, API, herramienta MCP `hyperion_suspend`, cliente y worker genérico. Los conectores nativos de reanudación de la tabla son trabajo de integración pendiente; no se incluyen como ejecutores de proveedor listos para usar. Las pruebas usan un conector sintético y las identidades de harness documentadas; no certifican aplicaciones reales.

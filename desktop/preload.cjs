@@ -13,5 +13,21 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
     );
   },
   checkForUpdates: () => ipcRenderer.invoke('hyperion:updates:check'),
+  liveChat: {
+    connect: (runId) => ipcRenderer.invoke('hyperion:live-chat:connect', runId),
+    send: (runId, text) =>
+      ipcRenderer.invoke('hyperion:live-chat:send', runId, text),
+    stop: (runId) => ipcRenderer.invoke('hyperion:live-chat:stop', runId),
+    approve: (runId, token, decision) =>
+      ipcRenderer.invoke('hyperion:live-chat:approve', runId, token, decision),
+    resolveUncertain: (runId) =>
+      ipcRenderer.invoke('hyperion:live-chat:resolve-uncertain', runId),
+    onEvent: (callback) => {
+      const listener = (_event, payload) => callback(payload);
+      ipcRenderer.on('hyperion:live-chat:event', listener);
+      return () =>
+        ipcRenderer.removeListener('hyperion:live-chat:event', listener);
+    },
+  },
   ...(resumeConnector ? { resumeConnector } : {}),
 });

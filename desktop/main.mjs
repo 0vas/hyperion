@@ -39,12 +39,14 @@ import {
   stopDesktopOutboundWorker,
   readResumeConnectorForPreload,
 } from './outbound-send.mjs';
+import { LiveCodexChat } from './live-codex-chat.mjs';
 const language = createLanguageStore({
   file: resolve(app.getPath('userData'), 'language.json'),
   systemLanguages: () => app.getPreferredSystemLanguages(),
 });
 const t = (message, values) => language.t(message, values);
 let window;
+let liveCodexChat;
 const updater = createUpdateController({
   t,
   app,
@@ -280,6 +282,74 @@ if (!app.requestSingleInstanceLock()) {
         validateDesktopSender(event);
         await updater.check(true);
       });
+      const liveChatEvent = (message) => {
+        if (window && !window.isDestroyed())
+          window.webContents.send('hyperion:live-chat:event', message);
+      };
+      const getLiveChat = () => {
+        if (!target)
+          throw new Error(
+            'Hyperion Desktop is not connected to a local service.',
+          );
+        if (!liveCodexChat)
+          liveCodexChat = new LiveCodexChat({
+            userData: app.getPath('userData'),
+            directory: target.directory,
+            url: target.service,
+            onEvent: liveChatEvent,
+            onError: (error) => {
+              try {
+                diagnostics(error);
+              } catch {}
+            },
+          });
+        return liveCodexChat;
+      };
+      const liveRun = (runId) => {
+        if (typeof runId !== 'string' || !/^[0-9a-f-]{36}$/i.test(runId))
+          throw new Error('A valid active run is required for live chat.');
+      };
+      ipcMain.handle('hyperion:live-chat:connect', async (event, runId) => {
+        validateDesktopSender(event);
+        liveRun(runId);
+        return getLiveChat().connect(runId);
+      });
+      ipcMain.handle('hyperion:live-chat:send', async (event, runId, text) => {
+        validateDesktopSender(event);
+        liveRun(runId);
+        if (typeof text !== 'string' || !text.trim() || text.length > 16_000)
+          throw new Error('Write a message shorter than 16,000 characters.');
+        await getLiveChat().send(runId, text);
+      });
+      ipcMain.handle('hyperion:live-chat:stop', async (event, runId) => {
+        validateDesktopSender(event);
+        liveRun(runId);
+        await getLiveChat().stop(runId);
+      });
+      ipcMain.handle(
+        'hyperion:live-chat:approve',
+        async (event, runId, token, decision) => {
+          validateDesktopSender(event);
+          liveRun(runId);
+          if (
+            typeof token !== 'string' ||
+            !/^[0-9a-f-]{36}$/i.test(token) ||
+            !['allow', 'deny'].includes(decision)
+          )
+            throw new Error(
+              'A valid live Codex approval decision is required.',
+            );
+          getLiveChat().approve(runId, token, decision);
+        },
+      );
+      ipcMain.handle(
+        'hyperion:live-chat:resolve-uncertain',
+        async (event, runId) => {
+          validateDesktopSender(event);
+          liveRun(runId);
+          getLiveChat().resolveUncertain(runId);
+        },
+      );
       // Sync preload read: expose ResumeConnector only when outbound-send.json is valid.
       // Preload may run before the frame URL is local — still require our BrowserWindow sender.
       ipcMain.on('hyperion:outbound-send:resume-connector-sync', (event) => {
@@ -363,6 +433,8 @@ if (!app.requestSingleInstanceLock()) {
     startupUpdateScheduler.cancel();
     updater.cancel();
     stopDesktopOutboundWorker();
+    liveCodexChat?.dispose();
+    liveCodexChat = undefined;
   });
   app.on('window-all-closed', () => app.quit());
 }
