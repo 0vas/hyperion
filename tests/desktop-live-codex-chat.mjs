@@ -1,14 +1,195 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { EventEmitter } from 'node:events';
 import {
   LIVE_CODEX_DISABLED_FEATURES,
   LiveCodexChat,
   LiveTurnStore,
   prepareLiveCodexHome,
 } from '../desktop/live-codex-chat.mjs';
+import {
+  LiveCodexLauncherStore,
+  resolveCodexExecutable,
+  saveCodexExecutable,
+} from '../desktop/codex-launcher.mjs';
+
+function executable(directory, name = 'codex') {
+  const path = join(directory, name);
+  writeFileSync(path, '#!/bin/sh\nexit 0\n');
+  chmodSync(path, 0o755);
+  return path;
+}
+
+function appServerChild() {
+  const stdout = new EventEmitter();
+  const stderr = new EventEmitter();
+  stdout.setEncoding = () => {};
+  stderr.setEncoding = () => {};
+  const child = new EventEmitter();
+  child.stdout = stdout;
+  child.stderr = stderr;
+  child.killed = false;
+  child.kill = () => {
+    child.killed = true;
+  };
+  child.stdin = {
+    writable: true,
+    write: (line) => {
+      const request = JSON.parse(line);
+      if (request.method === 'initialize')
+        queueMicrotask(() =>
+          stdout.emit(
+            'data',
+            `${JSON.stringify({ jsonrpc: '2.0', id: request.id, result: {} })}\n`,
+          ),
+        );
+      if (request.method === 'thread/start')
+        queueMicrotask(() => {
+          stdout.emit(
+            'data',
+            `${JSON.stringify({ method: 'mcpServer/startupStatus/updated', params: { name: 'hyperion', status: 'ready' } })}\n`,
+          );
+          stdout.emit(
+            'data',
+            `${JSON.stringify({ jsonrpc: '2.0', id: request.id, result: { thread: { id: 'thread-real' } } })}\n`,
+          );
+        });
+      return true;
+    },
+  };
+  return child;
+}
+
+test('Codex launcher discovers an executable with a minimal Electron PATH', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hyperion-codex-launcher-'));
+  try {
+    const codex = executable(directory);
+    const result = resolveCodexExecutable({
+      userData: join(directory, 'user-data'),
+      options: {
+        env: { PATH: '/not-a-shell-path' },
+        platform: 'darwin',
+        extraCandidates: [codex],
+      },
+    });
+    assert.deepEqual(result, {
+      status: 'ready',
+      executable: codex,
+      source: 'discovered',
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('Codex launcher persists a valid explicit selection and rejects a stale one', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hyperion-codex-selection-'));
+  try {
+    const userData = join(directory, 'user-data');
+    const store = new LiveCodexLauncherStore(userData);
+    store.save('/missing/codex');
+    assert.equal(
+      resolveCodexExecutable({ userData, store }).status,
+      'invalid-selection',
+    );
+    const codex = executable(directory);
+    assert.deepEqual(
+      saveCodexExecutable({ userData, executable: codex, store }),
+      { saved: true, status: 'ready' },
+    );
+    assert.deepEqual(resolveCodexExecutable({ userData, store }), {
+      status: 'ready',
+      executable: codex,
+      source: 'selected',
+    });
+    assert.deepEqual(
+      saveCodexExecutable({ userData, executable: '/missing/codex', store }),
+      { saved: false, status: 'invalid-selection' },
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('live chat starts App Server with the discovered absolute executable', async () => {
+  const sourceHome = mkdtempSync(join(tmpdir(), 'hyperion-codex-auth-'));
+  const userData = mkdtempSync(join(tmpdir(), 'hyperion-live-launch-'));
+  const previous = process.env.CODEX_HOME;
+  try {
+    writeFileSync(join(sourceHome, 'auth.json'), '{}');
+    process.env.CODEX_HOME = sourceHome;
+    const codex = executable(sourceHome);
+    const events = [];
+    let launched;
+    const chat = new LiveCodexChat({
+      userData,
+      directory: '/private/hyperion',
+      url: 'http://127.0.0.1:4317',
+      onEvent: (event) => events.push(event),
+      onError: () => {},
+      resolveExecutable: () => ({
+        status: 'ready',
+        executable: codex,
+        source: 'discovered',
+      }),
+      spawnImpl: (command, args, options) => {
+        launched = { command, args, options };
+        return appServerChild();
+      },
+    });
+    assert.deepEqual(await chat.connect('run-1'), { connected: true });
+    assert.equal(launched.command, codex);
+    assert.deepEqual(launched.args, [
+      'app-server',
+      '--strict-config',
+      '--listen',
+      'stdio://',
+    ]);
+    assert.equal(
+      events.some(
+        (event) => event.type === 'connection' && event.status === 'connected',
+      ),
+      true,
+    );
+  } finally {
+    if (previous === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = previous;
+    rmSync(sourceHome, { recursive: true, force: true });
+    rmSync(userData, { recursive: true, force: true });
+  }
+});
+
+test('missing Codex stays disconnected with setup guidance instead of ENOENT', async () => {
+  const events = [];
+  const chat = new LiveCodexChat({
+    userData: '/private/user-data',
+    directory: '/private/hyperion',
+    url: 'http://127.0.0.1:4317',
+    onEvent: (event) => events.push(event),
+    onError: () => {},
+    resolveExecutable: () => ({ status: 'missing', executable: null }),
+    spawnImpl: () => {
+      throw new Error('must not spawn');
+    },
+  });
+  assert.deepEqual(await chat.connect('run-1'), {
+    connected: false,
+    setup: 'missing',
+  });
+  assert.equal(events.at(-1)?.type, 'connection');
+  assert.equal(events.at(-1)?.status, 'disconnected');
+  assert.match(events.at(-1)?.message || '', /install Codex locally/i);
+  assert.doesNotMatch(events.at(-1)?.message || '', /ENOENT/i);
+});
 
 function chatWithWrites() {
   const writes = [];

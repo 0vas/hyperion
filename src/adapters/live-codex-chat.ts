@@ -9,6 +9,7 @@ export type LiveChatEvent =
       type: 'connection';
       status: 'connecting' | 'connected' | 'disconnected';
       message?: string;
+      setup?: 'missing' | 'invalid-selection' | 'authentication';
     }
   | { type: 'thread'; runId: string; threadId: string }
   | {

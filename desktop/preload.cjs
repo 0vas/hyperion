@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
       ipcRenderer.invoke('hyperion:live-chat:approve', runId, token, decision),
     resolveUncertain: (runId) =>
       ipcRenderer.invoke('hyperion:live-chat:resolve-uncertain', runId),
+    chooseCodex: () => ipcRenderer.invoke('hyperion:live-chat:choose-codex'),
     onEvent: (callback) => {
       const listener = (_event, payload) => callback(payload);
       ipcRenderer.on('hyperion:live-chat:event', listener);
