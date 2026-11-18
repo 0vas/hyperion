@@ -80,7 +80,7 @@ Say in the same chat: “Now translate this guide into English.” The agent cre
 **Continue from here**, at the end of the graph, helps you draft that request. **Copy request for chat** is the usual path (copy ≠ delivery). Paste into the connected chat; automatic send needs a send connector — MCP alone cannot wake the chat (**Send** hidden in this phase). The agent must create the linked run. Use plan revision for changes to unfinished work, or retry for a failed task.
 
 ::: info Availability
-The **2026.11.17.1919 UTC · Preview** installers include a complex inert HTML artifact for exercising isolated preview rendering, compact typed artifact bubbles with complete accessible names without splitting or truncating filenames, gateway evidence with human routes and destinations (sandboxed HTML/SVG preview), the **Jobs** switch, the standard frame, and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
+The **2026.11.18.0021 UTC · Preview** installers include the experimental local Codex chat, a complex inert HTML artifact for exercising isolated preview rendering, compact typed artifact bubbles with complete accessible names without splitting or truncating filenames, gateway evidence with human routes and destinations (sandboxed HTML/SVG preview), the **Jobs** switch, the standard frame, and linked runs. [Download the new version](primeros-pasos.md) if you are using an older one.
 :::
 
 ## Move and arrange nodes
@@ -93,6 +93,6 @@ Drag the dotted grip above a card or symbol. With a keyboard, focus the node, pr
 Positions are saved in this browser per workflow, orientation and steps/jobs view, including when agent activity arrives. They do not change dependencies or history, and do not sync across devices.
 :::
 
-Available in **2026.11.17.1919 UTC · Preview** installers. [Download](primeros-pasos.md).
+Available in **2026.11.18.0021 UTC · Preview** installers. [Download](primeros-pasos.md).
 
-> The next Hyperion Desktop cut adds **Connect local Codex** for a literal chat only on the active workflow. Responses arrive from the local Codex App Server protocol, not Copy or Send. Desktop creates a private profile containing only Hyperion MCP, turns off web search plus shell, browser, editable-file, network, app, and plugin feature families, and launches with strict configuration; an incompatible policy stays disconnected. Each MCP call raised by Codex is allowed or denied through a redacted Desktop card. The canvas retains forms, approvals, amendments, and irreversible confirmations. If Desktop closes before a terminal state, an opaque marker blocks another send until explicitly resolved; there is no automatic resume. It is not included in the 2026.11.17.1919 installer.
+> The **2026.11.18.0021 UTC · Preview** installers add **Connect local Codex** for a literal chat only on the active workflow. Responses arrive from the local Codex App Server protocol, not Copy or Send. Desktop creates a private profile containing only Hyperion MCP, turns off web search plus shell, browser, editable-file, network, app, and plugin feature families, and launches with strict configuration; an incompatible policy stays disconnected. Each MCP call raised by Codex is allowed or denied through a redacted Desktop card. The canvas retains forms, approvals, amendments, and irreversible confirmations. It does not certify arbitrary shell access, automatic resume, or Cursor, Claude, or ChatGPT parity.
