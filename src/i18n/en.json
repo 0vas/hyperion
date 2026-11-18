@@ -591,6 +591,7 @@
   "Rehacer": "Redo",
   "Reinicia tu aplicación de IA y abre una nueva conversación. Escribe «Usa Hyperion para…» y describe lo que quieres conseguir. Si la aplicación solicita habilitar Hyperion, acepta para usar sus herramientas.\n\nPuedes elegir vista dividida o escritorio desde el chat.": "Restart your AI application and open a new conversation. Write “Use Hyperion to…” and describe your goal. If the application asks you to enable Hyperion, accept to use its tools.\n\nChoose split view or desktop from the chat.",
   "Reintentar": "Retry",
+  "Restaurando servicio local…": "Restoring local service…",
   "Reintentar comprobación": "Retry check",
   "Reintentar paso": "Retry step",
   "Reportó un error": "Reported an error",

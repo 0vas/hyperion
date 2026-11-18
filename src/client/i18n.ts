@@ -107,6 +107,7 @@ declare global {
       setLanguage(value: LanguagePreference): Promise<void>;
       onLanguageChanged(callback: (value: LanguageSnapshot) => void): void;
       checkForUpdates?(): Promise<void>;
+      recoverLocalService?(): Promise<{ ready: boolean }>;
       liveChat?: {
         connect(runId: string): Promise<{
           connected: boolean;

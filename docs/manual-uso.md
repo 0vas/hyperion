@@ -114,19 +114,19 @@ Los títulos y decisiones se generan para tu actividad; este ejemplo no es una p
 
 ## Controles útiles
 
-| Control                    | Uso                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Vista del flujo (Ajustes)  | Alternar pasos detallados y resumen de trabajos                                                                     |
-| Ir a tarea / Enfocar tarea | Centrar un paso, incluso si ya terminó                                                                              |
-| Seguir actividad           | Acompañar la tarea que requiere atención                                                                            |
-| Vista general              | Volver al flujo completo                                                                                            |
-| I/O                        | Ver lo que recibe y entrega un paso                                                                                 |
-| Logs                       | Consultar acciones y resultados que registró el agente                                                              |
-| Actividad                  | Revisar el historial del proceso                                                                                    |
-| Ajustes                    | Idioma, apariencia, enlace a **Conexiones** y navegación                                                            |
-| Cabecera · Servicio local  | «Conectado» / «Sin conexión» del proceso Hyperion en este equipo — no implica que tu IA tenga herramientas cargadas |
-| Cabecera · Menú            | Un solo control: CalVer al pie, Conexiones, Ajustes, Guía, Ayuda y Acerca de (sin iconos sueltos)                   |
-| Pausar                     | Evitar que se inicien nuevas tareas hasta reanudar                                                                  |
+| Control                    | Uso                                                                                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vista del flujo (Ajustes)  | Alternar pasos detallados y resumen de trabajos                                                                                                    |
+| Ir a tarea / Enfocar tarea | Centrar un paso, incluso si ya terminó                                                                                                             |
+| Seguir actividad           | Acompañar la tarea que requiere atención                                                                                                           |
+| Vista general              | Volver al flujo completo                                                                                                                           |
+| I/O                        | Ver lo que recibe y entrega un paso                                                                                                                |
+| Logs                       | Consultar acciones y resultados que registró el agente                                                                                             |
+| Actividad                  | Revisar el historial del proceso                                                                                                                   |
+| Ajustes                    | Idioma, apariencia, enlace a **Conexiones** y navegación                                                                                           |
+| Cabecera · Servicio local  | «Conectado», «Restaurando servicio local…» o «Sin conexión» del proceso Hyperion en este equipo — no implica que tu IA tenga herramientas cargadas |
+| Cabecera · Menú            | Un solo control: CalVer al pie, Conexiones, Ajustes, Guía, Ayuda y Acerca de (sin iconos sueltos)                                                  |
+| Pausar                     | Evitar que se inicien nuevas tareas hasta reanudar                                                                                                 |
 
 Los ajustes se guardan en este navegador. No alteran tus decisiones ni conceden permisos al agente. Escape cierra un popup o el panel **Resultado** sin responder.
 

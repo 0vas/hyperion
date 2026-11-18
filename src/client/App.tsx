@@ -865,6 +865,7 @@ export function App() {
   }, [popup]);
   const [online, setOnline] = useState(false);
   const [streaming, setStreaming] = useState(false);
+  const [recoveringLocalService, setRecoveringLocalService] = useState(false);
   const streamConnected = useRef(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -1127,6 +1128,35 @@ export function App() {
       clearTimeout(timer);
     };
   }, [refresh]);
+  useEffect(() => {
+    const recover = window.hyperionDesktop?.recoverLocalService;
+    if (!isElectron || !loaded || online || !recover) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const attempt = () => {
+      if (cancelled) return;
+      setRecoveringLocalService(true);
+      void recover()
+        .catch(() => {
+          // Main records the diagnostic. The canvas stays honestly offline.
+        })
+        .finally(() => {
+          if (cancelled) return;
+          setRecoveringLocalService(false);
+          attempts++;
+          // A service can still be releasing its socket after an orderly exit.
+          // Try a few times without turning an unavailable host into a spawn loop.
+          if (attempts < 3 && !online)
+            timer = setTimeout(attempt, attempts * 1000);
+        });
+    };
+    timer = setTimeout(attempt, 500);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [isElectron, loaded, online]);
   const draftStepRef = useRef('');
   useEffect(() => {
     draftStepRef.current = '';
@@ -2141,9 +2171,11 @@ export function App() {
               <span className="connection-state">
                 {online
                   ? t('Conectado')
-                  : loaded
-                    ? t('Sin conexión')
-                    : t('Conectando')}
+                  : recoveringLocalService
+                    ? t('Restaurando servicio local…')
+                    : loaded
+                      ? t('Sin conexión')
+                      : t('Conectando')}
               </span>
             </span>
             <AppMenu
