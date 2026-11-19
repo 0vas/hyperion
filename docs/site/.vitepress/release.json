@@ -1,6 +1,6 @@
 {
-  "version": "2026.11.18.0021",
+  "version": "2026.11.19.0435",
   "channel": "preview",
   "timezone": "UTC",
-  "macNotarized": true
+  "macNotarized": false
 }

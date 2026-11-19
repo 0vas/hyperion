@@ -2,9 +2,9 @@
 
 Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local autenticado. El proceso del chat conserva la ejecución: Desktop presenta decisiones y resultados. El usuario elige split/escritorio en la conversación; el adaptador `open RUN_ID desktop` lanza la instalación registrada en su primer arranque.
 
-La [preview descargable para macOS](https://github.com/0vas/hyperion/releases/tag/v2026.11.18.0714) incluye Apple Silicon con el chat local y la recuperación de servicio. Verifica su integridad, pero no está notarizada por Apple; Windows sigue en 2026.11.18.0021.
+La [preview 2026.11.19.0435](https://github.com/0vas/hyperion/releases/tag/v2026.11.19.0435) está publicada para macOS Apple Silicon y Windows x64. Ambos instaladores pasaron pruebas nativas de fuente y paquete sobre el mismo commit; sus tamaños y SHA-256 se verificaron antes de publicar. macOS tiene firma de integridad ad-hoc, no notarización de Apple. Las notas mantienen los límites: Claude autenticado no verificado, evidencia anterior de conversaciones reales solo en macOS y un fallo intermitente de cierre en pruebas cuya causa sigue sin localizar pese al CI final aprobado.
 
-## Chat local multiharness (fuentes; aún no publicado)
+## Chat local multiharness (preview 2026.11.19.0435)
 
 La navegación **Chat** soporta Codex, Claude Code, Cursor Agent y Antigravity mediante ACP persistente. Codex/Claude usan sidecars empaquetados; Cursor ejecuta su CLI con `acp` y Antigravity ejecuta `agy acp`. El selector conserva identidad y ruta absoluta, no credenciales. Se descubre también `~/.gemini/bin/agy`; Antigravity IDE no sustituye ese CLI. Una ruta ausente queda desconectada. Hyperion no instala ni actualiza CLI automáticamente.
 
@@ -74,7 +74,7 @@ La web usa `docs/site/.vitepress/release.json` como registro de la última relea
 
 ## Chat local experimental
 
-La preview publicada 2026.11.18.0714 sigue siendo Codex-only. Las fuentes incorporan cuatro adaptadores ACP; soporte implementado no certifica una cuenta sin autenticar ni equivale a publicación. Gemini y ChatGPT quedan fuera. **Enviar** W1/W2 es otro transporte: entrega ≠ ejecución.
+La preview publicada 2026.11.19.0435 incorpora cuatro adaptadores ACP. Las pruebas nativas de ambos sistemas no certifican conversaciones autenticadas con los cuatro proveedores: Claude autenticado sigue sin verificar y la evidencia previa de conversaciones reales corresponde a macOS. Gemini y ChatGPT quedan fuera. **Enviar** W1/W2 es otro transporte: entrega ≠ ejecución.
 
 ## Interface language
 

@@ -12,13 +12,13 @@ Necesitas una herramienta de IA compatible y Hyperion conectado a ella. La conex
 
 <Downloads />
 
-[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.11.18.0021).
+[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.11.19.0435).
 
-Elige el instalador para tu equipo: `.dmg` para Mac Apple Silicon y `.exe` para Windows x64. Ábrelo e instala la aplicación. En Mac, mueve Hyperion a **Aplicaciones** antes de conectar tu IA. El instalador de Apple Silicon está firmado con **Developer ID** y **notarizado por Apple**. Windows no tiene firma de editor.
+Elige el instalador para tu equipo: `.dmg` para Mac Apple Silicon y `.exe` para Windows x64. Ábrelo e instala la aplicación. En Mac, mueve Hyperion a **Aplicaciones** antes de conectar tu IA. La preview 2026.11.19.0435 tiene firma de integridad ad-hoc: **no está notarizada por Apple ni acredita Developer ID**. Windows no tiene firma de editor.
 
 ### macOS bloquea la app
 
-Con la distribución notarizada actual, Gatekeeper debería aceptar Hyperion. Si aún aparece «Apple could not verify Hyperion.app is free of malware», no demuestra por sí mismo que la descarga esté dañada; comprueba que descargaste la copia del repositorio oficial y vuelve a intentarlo.
+Esta preview no está notarizada y Gatekeeper puede bloquear Hyperion. El aviso «Apple could not verify Hyperion.app is free of malware» no demuestra por sí mismo que la descarga esté dañada; comprueba que descargaste la copia del repositorio oficial antes de decidir si confías en ella.
 
 Si macOS sigue bloqueando una copia oficial:
 
@@ -119,7 +119,7 @@ Desde la versión CalVer **2026.10.12.0638 UTC**, el menú consulta GitHub y ofr
 
 **La primera migración desde 0.4 o 0.5.1 a CalVer es manual desde esta página**: el actualizador antiguo no reconoce las nuevas etiquetas. La versión pública usa **AAAA.MM.DD.HHMM UTC**, con hora y minuto; el canal Preview se muestra por separado. Las siguientes actualizaciones se comparan cronológicamente.
 
-La versión 0.4.0 necesita una actualización manual. Su bundle macOS tiene una firma incompleta; volver a descargar el mismo instalador no corrige esa firma. El instalador actual de Apple Silicon está firmado con Developer ID y notarizado por Apple. Si macOS bloquea la instalación, consulta la [guía de Apple](https://support.apple.com/102445); no desactives la protección global del equipo.
+La versión 0.4.0 necesita una actualización manual. Su bundle macOS tiene una firma incompleta; volver a descargar el mismo instalador no corrige esa firma. La preview actual de Apple Silicon pasa la verificación de integridad ad-hoc, pero no está notarizada por Apple. Si macOS bloquea la instalación, consulta la [guía de Apple](https://support.apple.com/102445); no desactives la protección global del equipo.
 
 Desde **2026.10.12.2101**, al abrir la app actualizada, Hyperion respalda y reinicia automáticamente el servicio antiguo de la misma instalación. Conserva flujos, archivos, respuestas e historial; no vuelve a ejecutar tareas. No necesitas reiniciar el ordenador. La copia previa queda en `backups` dentro del almacenamiento local.
 

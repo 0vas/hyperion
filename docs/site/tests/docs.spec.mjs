@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
+
+const publishedRelease = JSON.parse(
+  readFileSync(new URL('../.vitepress/release.json', import.meta.url), 'utf8'),
+);
+const [releaseYear, releaseMonth, releaseDay, releaseMinute] =
+  publishedRelease.version.split('.');
+const releaseDatetime = `${releaseYear}-${releaseMonth}-${releaseDay}T${releaseMinute.slice(0, 2)}:${releaseMinute.slice(2)}:00Z`;
 
 const pages = [
   '',
@@ -68,7 +76,10 @@ test('a new reader can find setup and search for retry', async ({ page }) => {
   await expect(page.locator('h1')).toHaveText('Tu primer flujo');
   await expect(
     page.getByRole('link', { name: 'Descargar Hyperion Desktop', exact: true }),
-  ).toHaveAttribute('href', /releases\/tag\/v2026.11.18.0021/);
+  ).toHaveAttribute(
+    'href',
+    `https://github.com/0vas/hyperion/releases/tag/v${publishedRelease.version}`,
+  );
   await page.getByRole('button', { name: /Buscar/ }).click();
   await page.locator('#localsearch-input').fill('Reintentar');
   await expect(page.locator('.VPLocalSearchBox a').first()).toBeVisible();
@@ -161,7 +172,7 @@ test('branded pages offer direct installers and a working Archify viewer in both
         page.getByRole('link', { name, exact: true }),
       ).toHaveAttribute(
         'href',
-        `https://github.com/0vas/hyperion/releases/download/v2026.11.18.0021/Hyperion-2026.11.18.0021-${asset}`,
+        `https://github.com/0vas/hyperion/releases/download/v${publishedRelease.version}/Hyperion-${publishedRelease.version}-${asset}`,
       );
     }
     await page.goto(`/hyperion/${locale}referencia/arquitectura.html`);
@@ -1392,6 +1403,7 @@ test('Claude Code happy path is documented honestly in both languages', async ({
 test('CalVer minute and macOS opening instructions remain visible in both themes, languages and narrow layouts', async ({
   page,
 }) => {
+  expect(publishedRelease.macNotarized).toBe(false);
   for (const locale of ['', 'en/']) {
     for (const dark of [false, true]) {
       for (const width of [390, 1440]) {
@@ -1403,15 +1415,25 @@ test('CalVer minute and macOS opening instructions remain visible in both themes
         await page.goto(`/hyperion/${locale}guia/primeros-pasos.html`);
         const downloads = page.locator('.downloads');
         await downloads.scrollIntoViewIfNeeded();
-        await expect(downloads.locator('time')).toHaveText('2026.11.18.0021');
+        await expect(downloads.locator('time')).toHaveText(
+          publishedRelease.version,
+        );
         await expect(downloads.locator('time')).toHaveAttribute(
           'datetime',
-          '2026-11-18T00:21:00Z',
+          releaseDatetime,
         );
         await expect(downloads.locator('.download-status')).toContainText(
           locale
+            ? 'this preview is not yet notarized by Apple'
+            : 'esta preview aún no está notarizada por Apple',
+        );
+        await expect(downloads.locator('.download-status')).not.toContainText(
+          locale
             ? 'notarized with Developer ID'
             : 'notarizado con Developer ID',
+        );
+        await expect(downloads.locator('.download-status')).not.toContainText(
+          locale ? 'Gatekeeper should accept' : 'Gatekeeper debería aceptar',
         );
         await expect(
           page.getByRole('link', { name: 'macOS · Intel', exact: true }),
