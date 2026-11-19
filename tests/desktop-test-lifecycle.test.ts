@@ -260,8 +260,10 @@ async function runTransportFixture(
   `;
     const script = `
     const { spawn } = require('node:child_process');
+    // Windows kills non-detached children when their parent exits (Node 24.22.2):
+    // https://github.com/nodejs/node/blob/v24.22.2/deps/uv/src/win/process.c#L1016-L1020
     const child = spawn(process.execPath, ['-e', ${JSON.stringify(descendantScript)}],
-      { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+      { detached: true, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
     process.send({ pid: child.pid });
     child.once('message', (message) => {
       if (message !== 'ready') process.exit(1);

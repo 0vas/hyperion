@@ -48,6 +48,8 @@ jobs:
       - run: npx playwright install chromium
       - run: npm run test:desktop
         timeout-minutes: 10
+        env:
+          HYPERION_DESKTOP_DIAGNOSTICS: '1'
       - run: npm run desktop:dist -- ${{ matrix.target }}
         env:
           HYPERION_REQUIRE_NOTARIZATION: ${{ runner.os == 'macOS' && inputs.notarized && '1' || '0' }}
@@ -74,6 +76,7 @@ jobs:
       - run: npm run test:desktop
         timeout-minutes: 10
         env:
+          HYPERION_DESKTOP_DIAGNOSTICS: '1'
           HYPERION_DISABLE_UPDATE_CHECK: '1'
           HYPERION_DESKTOP_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
       - uses: actions/upload-artifact@v7

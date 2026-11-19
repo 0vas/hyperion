@@ -10,6 +10,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { _electron } from '@playwright/test';
 import { listenerPid } from '../dist/adapters/runtime-upgrade.js';
 import {
@@ -17,6 +18,7 @@ import {
   closeDesktop,
   waitForPidExit,
 } from './helpers/desktop-test-lifecycle.mjs';
+import { createShutdownDiagnostics } from './helpers/desktop-shutdown-diagnostics.mjs';
 
 async function freePort() {
   const reservation = createServer();
@@ -31,6 +33,14 @@ test(
   { timeout: 45000 },
   async (t) => {
     const started = Date.now();
+    const evidenceId = `desktop-recovery-${process.platform}-${process.env.HYPERION_DESKTOP_EXECUTABLE ? 'packaged' : 'source'}-${started}-${randomUUID()}`;
+    // Opt-in only; sampling adds bounded diagnosis AFTER a gate failure, never
+    // more time for success. Unique evidence files preserve earlier failures.
+    const diagnostics = createShutdownDiagnostics({
+      id: evidenceId,
+      enabled: process.env.HYPERION_DESKTOP_DIAGNOSTICS === '1',
+      sample: process.env.HYPERION_DESKTOP_DIAGNOSTIC_SAMPLE === '1',
+    });
     const messages = [];
     const log = (message) => {
       const line = `[desktop-recovery +${Date.now() - started}ms] ${message}`;
@@ -77,6 +87,7 @@ test(
         },
       });
       log(`Electron launch: ready pid=${app.process().pid}`);
+      await diagnostics.install(app);
       page = await step(
         'first window',
         () => app.firstWindow({ timeout: 5000 }),
@@ -93,6 +104,7 @@ test(
         11000,
       );
       assert.ok(pid, 'the Desktop-owned service should be listening');
+      diagnostics.recordPid(pid);
       log(`stop initial service: pid=${pid}`);
       process.kill(pid, 'SIGTERM');
       await step(
@@ -131,6 +143,7 @@ test(
       try {
         await closeDesktop(app, {
           log,
+          killTree: diagnostics.killTree,
           releaseResources: async () => {
             const cleanupPort = Number(new URL(serviceUrl).port);
             const pid = await listenerPid(cleanupPort);
@@ -151,6 +164,7 @@ test(
             );
             await auth.body?.cancel();
             log(`cleanup authenticated service: pid=${pid}`);
+            diagnostics.recordPid(pid);
             process.kill(pid, 'SIGKILL');
             stoppedServicePid = pid;
           },
@@ -161,13 +175,12 @@ test(
       } catch (error) {
         failures.push(error);
         log(`cleanup failure: ${error.message}`);
+      } finally {
+        diagnostics.dispose();
       }
       mkdirSync('test-results', { recursive: true });
       writeFileSync(
-        join(
-          'test-results',
-          `desktop-recovery-${process.platform}-${process.env.HYPERION_DESKTOP_EXECUTABLE ? 'packaged' : 'source'}.log`,
-        ),
+        join('test-results', `${evidenceId}.log`),
         messages.join('\n') + '\n',
       );
       if (!failures.length) {
