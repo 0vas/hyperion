@@ -4,9 +4,13 @@ Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local 
 
 La [preview descargable para macOS](https://github.com/0vas/hyperion/releases/tag/v2026.11.18.0714) incluye Apple Silicon con el chat local y la recuperación de servicio. Verifica su integridad, pero no está notarizada por Apple; Windows sigue en 2026.11.18.0021.
 
-## Chat local de Codex (Preview macOS 2026.11.18.0714)
+## Chat local multiharness (fuentes; aún no publicado)
 
-La navegación **Chat** de Desktop abre una vista separada del canvas para un hilo local de Codex App Server del flujo activo. Solo se habilita después de que el servicio local, App Server, MCP y el hilo estén realmente listos. Electron busca un ejecutable absoluto de Codex en su entorno y ubicaciones locales conocidas, o acepta una ruta elegida explícitamente mediante el diálogo nativo. Una ruta ausente u obsoleta deja el chat desconectado y ofrece elegir o reintentar; no instala Codex, no usa una shell y no muestra `spawn ... ENOENT` al renderer. Esta vía sigue limitada a Codex local; el canvas mantiene formularios, aprobaciones, amend e irreversibles.
+La navegación **Chat** soporta Codex, Claude Code, Cursor Agent y Antigravity mediante ACP persistente. Codex/Claude usan sidecars empaquetados; Cursor ejecuta su CLI con `acp` y Antigravity ejecuta `agy acp`. El selector conserva identidad y ruta absoluta, no credenciales. Se descubre también `~/.gemini/bin/agy`; Antigravity IDE no sustituye ese CLI. Una ruta ausente queda desconectada. Hyperion no instala ni actualiza CLI automáticamente.
+
+Cada sesión recibe la definición de Hyperion MCP en un directorio separado. Los proveedores pueden cargar su configuración local; no se afirma aislamiento de herramientas ni sandbox del sistema operativo. El renderer recibe mensajes, acciones y permisos, nunca credenciales. Una aprobación permite una operación una sola vez, nunca una regla permanente implícita. Antes de certificar un proveedor se requiere conversación y llamada MCP reales.
+
+El compositor queda fijo al pie; la conversación tiene su propio scroll. Enter envía y Shift+Enter inserta una línea. El primer envío conecta al proveedor; las opciones de ruta y reconexión están en el control de ajustes. Un proceso persistente inactivo no bloquea cambiar de proveedor: se cierra su sesión y se conserva el borrador. Un error cancela permisos pendientes, libera el proceso y presenta recuperación fuera del transcript. Claude usa el ejecutable elegido mediante `CLAUDE_CODE_EXECUTABLE`. Cambiar al canvas conserva el componente del chat durante la sesión, pero no implementa persistencia del transcript al reiniciar Desktop. Un directorio de trabajo separado no es un sandbox del sistema operativo; los permisos del proveedor siguen siendo relevantes.
 
 ## Desarrollo y distribución
 
@@ -68,9 +72,9 @@ Para publicar archivos ya probados sin volver a compilarlos, crear primero una r
 
 La web usa `docs/site/.vitepress/release.json` como registro de la última release **publicada**. Actualizarlo solo después de subir y verificar los instaladores; no anunciar un enlace antes de que exista su asset. El campo `macNotarized` solo puede ser verdadero con evidencia de notarización y validación de Gatekeeper.
 
-## Chat Codex local experimental (2026.11.18.0021)
+## Chat local experimental
 
-Esta preview añade un chat literal local de Codex App Server, solo en Desktop y experimental: el proceso principal conserva credenciales, el perfil estricto solo permite Hyperion MCP y el canvas conserva submit, aprobaciones, amend y confirmaciones irreversibles. No certifica Cursor/Claude/ChatGPT, shell arbitrario ni reanudación automática. También incluye español e inglés, artefactos por paso, Trabajos y recorridos enlazados. **Enviar** W1/W2 sigue siendo distinto: entrega ≠ ejecución.
+La preview publicada 2026.11.18.0714 sigue siendo Codex-only. Las fuentes incorporan cuatro adaptadores ACP; soporte implementado no certifica una cuenta sin autenticar ni equivale a publicación. Gemini y ChatGPT quedan fuera. **Enviar** W1/W2 es otro transporte: entrega ≠ ejecución.
 
 ## Interface language
 

@@ -20,6 +20,8 @@ Tres vistas del mismo sistema. Selecciona una y abre Archify para explorar los c
 
 ## Despliegue y límites de confianza
 
+El chat local usa la misma frontera ACP para Codex, Claude Code, Cursor Agent y Antigravity. El proceso principal conserva los ejecutables y solicita permisos; el renderer no recibe credenciales. El MCP de sesión `hyperion_active` autentica únicamente el servicio del canvas mediante `chat-mcp-launcher`, sin buscar otra instancia si falla. Esta extensión no altera el motor de procesos ni convierte el directorio de sesión en un sandbox. Los diagramas del núcleo conservan sus referencias históricas; el detalle de adaptadores y evidencia se mantiene en [ADR 0038](https://github.com/0vas/hyperion/blob/main/docs/decisions/0038-desktop-local-multiharness.md), pendiente de publicación con el código.
+
 <ArchitectureAtlas kind="deployment" />
 
 El lanzador compartido puede sustituir el servicio antiguo autenticado de la misma instalación después de verificar su proceso y crear un respaldo consistente de SQLite. Conserva el estado de los flujos y las tareas externas; no añade un endpoint de apagado ni reanudación del chat. [Ciclo de actualización del runtime](https://github.com/0vas/hyperion/blob/main/docs/decisions/0034-runtime-replacement-on-upgrade.md).

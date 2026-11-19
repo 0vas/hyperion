@@ -7,6 +7,54 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { createApp } from '../src/server/app.js';
 import { Store } from '../src/server/store.js';
+import { loadCredentials } from '../src/server/config.js';
+
+for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
+  test(`Desktop MCP pins ${harness} to the active service and registers its identity`, async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'hyperion-chat-mcp-'));
+    const credentials = loadCredentials(directory);
+    const store = new Store(':memory:');
+    const app = createApp({
+      store,
+      ...credentials,
+      getAgentTokens: () => loadCredentials(directory).agents,
+    });
+    const url = await app.listen(0);
+    const client = new Client({ name: 'chat-pin-test', version: '1' });
+    const transport = new StdioClientTransport({
+      command: process.execPath,
+      args: ['--import', 'tsx', resolve('src/adapters/chat-mcp-launcher.ts')],
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(
+            (entry): entry is [string, string] => entry[1] !== undefined,
+          ),
+        ),
+        HYPERION_AGENT_ID: harness,
+        HYPERION_URL: url,
+        HYPERION_DATA_DIR: directory,
+        HYPERION_TOKEN: 'foreign-inherited-token-must-not-be-used',
+      },
+      stderr: 'pipe',
+    });
+    try {
+      await client.connect(transport);
+      assert.ok(loadCredentials(directory).agents[harness]);
+      const result = await client.callTool({
+        name: 'hyperion_list_runs',
+        arguments: {},
+      });
+      assert.notEqual(result.isError, true);
+      assert.equal((await client.listTools()).tools.length, 7);
+    } finally {
+      await client.close();
+      await transport.close();
+      await app.close();
+      store.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+}
 
 for (const coordinator of [
   'codex',

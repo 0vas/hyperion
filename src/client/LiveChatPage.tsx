@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, MessageSquareText, Send, Square } from 'lucide-react';
+import {
+  ArrowLeft,
+  MessageSquareText,
+  Send,
+  Square,
+  Settings2,
+} from 'lucide-react';
 import { t, useLocale } from './i18n';
 
 type ThreadMessage = {
@@ -9,10 +15,25 @@ type ThreadMessage = {
   meta?: string;
   approvalToken?: string;
   approvalState?: 'allowed' | 'denied';
+  provider?: string;
+};
+
+type Harness = { id: string; label: string; status: string };
+const PROVIDER_LABELS: Record<string, string> = {
+  codex: 'Codex',
+  claude: 'Claude Code',
+  cursor: 'Cursor Agent',
+  antigravity: 'Antigravity',
+};
+const LOGIN_COMMANDS: Record<string, string> = {
+  codex: 'codex login',
+  claude: 'claude auth login',
+  cursor: 'cursor-agent login',
+  antigravity: 'agy acp --login',
 };
 
 /**
- * Desktop-only, full-page projection of a single real Codex App Server thread.
+ * Desktop-only, full-page projection of a single real local-harness thread.
  * It deliberately has no workflow-command or generic host API surface.
  */
 export function LiveChatPage({
@@ -37,9 +58,18 @@ export function LiveChatPage({
   const [uncertain, setUncertain] = useState(false);
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [harnesses, setHarnesses] = useState<Harness[]>([
+    { id: 'codex', label: 'Codex', status: 'unknown' },
+  ]);
+  const [selectedHarness, setSelectedHarness] = useState('codex');
   const [thread, setThread] = useState<ThreadMessage[]>([]);
   const threadId = useRef<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
+  const followBottom = useRef(true);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const lastSubmitted = useRef('');
 
   useEffect(() => {
     setPrompt('');
@@ -53,6 +83,17 @@ export function LiveChatPage({
   }, [runId]);
 
   useEffect(() => {
+    if (!liveChat?.harnesses) return;
+    void liveChat
+      .harnesses()
+      .then((snapshot) => {
+        setHarnesses(snapshot.harnesses);
+        setSelectedHarness(snapshot.selected);
+      })
+      .catch(() => undefined);
+  }, [liveChat]);
+
+  useEffect(() => {
     if (!liveChat) return;
     return liveChat.onEvent((value) => {
       const event = value as Record<string, unknown>;
@@ -61,10 +102,23 @@ export function LiveChatPage({
         if (event.status === 'connected') {
           setUncertain(false);
           setSetupMessage(null);
+          setAuthRequired(false);
         }
         if (event.status === 'disconnected') {
           setTurnRunning(false);
-          if (typeof event.message === 'string') setSetupMessage(event.message);
+          if (event.message || event.code)
+            setPrompt((current) => current || lastSubmitted.current);
+          const needsLogin = event.code === 'auth-required';
+          setAuthRequired(needsLogin);
+          if (needsLogin)
+            setSetupMessage(
+              t(
+                'Tu sesión de {0} caducó. Inicia sesión en su CLI y reintenta, o elige otro proveedor.',
+                { 0: PROVIDER_LABELS[selectedHarness] || selectedHarness },
+              ),
+            );
+          else if (typeof event.message === 'string')
+            setSetupMessage(event.message);
         }
         return;
       }
@@ -115,7 +169,15 @@ export function LiveChatPage({
               ...items.slice(0, -1),
               { ...last, text: last.text + eventText },
             ];
-          return [...items, { id: itemId, role: 'assistant', text: eventText }];
+          return [
+            ...items,
+            {
+              id: itemId,
+              role: 'assistant',
+              text: eventText,
+              provider: PROVIDER_LABELS[selectedHarness] || selectedHarness,
+            },
+          ];
         });
         return;
       }
@@ -123,9 +185,12 @@ export function LiveChatPage({
         if (event.status === 'running') setTurnRunning(true);
         else {
           setTurnRunning(false);
+          if (event.status === 'completed') lastSubmitted.current = '';
           setThread((items) =>
             items.map((item) =>
-              item.role === 'assistant' && !item.meta
+              item.role === 'assistant' &&
+              !item.meta &&
+              event.status !== 'completed'
                 ? { ...item, meta: String(event.status) }
                 : item,
             ),
@@ -154,9 +219,9 @@ export function LiveChatPage({
           {
             id: crypto.randomUUID(),
             role: 'system',
-            text: t(
-              'Codex solicita permiso para usar una acción acotada de Hyperion.',
-            ),
+            text:
+              eventLabel ||
+              t('El proveedor solicita permiso para esta acción.'),
             meta: t('Permiso del proveedor'),
             approvalToken,
           },
@@ -184,12 +249,19 @@ export function LiveChatPage({
         );
       }
     });
-  }, [liveChat, runId]);
+  }, [liveChat, runId, selectedHarness]);
 
   useEffect(() => {
     const node = threadRef.current;
-    if (node) node.scrollTop = node.scrollHeight;
+    if (node && followBottom.current) node.scrollTop = node.scrollHeight;
   }, [thread]);
+
+  useEffect(() => {
+    const node = promptRef.current;
+    if (!node) return;
+    node.style.height = 'auto';
+    node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
+  }, [prompt]);
 
   const canConnect = Boolean(
     liveChat && runId && serviceOnline && !busy && !requestBusy,
@@ -198,11 +270,17 @@ export function LiveChatPage({
     liveChat &&
     runId &&
     serviceOnline &&
-    status === 'connected' &&
+    status !== 'connecting' &&
+    !authRequired &&
+    !uncertain &&
+    !busy &&
     !turnRunning &&
     !requestBusy &&
     prompt.trim(),
   );
+  const harnessLabel =
+    harnesses.find((harness) => harness.id === selectedHarness)?.label ||
+    'Codex';
 
   async function connect() {
     if (!canConnect || !liveChat || !runId) return;
@@ -214,7 +292,7 @@ export function LiveChatPage({
       // Main deliberately redacts process errors. Never surface raw spawn output.
       setSetupMessage(
         t(
-          'No se pudo iniciar Codex local. Revisa la aplicación seleccionada y reintenta.',
+          'No se pudo iniciar el harness local. Revisa la aplicación seleccionada y reintenta.',
         ),
       );
       setStatus('disconnected');
@@ -223,18 +301,43 @@ export function LiveChatPage({
     }
   }
 
-  async function chooseCodex() {
+  async function selectHarness(id: string) {
+    if (!liveChat?.selectHarness || requestBusy) return;
+    setRequestBusy(true);
+    setSetupMessage(null);
+    setNotice(null);
+    try {
+      const snapshot = await liveChat.selectHarness(id);
+      setSelectedHarness(snapshot.selected);
+      setHarnesses(snapshot.harnesses);
+      setStatus('disconnected');
+      setAuthRequired(false);
+      setUncertain(false);
+      threadId.current = null;
+      promptRef.current?.focus();
+    } catch {
+      setNotice(t('No se pudo cambiar el harness local.'));
+    } finally {
+      setRequestBusy(false);
+    }
+  }
+
+  async function chooseExecutable() {
     if (!liveChat || requestBusy) return;
+    const choose = liveChat.chooseExecutable || liveChat.chooseCodex;
+    if (!choose) return;
     setRequestBusy(true);
     try {
-      const result = await liveChat.chooseCodex();
+      const result = await choose();
       if (result.selected)
         setSetupMessage(
-          t('Codex seleccionado. Usa Reintentar para iniciar el hilo local.'),
+          t('{0} seleccionado. Usa Reintentar para iniciar el hilo local.', {
+            0: harnessLabel,
+          }),
         );
     } catch {
       setSetupMessage(
-        t('No se pudo guardar la aplicación de Codex seleccionada.'),
+        t('No se pudo guardar la aplicación del harness seleccionada.'),
       );
     } finally {
       setRequestBusy(false);
@@ -244,11 +347,18 @@ export function LiveChatPage({
   async function send() {
     if (!canSend || !liveChat || !runId) return;
     setRequestBusy(true);
+    setNotice(null);
     try {
+      if (status !== 'connected') {
+        const result = await liveChat.connect(runId);
+        if (!result.connected) return;
+      }
+      followBottom.current = true;
+      lastSubmitted.current = prompt.trim();
       await liveChat.send(runId, prompt.trim());
       setPrompt('');
     } catch {
-      setNotice(t('No se pudo enviar el mensaje a Codex.'));
+      setNotice(t('No se pudo enviar el mensaje al harness local.'));
     } finally {
       setRequestBusy(false);
     }
@@ -260,7 +370,7 @@ export function LiveChatPage({
     try {
       await liveChat.stop(runId);
     } catch {
-      setNotice(t('No se pudo detener el turno de Codex.'));
+      setNotice(t('No se pudo detener el turno del harness local.'));
     } finally {
       setRequestBusy(false);
     }
@@ -272,7 +382,7 @@ export function LiveChatPage({
     try {
       await liveChat.approve(runId, token, decision);
     } catch {
-      setNotice(t('No se pudo registrar el permiso de Codex.'));
+      setNotice(t('No se pudo registrar el permiso del harness local.'));
     } finally {
       setRequestBusy(false);
     }
@@ -286,7 +396,7 @@ export function LiveChatPage({
       setUncertain(false);
       setNotice(
         t(
-          'El turno incierto se marcó como no reanudable. Conecta Codex para iniciar un turno nuevo.',
+          'El turno incierto se marcó como no reanudable. Conecta un harness para iniciar un turno nuevo.',
         ),
       );
     } catch {
@@ -298,186 +408,273 @@ export function LiveChatPage({
 
   const runtimeLabel = !serviceOnline
     ? t('Servicio local sin conexión')
-    : status === 'connected'
-      ? t('Codex conectado: hilo local activo para este flujo.')
-      : status === 'connecting'
-        ? t('Conectando Codex local…')
-        : setupMessage ||
-          t(
-            'Codex no está conectado. Elige Conectar para iniciar un hilo local.',
-          );
+    : status === 'connecting'
+      ? t('Conectando')
+      : turnRunning
+        ? t('Trabajando…')
+        : authRequired
+          ? t('Inicia sesión para continuar')
+          : status === 'connected'
+            ? t('Sesión lista')
+            : t('Se conectará al enviar');
 
   return (
     <main className="live-chat-page" data-testid="live-chat-page">
-      <section className="live-chat-hero" aria-labelledby="live-chat-title">
-        <div>
-          <p className="eyebrow">{t('Hyperion Desktop')}</p>
-          <h1 id="live-chat-title">{t('Chat local de Codex')}</h1>
-          <p>
-            {t(
-              'El hilo y las respuestas provienen del App Server local. El canvas conserva formularios, aprobaciones, cambios y confirmaciones irreversibles.',
-            )}
-          </p>
+      <header className="live-chat-toolbar">
+        <div className="live-chat-heading">
+          <MessageSquareText size={18} aria-hidden="true" />
+          <h1>{t('Chat')}</h1>
+          <span
+            className="live-chat-status"
+            data-testid="live-chat-status"
+            role="status"
+          >
+            {runtimeLabel}
+          </span>
         </div>
-        <button type="button" className="secondary" onClick={onBack}>
-          <ArrowLeft size={16} />
-          {t('Volver al canvas')}
-        </button>
-      </section>
-
-      <section className="live-chat-runtime" aria-label={t('Estado del chat')}>
-        <div>
-          <span>{t('Servicio local')}</span>
-          <strong>{serviceOnline ? t('Conectado') : t('Sin conexión')}</strong>
+        <div className="live-chat-toolbar-actions">
+          <button type="button" className="secondary" onClick={onBack}>
+            <ArrowLeft size={15} />
+            {t('Volver al canvas')}
+          </button>
+          <button
+            type="button"
+            className="secondary live-chat-icon-button"
+            aria-label={t('Opciones de conexión')}
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen(!settingsOpen)}
+          >
+            <Settings2 size={17} />
+          </button>
         </div>
-        <div>
-          <span>{t('Codex local')}</span>
-          <strong data-testid="live-chat-status">{runtimeLabel}</strong>
-        </div>
-        <div className="live-chat-runtime-actions">
+      </header>
+      {settingsOpen && (
+        <section
+          className="live-chat-settings"
+          aria-label={t('Opciones de conexión')}
+        >
+          <span>{t('Usa el proveedor instalado en tu equipo.')}</span>
           <button
             type="button"
             className="secondary"
-            data-testid="live-chat-choose-codex"
-            disabled={!liveChat || requestBusy}
-            onClick={() => void chooseCodex()}
+            data-testid="live-chat-choose-executable"
+            disabled={!liveChat || requestBusy || turnRunning}
+            onClick={() => void chooseExecutable()}
           >
-            {t('Elegir aplicación Codex')}
+            {t('Elegir ejecutable')}
           </button>
           <button
             type="button"
-            className="primary"
+            className="secondary"
             data-testid="live-chat-connect"
-            disabled={!canConnect}
+            disabled={!canConnect || turnRunning}
             onClick={() => void (uncertain ? resolveUncertain() : connect())}
           >
-            <MessageSquareText size={16} />
-            {t(
-              uncertain
-                ? 'Resolver turno incierto'
-                : setupMessage
-                  ? 'Reintentar Codex local'
-                  : 'Conectar Codex local',
-            )}
+            {uncertain ? t('Resolver turno incierto') : t('Reconectar')}
           </button>
-        </div>
-      </section>
-
-      {setupMessage && (
-        <p className="live-chat-notice" role="status">
-          {setupMessage}
-        </p>
+        </section>
       )}
-      {!runId && (
-        <p className="live-chat-notice" role="status">
-          {t('Abre un flujo para conectar un hilo local de Codex.')}
-        </p>
-      )}
-
       <section
         ref={threadRef}
         className="live-chat-thread"
         data-testid="live-chat-thread"
         role="log"
+        aria-label={t('Conversación')}
         aria-live="polite"
         aria-relevant="additions"
+        onScroll={() => {
+          const node = threadRef.current;
+          if (node)
+            followBottom.current =
+              node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+        }}
       >
-        {thread.length === 0 && (
-          <p className="live-chat-empty">
-            {t(
-              'Conecta Codex local para crear un hilo real de este flujo. Un turno sin estado terminal después de reiniciar requiere resolución explícita.',
-            )}
-          </p>
-        )}
-        {thread.map((message) => (
-          <article
-            key={message.id}
-            className={`live-chat-message ${message.role}`}
-            data-testid={`live-chat-message-${message.role}`}
-          >
-            <p className="live-chat-message-role">
-              {message.role === 'you'
-                ? t('Tú')
-                : message.role === 'assistant'
-                  ? t('Codex')
-                  : t('Hyperion')}
-              {message.meta ? ` · ${message.meta}` : ''}
-            </p>
-            <p>{message.text}</p>
-            {message.approvalToken && !message.approvalState && (
-              <div className="live-chat-message-actions">
-                <button
-                  type="button"
-                  className="primary"
-                  data-testid="live-chat-approval-allow"
-                  disabled={requestBusy}
-                  onClick={() => void decide(message.approvalToken!, 'allow')}
-                >
-                  {t('Permitir para esta acción')}
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  data-testid="live-chat-approval-deny"
-                  disabled={requestBusy}
-                  onClick={() => void decide(message.approvalToken!, 'deny')}
-                >
-                  {t('Denegar')}
-                </button>
+        <div className="live-chat-transcript">
+          {thread.length === 0 && (
+            <div className="live-chat-empty">
+              <span className="live-chat-empty-symbol">
+                <MessageSquareText size={25} />
+              </span>
+              <h2>{t('¿Qué quieres hacer?')}</h2>
+              <p>
+                {t(
+                  'Conversa con tu IA local y lleva el trabajo al canvas de Hyperion.',
+                )}
+              </p>
+              <div className="live-chat-suggestions">
+                {['Resume este flujo', '¿Cuál es el siguiente paso?'].map(
+                  (text) => (
+                    <button
+                      className="secondary"
+                      type="button"
+                      key={text}
+                      onClick={() => {
+                        setPrompt(t(text));
+                        promptRef.current?.focus();
+                      }}
+                    >
+                      {t(text)}
+                    </button>
+                  ),
+                )}
               </div>
-            )}
-          </article>
-        ))}
-      </section>
-
-      <section className="live-chat-composer">
-        <label className="form-sr-only" htmlFor="live-chat-prompt">
-          {t('Petición para el agente')}
-        </label>
-        <textarea
-          id="live-chat-prompt"
-          rows={4}
-          maxLength={8000}
-          value={prompt}
-          disabled={status !== 'connected' || turnRunning || requestBusy}
-          onChange={(event) => setPrompt(event.target.value)}
-          placeholder={t('Usa Hyperion para…')}
-        />
-        <p className="field-hint">
-          {t(
-            'Este chat no responde formularios humanos ni aprueba, modifica o confirma efectos irreversibles. Detener interrumpe el turno real de Codex.',
+            </div>
           )}
-        </p>
-        {notice && (
-          <p className="live-chat-notice" role="status">
-            {notice}
-          </p>
-        )}
-        <div className="live-chat-composer-actions">
-          {turnRunning && (
-            <button
-              type="button"
-              className="secondary"
-              data-testid="live-chat-stop"
-              disabled={requestBusy}
-              onClick={() => void stop()}
+          {thread.map((message) => (
+            <article
+              key={message.id}
+              className={`live-chat-message ${message.role}`}
+              data-testid={`live-chat-message-${message.role}`}
             >
-              <Square size={16} />
-              {t('Detener')}
-            </button>
+              <p className="live-chat-message-role">
+                {message.role === 'you'
+                  ? t('Tú')
+                  : message.role === 'assistant'
+                    ? message.provider || harnessLabel
+                    : t('Hyperion')}
+                {message.meta ? ` · ${message.meta}` : ''}
+              </p>
+              <p>{message.text}</p>
+              {message.approvalToken && !message.approvalState && (
+                <div className="live-chat-message-actions">
+                  <button
+                    type="button"
+                    className="primary"
+                    data-testid="live-chat-approval-allow"
+                    disabled={requestBusy}
+                    onClick={() => void decide(message.approvalToken!, 'allow')}
+                  >
+                    {t('Permitir para esta acción')}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    data-testid="live-chat-approval-deny"
+                    disabled={requestBusy}
+                    onClick={() => void decide(message.approvalToken!, 'deny')}
+                  >
+                    {t('Denegar')}
+                  </button>
+                </div>
+              )}
+            </article>
+          ))}
+          {turnRunning && (
+            <p className="live-chat-working" role="status">
+              {harnessLabel} · {t('Trabajando…')}
+            </p>
           )}
-          <button
-            type="button"
-            className="primary"
-            data-testid="live-chat-send"
-            disabled={!canSend}
-            onClick={() => void send()}
-          >
-            <Send size={16} />
-            {t('Enviar a Codex')}
-          </button>
         </div>
       </section>
+      <div className="live-chat-bottom">
+        {(setupMessage || notice || !runId || !serviceOnline) && (
+          <div className="live-chat-notice" role="status">
+            <p>
+              {setupMessage ||
+                notice ||
+                (!runId
+                  ? t('Abre un flujo para conectar un hilo local.')
+                  : t('Servicio local sin conexión'))}
+            </p>
+            {authRequired && <code>{LOGIN_COMMANDS[selectedHarness]}</code>}
+            {setupMessage && (
+              <button
+                type="button"
+                className="secondary"
+                disabled={!canConnect}
+                onClick={() => void connect()}
+              >
+                {t('Reintentar')}
+              </button>
+            )}
+          </div>
+        )}
+        <section
+          className="live-chat-composer"
+          aria-label={t('Escribir mensaje')}
+        >
+          <label className="form-sr-only" htmlFor="live-chat-prompt">
+            {t('Petición para el agente')}
+          </label>
+          <textarea
+            ref={promptRef}
+            id="live-chat-prompt"
+            rows={2}
+            maxLength={8000}
+            value={prompt}
+            disabled={!liveChat || !runId}
+            onChange={(event) => setPrompt(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing
+              ) {
+                event.preventDefault();
+                if (canSend) void send();
+              }
+            }}
+            placeholder={t('Escribe tu mensaje…')}
+          />
+          <div className="live-chat-composer-actions">
+            <label className="form-sr-only" htmlFor="live-chat-harness">
+              {t('Proveedor')}
+            </label>
+            <select
+              id="live-chat-harness"
+              data-testid="live-chat-harness"
+              value={selectedHarness}
+              disabled={
+                !liveChat?.selectHarness ||
+                requestBusy ||
+                turnRunning ||
+                status === 'connecting'
+              }
+              onChange={(event) => void selectHarness(event.target.value)}
+            >
+              {harnesses.map((harness) => (
+                <option key={harness.id} value={harness.id}>
+                  {harness.label}
+                  {harness.status === 'missing'
+                    ? ` · ${t('No instalado')}`
+                    : ''}
+                </option>
+              ))}
+            </select>
+            <span className="live-chat-shortcut">
+              {t('Enter para enviar · Shift+Enter para nueva línea')}
+            </span>
+            {turnRunning ? (
+              <button
+                type="button"
+                className="primary live-chat-send"
+                aria-label={t('Detener')}
+                data-testid="live-chat-stop"
+                disabled={requestBusy}
+                onClick={() => void stop()}
+              >
+                <Square size={16} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="primary live-chat-send"
+                aria-label={t('Enviar mensaje')}
+                data-testid="live-chat-send"
+                disabled={!canSend}
+                onClick={() => void send()}
+              >
+                <Send size={17} />
+              </button>
+            )}
+          </div>
+        </section>
+        <p className="live-chat-footnote">
+          {t(
+            'Las decisiones y aprobaciones del flujo se realizan en el canvas.',
+          )}
+        </p>
+      </div>
     </main>
   );
 }

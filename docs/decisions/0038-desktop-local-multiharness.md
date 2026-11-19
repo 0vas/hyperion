@@ -1,0 +1,51 @@
+# ADR 0038 — Chat local multiharness en Desktop
+
+Estado: **accepted in source; Codex, Cursor y Antigravity verificados con conversación y lectura MCP en Desktop empaquetado; Claude pendiente de autenticación; sin instalador publicado**.
+Fecha: 2026-11-18.
+
+## Decisión
+
+Desktop separa la elección de harness de la ruta de su ejecutable y conserva ambas en `userData`, sin secretos. La vista **Chat** ofrece Codex, Claude Code, Cursor Agent y Antigravity. El proceso principal resuelve rutas absolutas conocidas o una selección explícita, incluida `~/.gemini/bin/agy`, sin invocar una shell para buscar ni instalar CLIs.
+
+Desktop usa **Agent Client Protocol (ACP)** como frontera persistente. Codex y Claude usan sidecars empaquetados con `CODEX_PATH` y `CLAUDE_CODE_EXECUTABLE`; Cursor y Antigravity ejecutan directamente su CLI con `acp`. Se normalizan mensajes, herramientas, permisos e interrupciones. La aprobación simple selecciona únicamente `allow_once`, nunca `allow_always`. Los métodos específicos de Cursor para preguntas y planes se cancelan con instrucciones de utilizar el canvas; no se inventan respuestas. Los planes y selectores de modelo no se proyectan todavía. El directorio separado no es un sandbox y los proveedores pueden cargar su configuración local.
+
+`chat-mcp-launcher.ts` registra la identidad elegida y autentica exclusivamente el servicio explícito del canvas. El servidor se denomina `hyperion_active` para evitar colisiones con configuraciones de usuario preexistentes. No usa el bootstrap que puede buscar otro puerto ni hereda un `HYPERION_TOKEN` ajeno. Esta decisión corrige el fallo observado con Cursor: el MCP de sesión no registrado fallaba y otro Hyperion configurado devolvía `NOT_FOUND` para el flujo activo.
+
+Un proceso inactivo puede cerrarse al cambiar de proveedor; solo un turno activo o una conexión en curso bloquean ese cambio. Cada permiso queda vinculado al flujo, sesión y turno que lo originaron. Detener envía `session/cancel` y responde `cancelled` a los permisos pendientes sin esperar el fin del turno; esto libera también al proveedor que espera esa respuesta para terminar. El fin del turno, el cierre y la cancelación de la petición invalidan los permisos restantes y notifican su resolución a la UI. Los clics tardíos se rechazan y no se aceptan permisos mientras se detiene el turno. Si falta una opción `allow_once`, pulsar permitir cancela la petición y nunca informa una autorización inexistente. La UI no declara el turno interrumpido antes de recibir el resultado del proveedor. Un fallo cierra la sesión. Los diagnósticos de autenticación se presentan como avisos de recuperación, no como respuestas del agente. El compositor conserva el borrador y permanece visible; la navegación al canvas conserva la conversación durante la sesión de Desktop.
+
+## Consecuencias y límites
+
+- El canvas sigue siendo autoridad exclusiva para formularios, aprobaciones, cambios y confirmaciones irreversibles.
+- Una sesión ACP vive mientras Desktop siga abierto. Un reinicio no reenvía un turno en curso ni simula una reanudación durable; un error de autenticación pide iniciar sesión en el harness local.
+- Gemini y ChatGPT no se anuncian como compatibles con este chat. Cursor y Antigravity requieren sus CLI con ACP y autenticación local; la presencia de sus aplicaciones de escritorio no basta.
+- En Windows el resolvedor admite ejecutables nativos `.exe`, no wrappers `.cmd` o `.ps1`. Las aserciones de rutas usan separadores nativos; esto no sustituye una prueba real de los cuatro proveedores en Windows, todavía pendiente.
+- Las pruebas sintéticas validan selección, recuperación de autenticación, cierre y permisos pendientes. La prueba optativa `tests/desktop-live-chat-native.mjs` verifica una respuesta real desde Electron, el cambio de proveedor y el borrador; con `HYPERION_TEST_MCP=1` verifica también la lectura del título único del flujo activo. Esto no certifica todas las herramientas ni una sesión autenticada de Claude.
+- El instalador 2026.11.18.0714 sigue siendo Codex-only; este ADR no es prueba de que un binario publicado incluya el selector.
+
+Relacionada: [ADR 0037](0037-desktop-live-codex-chat.md).
+
+Protocolos nativos contrastados con [Cursor ACP](https://cursor.com/docs/cli/acp) y [Antigravity ACP](https://antigravity.google/docs/ide/extensions/acp/). Las pruebas de protocolo usan procesos simulados; la prueba optativa `HYPERION_TEST_HARNESS=cursor HYPERION_TEST_MCP=1 node --test tests/desktop-live-chat-native.mjs` usa un CLI real y un flujo aislado. Permite solo su lectura `hyperion_get_run` si el proveedor solicita permiso; no aprueba operaciones genéricas.
+
+## Verificación anterior: preview 2026.11.18.2206
+
+- `npm run check`: 323 pruebas unitarias y 45 de producción aprobadas, además de formato, tipos y build.
+- Chat Playwright: cinco pruebas aprobadas; lifecycle multiharness: ocho aprobadas, incluyendo recuperación de autenticación y liberación de permisos pendientes.
+- `tests/desktop-live-chat-native.mjs`: conversación con Codex real aprobada tanto en Electron desde fuente como en el ejecutable empaquetado; borrador conservado al volver del canvas y al cambiar proveedor. Se comprobó también el cambio de idioma sin perderlo.
+- La preview local 2026.11.18.2206 es arm64, con firma ad-hoc, no notarizada. No equivale a una publicación en el actualizador. Claude sigue pendiente de autenticación válida y de prueba nativa propia.
+- Sitio de documentación: build aprobado, 22 pruebas aprobadas y cinco fallidas. Cuatro esperan etiquetas españolas de navegación/tema que la página entrega en inglés; otra detecta contraste insuficiente. No se declara una validación global satisfactoria ni se atribuye su antigüedad sin una comparación con la base.
+
+## Verificación: candidato 2026.11.19.0237
+
+- `npm run check`: 327 pruebas unitarias y 53 de producción aprobadas, además de tipos, formato y build. Incluye 16 pruebas de lifecycle/protocolo ACP y cuatro pruebas nuevas de identidad MCP contra stdio real.
+- Chat Playwright: cinco pruebas aprobadas, incluyendo selección de los cuatro proveedores y conservación del borrador.
+- En el ejecutable arm64 empaquetado, Codex, Cursor Agent y Antigravity completaron conversación real y lectura MCP del título único de un flujo aislado. La prueba de Antigravity autorizó exclusivamente la lectura `hyperion_get_run`. También se comprobó navegación, cambio de proveedor, borrador e idioma.
+- Claude Code está integrado, pero su cuenta local no tiene autenticación válida. No se certifica una conversación autenticada hasta completar `claude auth login` y repetir la prueba nativa.
+- El DMG local está en `release/2026.11.19.0237/`; pasó `codesign --verify --deep --strict` y `hdiutil verify`. Firma ad-hoc, sin notarización, sin publicación ni actualización automática. No se reemplazó la aplicación instalada.
+- Documentación pública: 22 pruebas aprobadas y cinco fallidas al repetir la suite, en navegación móvil, idioma del selector de tema y contraste. No se declara la suite completa aprobada ni se ocultan esos pendientes de publicación.
+
+### Corrección previa a publicación: permisos y rutas portables
+
+- TDD: ocho regresiones de permisos fallaron antes del cambio y las 24 pruebas de `tests/desktop-live-harness-chat.mjs` pasan después. Incluyen un proveedor ACP que necesita recibir la cancelación del permiso antes de confirmar el fin del turno, tokens caducados, fin normal/fallido/interrumpido, cancelación del proveedor y ausencia de `allow_once`.
+- `npm run check`: 327 pruebas unitarias y 61 de producción aprobadas, además de tipos, build y formato. `npx playwright test tests/e2e/chat-bubble.spec.ts`: cinco aprobadas.
+- Las comprobaciones de rutas usan `node:path` en lugar de asumir separadores POSIX. El fixture legacy de selección explícita usa `codex.exe` en Windows y `codex` en las demás plataformas, sin relajar la validación del producto. Las suites `desktop-live-codex-chat.mjs` y `desktop-live-harness-chat.mjs` suman 33 pruebas aprobadas. Estas pruebas se ejecutaron en macOS; no certifican ejecución nativa en Windows.
+- Este cambio requiere reconstruir los instaladores antes de publicar; no modifica la evidencia previa de autenticación de Claude, notarización ni las pruebas pendientes del sitio de documentación.

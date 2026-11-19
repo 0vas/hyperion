@@ -122,7 +122,25 @@ declare global {
           decision: 'allow' | 'deny',
         ): Promise<void>;
         resolveUncertain(runId: string): Promise<void>;
-        chooseCodex(): Promise<{ selected: boolean; status?: string }>;
+        harnesses?(): Promise<{
+          selected: string;
+          harnesses: Array<{
+            id: string;
+            label: string;
+            status: string;
+          }>;
+        }>;
+        selectHarness?(id: string): Promise<{
+          selected: string;
+          harnesses: Array<{
+            id: string;
+            label: string;
+            status: string;
+          }>;
+        }>;
+        chooseExecutable?(): Promise<{ selected: boolean; status?: string }>;
+        /** @deprecated Kept optional for earlier Desktop preview compatibility. */
+        chooseCodex?(): Promise<{ selected: boolean; status?: string }>;
         onEvent(callback: (event: unknown) => void): () => void;
       };
       /** Host-configured connectorSchema object for outbound Enviar; never invent in UI. */

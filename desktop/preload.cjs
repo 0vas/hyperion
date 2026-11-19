@@ -26,7 +26,11 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
       ipcRenderer.invoke('hyperion:live-chat:approve', runId, token, decision),
     resolveUncertain: (runId) =>
       ipcRenderer.invoke('hyperion:live-chat:resolve-uncertain', runId),
-    chooseCodex: () => ipcRenderer.invoke('hyperion:live-chat:choose-codex'),
+    harnesses: () => ipcRenderer.invoke('hyperion:live-chat:harnesses'),
+    selectHarness: (id) =>
+      ipcRenderer.invoke('hyperion:live-chat:select-harness', id),
+    chooseExecutable: () =>
+      ipcRenderer.invoke('hyperion:live-chat:choose-executable'),
     onEvent: (callback) => {
       const listener = (_event, payload) => callback(payload);
       ipcRenderer.on('hyperion:live-chat:event', listener);

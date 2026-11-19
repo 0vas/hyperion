@@ -2221,14 +2221,17 @@ export function App() {
             />
           </div>
         </header>
-        {isElectron && desktopView === 'chat' ? (
-          <LiveChatPage
-            runId={run?.id}
-            serviceOnline={online}
-            busy={busy || dialogOpen}
-            onBack={() => setDesktopView('canvas')}
-          />
-        ) : (
+        {isElectron && (
+          <div hidden={desktopView !== 'chat'}>
+            <LiveChatPage
+              runId={run?.id}
+              serviceOnline={online}
+              busy={busy || dialogOpen}
+              onBack={() => setDesktopView('canvas')}
+            />
+          </div>
+        )}
+        {!(isElectron && desktopView === 'chat') && (
           <main className="canvas-main">
             {!loaded ? (
               <div className="empty-state">

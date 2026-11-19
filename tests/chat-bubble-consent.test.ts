@@ -84,7 +84,10 @@ test('live chat page has no human command or API commit path', () => {
   assert.match(source, /liveChat\.stop/);
   assert.match(source, /live-chat-thread/);
   assert.match(source, /live-chat-composer/);
-  assert.match(source, /canvas conserva formularios/);
+  assert.match(
+    source,
+    /Las decisiones y aprobaciones del flujo se realizan en el canvas/,
+  );
 });
 
 test('Desktop mounts the dedicated chat page only in its navbar view', () => {

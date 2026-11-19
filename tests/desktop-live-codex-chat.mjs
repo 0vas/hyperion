@@ -21,7 +21,10 @@ import {
   saveCodexExecutable,
 } from '../desktop/codex-launcher.mjs';
 
-function executable(directory, name = 'codex') {
+function executable(
+  directory,
+  name = process.platform === 'win32' ? 'codex.exe' : 'codex',
+) {
   const path = join(directory, name);
   writeFileSync(path, '#!/bin/sh\nexit 0\n');
   chmodSync(path, 0o755);

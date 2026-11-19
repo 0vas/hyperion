@@ -39,14 +39,14 @@ import {
   stopDesktopOutboundWorker,
   readResumeConnectorForPreload,
 } from './outbound-send.mjs';
-import { LiveCodexChat } from './live-codex-chat.mjs';
+import { LiveHarnessChat } from './live-harness-chat.mjs';
 const language = createLanguageStore({
   file: resolve(app.getPath('userData'), 'language.json'),
   systemLanguages: () => app.getPreferredSystemLanguages(),
 });
 const t = (message, values) => language.t(message, values);
 let window;
-let liveCodexChat;
+let liveHarnessChat;
 const updater = createUpdateController({
   t,
   app,
@@ -160,8 +160,8 @@ async function recoverLocalService() {
     if (service !== requested.service && window && !window.isDestroyed()) {
       // An alternate port is reachable only after a main-owned authenticated
       // ensureServer result. Rebind the page and live chat to that real origin.
-      liveCodexChat?.dispose();
-      liveCodexChat = undefined;
+      liveHarnessChat?.dispose();
+      liveHarnessChat = undefined;
       loadingRun = true;
       try {
         await window.loadURL(target.url);
@@ -342,8 +342,8 @@ if (!app.requestSingleInstanceLock()) {
           throw new Error(
             'Hyperion Desktop is not connected to a local service.',
           );
-        if (!liveCodexChat)
-          liveCodexChat = new LiveCodexChat({
+        if (!liveHarnessChat)
+          liveHarnessChat = new LiveHarnessChat({
             userData: app.getPath('userData'),
             directory: target.directory,
             url: target.service,
@@ -354,7 +354,7 @@ if (!app.requestSingleInstanceLock()) {
               } catch {}
             },
           });
-        return liveCodexChat;
+        return liveHarnessChat;
       };
       const liveRun = (runId) => {
         if (typeof runId !== 'string' || !/^[0-9a-f-]{36}$/i.test(runId))
@@ -364,6 +364,16 @@ if (!app.requestSingleInstanceLock()) {
         validateDesktopSender(event);
         liveRun(runId);
         return getLiveChat().connect(runId);
+      });
+      ipcMain.handle('hyperion:live-chat:harnesses', (event) => {
+        validateDesktopSender(event);
+        return getLiveChat().snapshot();
+      });
+      ipcMain.handle('hyperion:live-chat:select-harness', (event, id) => {
+        validateDesktopSender(event);
+        if (typeof id !== 'string')
+          throw new Error('A valid local chat harness is required.');
+        return getLiveChat().selectHarness(id);
       });
       ipcMain.handle('hyperion:live-chat:send', async (event, runId, text) => {
         validateDesktopSender(event);
@@ -401,14 +411,14 @@ if (!app.requestSingleInstanceLock()) {
           getLiveChat().resolveUncertain(runId);
         },
       );
-      ipcMain.handle('hyperion:live-chat:choose-codex', async (event) => {
+      ipcMain.handle('hyperion:live-chat:choose-executable', async (event) => {
         validateDesktopSender(event);
         const selection = await dialog.showOpenDialog(window, {
-          title: t('Elegir aplicación Codex'),
+          title: t('Elegir aplicación del harness'),
           properties: ['openFile'],
           filters:
             process.platform === 'win32'
-              ? [{ name: 'Codex', extensions: ['exe'] }]
+              ? [{ name: 'Aplicación local', extensions: ['exe'] }]
               : [],
         });
         if (selection.canceled || selection.filePaths.length !== 1)
@@ -499,8 +509,8 @@ if (!app.requestSingleInstanceLock()) {
     startupUpdateScheduler.cancel();
     updater.cancel();
     stopDesktopOutboundWorker();
-    liveCodexChat?.dispose();
-    liveCodexChat = undefined;
+    liveHarnessChat?.dispose();
+    liveHarnessChat = undefined;
   });
   app.on('window-all-closed', () => app.quit());
 }
