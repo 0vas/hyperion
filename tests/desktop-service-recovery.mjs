@@ -127,16 +127,11 @@ test(
       const serviceUrl = pageUrl?.startsWith('http://127.0.0.1:')
         ? new URL(pageUrl).origin
         : url;
+      let stoppedServicePid;
       try {
-        await closeDesktop(app, { log });
-      } catch (error) {
-        failures.push(error);
-        log(`cleanup failure: ${error.message}`);
-      }
-      try {
-        await phase(
-          'cleanup service',
-          async () => {
+        await closeDesktop(app, {
+          log,
+          releaseResources: async () => {
             const cleanupPort = Number(new URL(serviceUrl).port);
             const pid = await listenerPid(cleanupPort);
             if (!pid) return;
@@ -157,10 +152,12 @@ test(
             await auth.body?.cancel();
             log(`cleanup authenticated service: pid=${pid}`);
             process.kill(pid, 'SIGKILL');
-            await waitForPidExit(pid);
+            stoppedServicePid = pid;
           },
-          { timeoutMs: 15000, log },
-        );
+          verifyResources: async () => {
+            if (stoppedServicePid) await waitForPidExit(stoppedServicePid);
+          },
+        });
       } catch (error) {
         failures.push(error);
         log(`cleanup failure: ${error.message}`);

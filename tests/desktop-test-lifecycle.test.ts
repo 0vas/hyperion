@@ -71,6 +71,162 @@ test('an Electron process already ended by signal is not killed or awaited again
   assert.equal(killed, false);
 });
 
+test('an exited wrapper still requires transport closure after its service is released', async () => {
+  const child = { pid: 12345, exitCode: 0, signalCode: null };
+  const order: string[] = [];
+  let finishClose!: () => void;
+  let rendererClosed!: () => void;
+  const renderer = new Promise<void>((resolve) => (rendererClosed = resolve));
+  await deadline(
+    closeDesktop(
+      {
+        process: () => child,
+        windows: () => [
+          { isClosed: () => false, waitForEvent: () => renderer },
+        ],
+        close: () => {
+          order.push('quit requested');
+          rendererClosed();
+          return new Promise<void>((resolve) => (finishClose = resolve));
+        },
+      },
+      {
+        timeoutMs: 10,
+        releaseResources: async () => {
+          await renderer;
+          order.push('service released');
+          finishClose();
+        },
+        killTree: async () => assert.fail('must not kill an exited wrapper'),
+      },
+    ),
+  );
+  assert.deepEqual(order, ['quit requested', 'service released']);
+});
+
+test('an exited wrapper with a permanently pending transport still fails shutdown', async () => {
+  let released = false;
+  await assert.rejects(
+    closeDesktop(
+      {
+        process: () => ({ pid: 12345, exitCode: 0, signalCode: null }),
+        close: pending,
+      },
+      {
+        timeoutMs: 10,
+        releaseResources: async () => {
+          released = true;
+        },
+        killTree: async () => assert.fail('must not kill an exited wrapper'),
+      },
+    ),
+    /Electron close timed out/,
+  );
+  assert.equal(released, true);
+});
+
+test('a service cleanup failure is not hidden by a successful Electron close', async () => {
+  await assert.rejects(
+    closeDesktop(
+      {
+        process: () => ({ pid: 12345, exitCode: 0, signalCode: null }),
+        close: async () => {},
+      },
+      {
+        releaseResources: async () => {
+          throw new Error('service still alive');
+        },
+      },
+    ),
+    /service still alive/,
+  );
+});
+
+test('detached service exit is verified after Electron transport closes', async () => {
+  const order: string[] = [];
+  let finishClose!: () => void;
+  await closeDesktop(
+    {
+      process: () => ({ pid: 12345, exitCode: 0, signalCode: null }),
+      close: () =>
+        new Promise<void>((resolve) => {
+          finishClose = resolve;
+        }),
+    },
+    {
+      releaseResources: async () => {
+        order.push('service signalled');
+        finishClose();
+      },
+      verifyResources: async () => {
+        order.push('service exit verified');
+      },
+      log: (line: string) => {
+        if (line === 'Electron app.close: resolved')
+          order.push('transport closed');
+      },
+    },
+  );
+  assert.deepEqual(order, [
+    'service signalled',
+    'transport closed',
+    'service exit verified',
+  ]);
+});
+
+test('real inherited pipes close only after releasing the descendant, not on wrapper exit', async () => {
+  const script = `
+    const { spawn } = require('node:child_process');
+    const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'],
+      { stdio: ['ignore', process.stdout, process.stderr] });
+    console.log(child.pid);
+    child.unref();
+  `;
+  const wrapper = spawn(process.execPath, ['-e', script], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const exited = once(wrapper, 'exit');
+  let closed = false;
+  const transportClosed = once(wrapper, 'close').then(() => {
+    closed = true;
+  });
+  let descendant: number | undefined;
+  try {
+    const [data] = await phase(
+      'fixture descendant PID',
+      () => once(wrapper.stdout!, 'data'),
+      { timeoutMs: 3000 },
+    );
+    descendant = Number(String(data).trim());
+    assert.ok(Number.isInteger(descendant) && descendant! > 1);
+    await phase('fixture wrapper exit', () => exited, { timeoutMs: 3000 });
+    assert.equal(wrapper.exitCode, 0);
+    assert.equal(closed, false, 'inherited pipe must outlive the wrapper');
+    await closeDesktop(
+      { process: () => wrapper, close: () => transportClosed },
+      {
+        releaseResources: async () => {
+          assert.equal(closed, false);
+          process.kill(descendant!, 'SIGKILL');
+          await waitForPidExit(descendant);
+        },
+        killTree: async () => assert.fail('the wrapper already exited'),
+      },
+    );
+    assert.equal(closed, true, 'success requires actual transport EOF');
+  } finally {
+    if (descendant) {
+      try {
+        process.kill(descendant, 'SIGKILL');
+      } catch {}
+    }
+    if (wrapper.exitCode === null && wrapper.signalCode === null) {
+      wrapper.kill('SIGKILL');
+      await exited;
+    }
+  }
+});
+
 test('a PID exit poll stops scheduling work after its deadline', async () => {
   let probes = 0;
   await assert.rejects(
