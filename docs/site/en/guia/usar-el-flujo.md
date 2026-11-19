@@ -1,5 +1,9 @@
 # Use the canvas
 
+## Chat beside the canvas (source)
+
+The Hyperion Desktop bubble opens a nonmodal side panel beside the workflow without replacing it with another screen. You can also request a new workflow from Home. Closing the panel with its button or Escape does not stop the turn; use **Stop** to request that. Context selection does not change automatically when navigating the canvas and cannot retarget an active turn or pending permission. All four harnesses receive shared Hyperion entry instructions and updated selection context; opening the bubble alone does not create work. Changing the selection starts another provider session; restoring a visible transcript does not restore its native memory. The coordinator agent can create, execute, record evidence, recover tasks and propose revisions; it checks external effects before repeating work. A revision pauses the workflow until the person reviews and resumes it. Forms and approvals remain on the canvas; the bubble is not available in the web version. This change is not published yet; see the [integration guide](./integraciones.md#desktop-side-chat-development-source) for session, permission and validation limits.
+
 The chat carries the goal, short progress and continuation when needed. Scope, paths and decisions live in canvas forms—not in a parallel chat questionnaire.
 
 <GuideLens kind="canvas" />

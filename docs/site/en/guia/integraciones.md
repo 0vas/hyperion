@@ -4,6 +4,16 @@ Hyperion keeps the same workflow regardless of the tool doing the work. The loca
 
 ## Recommended setup
 
+### Desktop side chat (development source)
+
+The Desktop-only chat bubble sits beside the canvas. Ask about the selected workflow or create a new one from Home, without inventing or opening a workflow first. Opening the bubble does not send messages or create work automatically.
+
+Codex, Claude Code, Cursor Agent and Antigravity receive the same Hyperion entry instructions: collaborate clearly, be concise and proactive, reply in your language, and turn your intent into a visible workflow with real evidence. Only missing information is requested; scope questions, forms and approvals stay on the canvas. A provider's one-time tool permission does not approve a workflow.
+
+The private MCP offers every existing agent operation: create, read, open, execute eligible steps, record logs and artifacts, recover tasks and revise future work. Only the coordinator may mutate its workflow; changing harness does not transfer that permission. A revision pauses the workflow for the person to review and resume on the canvas. Recovery does not cancel tools or undo external effects: check them before repeating work. Waiting for decisions does not wake a closed chat; suspension needs a genuine installed resume connector. Forms, approvals, human corrections, pause, resume, cancellation and configuration remain human actions, never a credential shared with the harness.
+
+Each message identifies the current selection and requests fresh state through MCP. Changing workflows starts another provider session when no turn is active; previous workflow context is not copied. A request continuing a completed workflow can create a linked one without changing its parent. These instructions are not extra permission, a sandbox, or a guarantee of model compliance. The bubble and shared entry instructions are not yet in a published installer; protocol tests do not certify an authenticated Claude session or every native provider on Windows.
+
 Install Desktop and open **Hyperion → Conectar con mi IA**. The assistant configures:
 
 | Tool           | Connection                                          |

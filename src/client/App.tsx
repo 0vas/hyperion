@@ -850,7 +850,11 @@ export function App() {
   >(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const isElectron = navigator.userAgent.includes('Electron/');
-  const [desktopView, setDesktopView] = useState<'canvas' | 'chat'>('canvas');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatActivity, setChatActivity] = useState<
+    'idle' | 'working' | 'approval'
+  >('idle');
+  const chatTrigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     document.documentElement.classList.toggle('electron', isElectron);
   }, [isElectron]);
@@ -2116,6 +2120,7 @@ export function App() {
     <div className="app-shell canvas-app" data-connected={online}>
       <div
         className="canvas-shell"
+        data-chat-open={isElectron && chatOpen}
         inert={dialogOpen}
         onClickCapture={(event) => {
           const button = (event.target as HTMLElement).closest('button');
@@ -2140,23 +2145,6 @@ export function App() {
               <Workflow size={15} />
               <span className="flows-label">{t('Mis flujos')}</span>
             </button>
-            {isElectron && (
-              <button
-                type="button"
-                className={`secondary desktop-chat-nav${
-                  desktopView === 'chat' ? ' active' : ''
-                }`}
-                aria-pressed={desktopView === 'chat'}
-                onClick={() => {
-                  setPopup(null);
-                  setHelp(false);
-                  setDesktopView('chat');
-                }}
-              >
-                <MessageSquareText size={15} />
-                {t('Chat')}
-              </button>
-            )}
             {run && (
               <div className="canvas-title">
                 <h1 title={run.title}>{run.title}</h1>
@@ -2222,16 +2210,42 @@ export function App() {
           </div>
         </header>
         {isElectron && (
-          <div hidden={desktopView !== 'chat'}>
+          <>
+            <button
+              ref={chatTrigger}
+              type="button"
+              className="chat-bubble"
+              data-testid="chat-bubble"
+              aria-label={t('Chat')}
+              aria-expanded={chatOpen}
+              aria-controls="hyperion-chat-panel"
+              onClick={() => setChatOpen(!chatOpen)}
+            >
+              <MessageSquareText size={22} aria-hidden="true" />
+              <span>{t('Chat')}</span>
+              {chatActivity !== 'idle' && (
+                <span className="chat-bubble-activity" role="status">
+                  {chatActivity === 'approval'
+                    ? t('Permiso pendiente')
+                    : t('Trabajando…')}
+                </span>
+              )}
+            </button>
             <LiveChatPage
               runId={run?.id}
+              runTitle={run?.title}
+              open={chatOpen}
               serviceOnline={online}
               busy={busy || dialogOpen}
-              onBack={() => setDesktopView('canvas')}
+              onActivityChange={setChatActivity}
+              onClose={() => {
+                setChatOpen(false);
+                chatTrigger.current?.focus();
+              }}
             />
-          </div>
+          </>
         )}
-        {!(isElectron && desktopView === 'chat') && (
+        {
           <main className="canvas-main">
             {!loaded ? (
               <div className="empty-state">
@@ -2881,7 +2895,7 @@ export function App() {
               </section>
             )}
           </main>
-        )}
+        }
       </div>
       {popup && !confirmation && !help && (
         <Modal

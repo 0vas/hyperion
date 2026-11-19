@@ -4,6 +4,16 @@ Hyperion mantiene el mismo proceso independientemente de la herramienta que real
 
 ## Camino recomendado
 
+### Chat lateral de Desktop (fuentes de desarrollo)
+
+La burbuja de chat, exclusiva de Desktop, permanece al costado del canvas. Puedes pedir ayuda sobre el flujo seleccionado o crear uno nuevo desde Inicio, sin inventar ni abrir antes un flujo. Abrir la burbuja no envía mensajes ni crea trabajo automáticamente.
+
+Codex, Claude Code, Cursor Agent y Antigravity reciben las mismas instrucciones de entrada de Hyperion: colaborar con claridad, ser concisos y proactivos, responder en tu idioma y convertir tu intención en un flujo visible con evidencia real. Solo se solicitan los datos que faltan; las preguntas de alcance, formularios y aprobaciones siguen en el canvas. Los permisos puntuales del proveedor no aprueban un workflow.
+
+El MCP privado ofrece todas las operaciones de agente existentes: crear, leer, abrir, ejecutar pasos elegibles, registrar logs y artefactos, recuperar tareas y revisar trabajo futuro. Solo el coordinador puede modificar su flujo; cambiar de harness no transfiere ese permiso. Una revisión pausa el flujo para que la persona la examine y reanude en el canvas. Recuperar no cancela herramientas ni deshace efectos externos: hay que comprobarlos antes de repetir. Esperar decisiones no despierta un chat cerrado; suspender requiere un conector de reanudación real instalado. Formularios, aprobaciones, correcciones humanas, pausa, reanudación, cancelación y configuración siguen siendo acciones humanas, nunca una credencial compartida con el harness.
+
+Cada mensaje identifica la selección actual y pide leer su estado por MCP. Cambiar de flujo inicia otra sesión del proveedor cuando no hay un turno activo; no copia el contexto anterior. Una petición que continúe un flujo completado puede crear otro enlazado, sin modificar el anterior. Estas instrucciones no son un permiso adicional, un sandbox ni una garantía de que un modelo las siga. La burbuja y esta entrada compartida aún no están en un instalador publicado; las pruebas de protocolo no certifican una sesión autenticada de Claude ni todos los proveedores nativos en Windows.
+
 Instala Desktop y abre **Hyperion → Conectar con mi IA**. El asistente configura:
 
 | Herramienta    | Conexión                                                 |

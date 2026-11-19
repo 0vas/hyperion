@@ -147,8 +147,14 @@ test(
           .waitFor();
       }
       await input.fill('Borrador conservado');
-      await page.getByRole('button', { name: 'Volver al canvas' }).click();
-      await page.getByRole('button', { name: 'Chat', exact: true }).click();
+      await page.locator('.canvas-main').waitFor({ state: 'visible' });
+      await page.getByRole('button', { name: 'Cerrar chat' }).click();
+      await page.getByTestId('live-chat-page').waitFor({ state: 'hidden' });
+      await page.locator('.canvas-main').waitFor({ state: 'visible' });
+      assert.equal(await input.inputValue(), 'Borrador conservado');
+      await page.getByTestId('chat-bubble').click();
+      await page.getByTestId('live-chat-page').waitFor({ state: 'visible' });
+      await page.locator('.canvas-main').waitFor({ state: 'visible' });
       assert.equal(await input.inputValue(), 'Borrador conservado');
       for (const provider of ['claude', 'codex', 'cursor', 'antigravity']) {
         await page.getByTestId('live-chat-harness').selectOption(provider);

@@ -40,6 +40,7 @@ import {
   readResumeConnectorForPreload,
 } from './outbound-send.mjs';
 import { LiveHarnessChat } from './live-harness-chat.mjs';
+import { validateChatRunId } from './hyperion-entry-prompt.mjs';
 const language = createLanguageStore({
   file: resolve(app.getPath('userData'), 'language.json'),
   systemLanguages: () => app.getPreferredSystemLanguages(),
@@ -356,10 +357,7 @@ if (!app.requestSingleInstanceLock()) {
           });
         return liveHarnessChat;
       };
-      const liveRun = (runId) => {
-        if (typeof runId !== 'string' || !/^[0-9a-f-]{36}$/i.test(runId))
-          throw new Error('A valid active run is required for live chat.');
-      };
+      const liveRun = validateChatRunId;
       ipcMain.handle('hyperion:live-chat:connect', async (event, runId) => {
         validateDesktopSender(event);
         liveRun(runId);

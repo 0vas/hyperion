@@ -840,5 +840,18 @@
   "No instalado": "Not installed",
   "Enter para enviar · Shift+Enter para nueva línea": "Enter to send · Shift+Enter for a new line",
   "Enviar mensaje": "Send message",
-  "Las decisiones y aprobaciones del flujo se realizan en el canvas.": "Workflow decisions and approvals take place on the canvas."
+  "Las decisiones y aprobaciones del flujo se realizan en el canvas.": "Workflow decisions and approvals take place on the canvas.",
+  "Chat con Hyperion": "Chat with Hyperion",
+  "Cerrar chat": "Close chat",
+  "Permiso pendiente": "Permission pending",
+  "Contexto del chat": "Chat context",
+  "Trabajar en": "Work in",
+  "Flujo actual": "Current workflow",
+  "Nuevo workflow": "New workflow",
+  "El contexto permanece fijo hasta terminar el turno y resolver sus permisos.": "The context stays fixed until the turn ends and its permissions are resolved.",
+  "Este chat sigue vinculado a otro flujo. Cambia el contexto para trabajar en el canvas actual.": "This chat is still linked to another workflow. Change context to work on the current canvas.",
+  "Los mensajes se envían al flujo seleccionado.": "Messages are sent to the selected workflow.",
+  "Describe lo que quieres crear. Hyperion puede iniciar un workflow nuevo.": "Describe what you want to create. Hyperion can start a new workflow.",
+  "Ayúdame a crear un workflow": "Help me create a workflow",
+  "Permiso ya no disponible": "Permission no longer available"
 }

@@ -45,7 +45,43 @@ for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
         arguments: {},
       });
       assert.notEqual(result.isError, true);
-      assert.equal((await client.listTools()).tools.length, 7);
+      assert.equal((await client.listTools()).tools.length, 9);
+      // This is the actual chat MCP launcher and HTTP service, with no selected
+      // run or fabricated UI ID. It proves transport/policy, not LLM behavior.
+      const request = `Create a synthetic welcome workflow with ${harness}`;
+      const args = {
+        commandId: 'desktop-new-activity',
+        plan: {
+          title: 'New activity from the bubble',
+          request,
+          steps: [{ id: 'work', title: 'Write welcome', kind: 'agent' }],
+        },
+      };
+      const created = await client.callTool({
+        name: 'hyperion_create_run',
+        arguments: args,
+      });
+      assert.notEqual(created.isError, true);
+      const run = JSON.parse((created.content as { text: string }[])[0]!.text);
+      assert.equal(run.coordinator, harness);
+      assert.equal(run.request, request);
+      assert.match(run.id, /^[0-9a-f-]{36}$/i);
+      const replay = await client.callTool({
+        name: 'hyperion_create_run',
+        arguments: args,
+      });
+      assert.equal(
+        JSON.parse((replay.content as { text: string }[])[0]!.text).id,
+        run.id,
+      );
+      const current = await client.callTool({
+        name: 'hyperion_get_run',
+        arguments: { runId: run.id },
+      });
+      assert.equal(
+        JSON.parse((current.content as { text: string }[])[0]!.text).id,
+        run.id,
+      );
     } finally {
       await client.close();
       await transport.close();

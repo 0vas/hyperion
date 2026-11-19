@@ -6,6 +6,10 @@ import { homedir } from 'node:os';
 import { Readable, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import * as acp from '@agentclientprotocol/sdk';
+import {
+  hyperionPromptBlocks,
+  validateChatRunId,
+} from './hyperion-entry-prompt.mjs';
 
 const appRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const mcpLauncher = resolve(appRoot, 'dist/adapters/chat-mcp-launcher.js');
@@ -159,13 +163,15 @@ export class LiveAcpChat {
     this.stderr = '';
     this.pendingApprovals = new Map();
     this.connecting = false;
+    this.entryPromptSent = false;
   }
 
   emit(event) {
-    this.onEvent(event);
+    this.onEvent({ runId: this.runId, ...event });
   }
 
   async connect(runId) {
+    validateChatRunId(runId);
     if (this.connecting)
       throw new Error('A local connection is already starting.');
     if (this.connection) {
@@ -175,6 +181,7 @@ export class LiveAcpChat {
       this.emit({ type: 'thread', runId, threadId: this.threadId });
       return { connected: true };
     }
+    this.runId = runId;
     this.emit({ type: 'connection', status: 'connecting' });
     const launcher = this.resolveExecutable();
     if (!launcher?.executable) {
@@ -220,7 +227,7 @@ export class LiveAcpChat {
           : { outcome: { outcome: 'cancelled' } },
       )
       .onNotification(acp.methods.client.session.update, (context) =>
-        this.onSessionUpdate(context.params),
+        this.child === child ? this.onSessionUpdate(context.params) : undefined,
       );
     // Cursor-specific blocking requests must never hang or implicitly approve.
     // Workflow forms and plan review belong to the Hyperion canvas.
@@ -291,6 +298,7 @@ export class LiveAcpChat {
         throw new Error('ACP session was closed during connection.');
       this.runId = runId;
       this.threadId = session.sessionId;
+      this.entryPromptSent = false;
       this.connecting = false;
       this.emit({ type: 'connection', status: 'connected' });
       this.emit({ type: 'thread', runId, threadId: this.threadId });
@@ -302,12 +310,21 @@ export class LiveAcpChat {
   }
 
   async send(runId, text) {
+    validateChatRunId(runId);
     if (!this.agent || !this.threadId || this.runId !== runId)
-      throw new Error('Connect the active run to a local harness first.');
+      throw new Error(
+        'Connect this workflow selection to a local harness first.',
+      );
     if (this.turnId)
       throw new Error('Wait for the current local turn to finish.');
     const prompt = String(text || '').trim();
     if (!prompt) throw new Error('Write a message for the local harness.');
+    const blocks = hyperionPromptBlocks({
+      runId,
+      text: prompt,
+      includeEntry: !this.entryPromptSent,
+    });
+    this.entryPromptSent = true;
     const turnId = randomUUID();
     this.turnId = turnId;
     this.emit({ type: 'user-message', threadId: this.threadId, text: prompt });
@@ -320,13 +337,7 @@ export class LiveAcpChat {
     void this.agent
       .request(acp.methods.agent.session.prompt, {
         sessionId: this.threadId,
-        prompt: [
-          {
-            type: 'text',
-            text: `Hyperion context: the active workflow ID is ${runId}. Use the hyperion_active MCP server to inspect its current state before workflow actions. Other configured Hyperion servers belong to different contexts: do not use them for this workflow. Human forms, approvals and irreversible confirmations remain in the canvas. Do not claim work was performed without evidence. The user's message follows.`,
-          },
-          { type: 'text', text: prompt },
-        ],
+        prompt: blocks,
       })
       .then((result) => {
         if (this.turnId !== turnId) return;
@@ -364,8 +375,9 @@ export class LiveAcpChat {
   }
 
   requestPermission(params, signal) {
+    // null is a real no-workflow selection, not a missing session. Consent is
+    // still bound to this live session/turn and its exact selection below.
     if (
-      !this.runId ||
       !this.threadId ||
       !this.turnId ||
       this.stoppingTurnId ||
@@ -436,6 +448,7 @@ export class LiveAcpChat {
     });
     this.emit({
       type: 'approval-resolved',
+      runId: pending.runId,
       threadId: pending.threadId,
       token,
       decision,
@@ -509,6 +522,7 @@ export class LiveAcpChat {
     this.connection = null;
     this.agent = null;
     this.connecting = false;
+    this.entryPromptSent = false;
     this.stoppingTurnId = null;
     this.cancelPendingApprovals();
     connection?.close?.();

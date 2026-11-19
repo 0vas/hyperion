@@ -1,5 +1,9 @@
 # Usar el canvas
 
+## Chat al costado del canvas (fuentes)
+
+La burbuja de Hyperion Desktop abre un panel lateral no modal junto al workflow, sin reemplazarlo por otra pantalla. También puedes pedir un flujo nuevo desde Inicio. Cerrar el panel con su botón o Escape no detiene el turno; usa **Detener** para solicitarlo. La selección de contexto no cambia automáticamente al navegar por el canvas y no puede redirigir un turno o permiso en curso. Los cuatro harness reciben una entrada Hyperion compartida y el contexto seleccionado actualizado; no se crea trabajo sólo por abrir la burbuja. Cambiar la selección inicia otra sesión del proveedor; recuperar un transcript visible no restaura su memoria nativa. El agente coordinador puede crear, ejecutar, registrar evidencia, recuperar tareas y proponer revisiones; comprueba efectos externos antes de repetir trabajo. Una revisión pausa el flujo hasta que la persona lo revise y reanude. Los formularios y aprobaciones continúan en el canvas; la burbuja no existe en la versión web. Este cambio aún no está publicado; consulta [la guía de integración](./integraciones.md#chat-lateral-de-desktop-fuentes-de-desarrollo) para los límites de sesión, permisos y validación.
+
 El chat define el objetivo, el progreso breve y la continuación cuando haga falta. El alcance, las rutas y las decisiones viven en formularios del canvas—no en un cuestionario paralelo en el chat.
 
 <GuideLens kind="canvas" />

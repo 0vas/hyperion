@@ -17,5 +17,6 @@ registerAgent(agentId, directory);
 // workspace credential selected above. Credentials never enter the renderer.
 delete process.env.HYPERION_TOKEN;
 await new HyperionClient({ directory, url, agentId }).authCheck();
-process.env.HYPERION_INTERACTIVE_CHAT = '1';
+// Use the full agent MCP surface, not a second chat-only permission model.
+// Engine roles still exclude human commands and enforce coordinator ownership.
 await import('./mcp.js');

@@ -1,4 +1,5 @@
 import { LiveAcpChat } from './live-acp-chat.mjs';
+import { validateChatRunId } from './hyperion-entry-prompt.mjs';
 import {
   LIVE_HARNESSES,
   LiveHarnessLauncherStore,
@@ -89,12 +90,12 @@ export class LiveHarnessChat {
   }
 
   connect(runId) {
-    if (
-      this.chat?.runId &&
-      this.chat.runId !== runId &&
-      !this.chat.turnId &&
-      !this.chat.connecting
-    ) {
+    validateChatRunId(runId);
+    if (this.chat && this.chat.runId !== runId) {
+      if (this.chat.turnId || this.chat.connecting)
+        throw new Error(
+          'Wait for the active turn or connection before changing workflow.',
+        );
       this.chat.dispose();
       this.chat = null;
     }

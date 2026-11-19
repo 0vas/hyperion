@@ -15,7 +15,19 @@ Un proceso inactivo puede cerrarse al cambiar de proveedor; solo un turno activo
 
 ## Consecuencias y límites
 
-- El canvas sigue siendo autoridad exclusiva para formularios, aprobaciones, cambios y confirmaciones irreversibles.
+### Evolución en fuentes: burbuja y entrada compartida (2026-11-19)
+
+El chat pasa a una burbuja lateral junto al canvas y admite una selección de flujo explícitamente nula. No se fabrica un ID: desde Inicio, el primer pedido real puede crear un flujo usando el mismo MCP `hyperion_active` autenticado. Abrir o conectar el chat no inicia por sí mismo una actividad.
+
+`desktop/hyperion-entry-prompt.mjs` contiene las instrucciones compartidas para los cuatro proveedores. Se adjuntan al primer mensaje real de cada sesión como un bloque de texto ACP, seguido del contexto de selección y del mensaje del usuario en bloques separados. ACP v1 no se presenta como si ofreciera un rol `system` portable; tampoco se ejecuta un turno oculto de preparación. La personalidad es colaborativa, clara, concisa, proactiva y responde en el idioma de la persona. La operación sigue las herramientas disponibles, la lectura del estado actual, los commandId/revisiones/intentos, evidencia pública y decisiones exclusivamente humanas del canvas. Una nueva petición vinculada a un flujo completado usa parentRunId, nunca reabre al padre.
+
+Cada turno recibe sólo el UUID validado o `null`, no una copia de datos del workflow ni credenciales. Al cambiar la selección se reemplaza una sesión inactiva; un turno o conexión en curso impide cambiar su destino. La nueva sesión vuelve a recibir la entrada y no arrastra el flujo anterior. Los permisos siguen vinculados a selección (también nula), sesión y turno: no se amplía `allow_once`. Las instrucciones son guía del cliente, no una garantía de obediencia del modelo ni aislamiento del sistema operativo. La UI decide qué selección mostrar; el backend rechaza destinos inválidos y operaciones sobre una selección distinta de la sesión.
+
+Por la aclaración del usuario, el chat exclusivo de Desktop recibe las nueve herramientas MCP de agente existentes, retirando el filtro anterior de siete y el rechazo artificial de retry. No cambia el motor: recuperación requiere reconciliar efectos; revisión exige versión vigente, preserva evidencia y pausa para revisión/reanudación humana; suspensión requiere un conector real. No se exportan comandos humanos ni credenciales humanas. La identidad del coordinador limita las escrituras, aunque otros agentes puedan leer el flujo. Los workers de conectores conservan claim/settle y confirmaciones de entrega; no se delegan al modelo. La matriz completa está en [integración](../integration.md#desktop-entry-instructions-and-workflow-selection-development-source).
+
+Pruebas: transporte ACP simulado en los cuatro proveedores, entrada única sin turno sintético, contexto nulo, consentimiento/cancelación, reconexión y cambio de selección. El lanzador MCP real contra un servicio HTTP sintético crea y lee flujos para las cuatro identidades y conserva idempotencia y límites humanos. No certifica razonamiento autónomo, autenticación Claude ni ejecución nativa Windows. Este cambio de burbuja y personalidad todavía no se publica en un instalador.
+
+- El canvas sigue siendo autoridad exclusiva para formularios, aprobaciones, correcciones humanas, revisión de cambios y confirmaciones irreversibles.
 - Una sesión ACP vive mientras Desktop siga abierto. Un reinicio no reenvía un turno en curso ni simula una reanudación durable; un error de autenticación pide iniciar sesión en el harness local.
 - Gemini y ChatGPT no se anuncian como compatibles con este chat. Cursor y Antigravity requieren sus CLI con ACP y autenticación local; la presencia de sus aplicaciones de escritorio no basta.
 - En Windows el resolvedor admite ejecutables nativos `.exe`, no wrappers `.cmd` o `.ps1`. Las aserciones de rutas usan separadores nativos; esto no sustituye una prueba real de los cuatro proveedores en Windows, todavía pendiente.

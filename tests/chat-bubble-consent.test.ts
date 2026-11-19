@@ -90,13 +90,19 @@ test('live chat page has no human command or API commit path', () => {
   );
 });
 
-test('Desktop mounts the dedicated chat page only in its navbar view', () => {
+test('Desktop persistently mounts its chat bubble and panel beside the canvas', () => {
   const app = readFileSync(join(root, 'src/client/App.tsx'), 'utf8');
-  assert.match(app, /isElectron && desktopView === 'chat'/);
-  assert.match(app, /<LiveChatPage/);
-  assert.doesNotMatch(app, /<ChatBubble/);
+  const panel = readFileSync(join(root, 'src/client/LiveChatPage.tsx'), 'utf8');
+  const desktopChat = app.match(
+    /\{isElectron && \(\s*<>[\s\S]*?data-testid="chat-bubble"[\s\S]*?<LiveChatPage([\s\S]*?)\/>\s*<\/>\s*\)\}/,
+  );
+  assert.ok(desktopChat, 'Desktop owns the bubble and persistent chat panel');
+  assert.match(desktopChat[1]!, /open=\{chatOpen\}/);
+  assert.match(panel, /hidden=\{!open\}/);
+  assert.match(app, /<main className="canvas-main">/);
+  assert.doesNotMatch(app, /desktopView/);
   assert.doesNotMatch(
-    app.slice(app.indexOf('<LiveChatPage'), app.indexOf('/>') + 2),
+    desktopChat[1]!,
     /type:\s*'(submit|approve|reject|amend)'/,
   );
 });

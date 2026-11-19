@@ -185,6 +185,176 @@ async function until(check) {
 }
 
 for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
+  test(`${harness} receives the shared entry prompt once and can request consent without a selected run`, async () => {
+    const home = mkdtempSync(join(tmpdir(), 'hyperion-entry-'));
+    const wire = fakeAcpProcess();
+    const events = [];
+    const chat = new LiveAcpChat({
+      harness,
+      userData: home,
+      directory: home,
+      url: 'http://127.0.0.1:4317',
+      resolveExecutable: () => ({ executable: '/private/test-cli' }),
+      spawnImpl: () => wire.child,
+      onEvent: (event) => events.push(event),
+    });
+    try {
+      assert.equal((await chat.connect(null)).connected, true);
+      assert.equal(
+        wire.requests.filter((r) => r.method === 'session/prompt').length,
+        0,
+        'no synthetic startup turn',
+      );
+      for (let turn = 0; turn < 2; turn++) {
+        const message = turn
+          ? 'Lee el estado actualizado'
+          : 'Crea un flujo para mi nueva actividad';
+        await chat.send(null, message);
+        await until(
+          () =>
+            wire.requests.filter((r) => r.method === 'session/prompt')
+              .length ===
+            turn + 1,
+        );
+        const blocks = wire.requests
+          .filter((r) => r.method === 'session/prompt')
+          .at(-1).params.prompt;
+        assert.equal(blocks.length, turn ? 2 : 3);
+        if (!turn) {
+          assert.match(blocks[0].text, /Hyperion.*collaborator/);
+          for (const rule of [
+            'language',
+            'hyperion_active',
+            'parentRunId',
+            'commandId',
+            'expectedRevision',
+            'canvas',
+            'private chain-of-thought',
+            'sandbox',
+          ])
+            assert.ok(blocks[0].text.includes(rule), rule);
+        }
+        assert.match(blocks.at(-2).text, /"selectedRunId":null/);
+        assert.equal(blocks.at(-1).text, message);
+        assert.ok(
+          blocks.every((block) => block.type === 'text' && !('role' in block)),
+        );
+        await until(() => chat.pendingApprovals.size === 1);
+        chat.approve(null, [...chat.pendingApprovals.keys()][0], 'allow');
+        await until(() => chat.turnId === null);
+      }
+      assert.equal(
+        events.filter((event) => event.type === 'user-message').length,
+        2,
+      );
+      assert.ok(
+        events
+          .filter((event) => event.threadId)
+          .every((event) => event.runId === null),
+      );
+    } finally {
+      chat.dispose();
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+}
+
+test('changing workflow selection replaces an idle session including null and rejects active retargeting', async () => {
+  const made = [];
+  const chat = new LiveHarnessChat({
+    userData: '/unused',
+    store: { getSelected: () => 'codex' },
+    resolveHarnesses: () => [],
+    factories: {
+      codex: () => {
+        const session = {
+          runId: null,
+          turnId: null,
+          connecting: false,
+          disposed: false,
+          async connect(runId) {
+            this.runId = runId;
+            return { connected: true };
+          },
+          dispose() {
+            this.disposed = true;
+          },
+        };
+        made.push(session);
+        return session;
+      },
+    },
+  });
+  await chat.connect(null);
+  await chat.connect('11111111-1111-4111-8111-111111111111');
+  assert.equal(made.length, 2);
+  assert.equal(made[0].disposed, true);
+  made[1].turnId = 'active';
+  assert.throws(() => chat.connect(null), /turn|connection/);
+  assert.equal(made[1].disposed, false);
+  made[1].turnId = null;
+  await chat.connect(null);
+  assert.equal(made.length, 3);
+  assert.equal(made[1].disposed, true);
+});
+
+test('a fresh session replays entry instructions, clears old context and cancels no-run permissions', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'hyperion-reconnect-entry-'));
+  const wires = [];
+  const events = [];
+  const runId = '22222222-2222-4222-8222-222222222222';
+  const chat = new LiveAcpChat({
+    harness: 'codex',
+    userData: home,
+    directory: home,
+    url: 'http://127.0.0.1:4317',
+    resolveExecutable: () => ({ executable: '/private/test-cli' }),
+    spawnImpl: () => {
+      const wire = fakeAcpProcess({ waitForPermissionOnCancel: true });
+      wires.push(wire);
+      return wire.child;
+    },
+    onEvent: (event) => events.push(event),
+  });
+  try {
+    await chat.connect(runId);
+    await chat.send(runId, 'Read the selected workflow');
+    await until(() => chat.pendingApprovals.size === 1);
+    await assert.rejects(chat.connect(null), /Close the current/);
+    await assert.rejects(chat.send(null, 'Do not retarget'), /selection/);
+    chat.approve(runId, [...chat.pendingApprovals.keys()][0], 'allow');
+    await until(() => chat.turnId === null);
+    chat.dispose();
+    await chat.connect(null);
+    await chat.send(null, 'Create another workflow');
+    await until(() => chat.pendingApprovals.size === 1);
+    const token = [...chat.pendingApprovals.keys()][0];
+    const blocks = wires[1].requests.find((r) => r.method === 'session/prompt')
+      .params.prompt;
+    assert.equal(blocks.length, 3);
+    assert.ok(!JSON.stringify(blocks).includes(runId));
+    await chat.stop(null);
+    await until(() => chat.turnId === null);
+    assert.equal(chat.pendingApprovals.size, 0);
+    assert.throws(
+      () => chat.approve(null, token, 'allow'),
+      /no longer pending/,
+    );
+    assert.ok(
+      events.some(
+        (event) =>
+          event.type === 'approval-resolved' &&
+          event.runId === null &&
+          event.decision === 'cancelled',
+      ),
+    );
+  } finally {
+    chat.dispose();
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
   test(`${harness} uses a real ACP wire contract for MCP, streaming and explicit consent`, async () => {
     const home = mkdtempSync(join(tmpdir(), 'hyperion-wire-'));
     const wire = fakeAcpProcess();
@@ -199,20 +369,26 @@ for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
       onEvent: (event) => events.push(event),
     });
     try {
-      assert.equal((await chat.connect('run')).connected, true);
+      assert.equal(
+        (await chat.connect('11111111-1111-4111-8111-111111111111')).connected,
+        true,
+      );
       assert.equal(
         wire.requests.find((r) => r.method === 'session/new').params
           .mcpServers[0].name,
         'hyperion_active',
       );
-      await chat.send('run', 'Read my isolated test workflow');
+      await chat.send(
+        '11111111-1111-4111-8111-111111111111',
+        'Read my isolated test workflow',
+      );
       await until(() => events.some((e) => e.type === 'approval'));
       assert.equal(
         wire.requests.some((r) => r.id === 900),
         false,
       );
       chat.approve(
-        'run',
+        '11111111-1111-4111-8111-111111111111',
         events.find((e) => e.type === 'approval').token,
         'allow',
       );
@@ -248,7 +424,10 @@ test('an unresponsive native ACP executable times out and releases its process',
     connectionTimeoutMs: 20,
   });
   try {
-    assert.equal((await chat.connect('run')).connected, false);
+    assert.equal(
+      (await chat.connect('11111111-1111-4111-8111-111111111111')).connected,
+      false,
+    );
     assert.equal(chat.child, null);
     assert.equal(chat.connecting, false);
   } finally {
@@ -284,7 +463,7 @@ test('native ACP providers use the selected executable without a sidecar or shel
 
 test('a one-time permission never selects allow-always implicitly', async () => {
   const chat = new LiveAcpChat({ harness: 'cursor', onEvent() {} });
-  chat.runId = 'run';
+  chat.runId = '11111111-1111-4111-8111-111111111111';
   chat.threadId = 'thread';
   chat.turnId = 'turn';
   const result = chat.requestPermission({
@@ -295,7 +474,7 @@ test('a one-time permission never selects allow-always implicitly', async () => 
     ],
   });
   const token = [...chat.pendingApprovals.keys()][0];
-  chat.approve('run', token, 'allow');
+  chat.approve('11111111-1111-4111-8111-111111111111', token, 'allow');
   assert.equal((await result).outcome.optionId, 'once');
 });
 
@@ -313,11 +492,17 @@ test('stop settles permissions over ACP before a provider can complete cancellat
     onEvent: (event) => events.push(event),
   });
   try {
-    assert.equal((await chat.connect('run')).connected, true);
-    await chat.send('run', 'Inspect the workflow');
+    assert.equal(
+      (await chat.connect('11111111-1111-4111-8111-111111111111')).connected,
+      true,
+    );
+    await chat.send(
+      '11111111-1111-4111-8111-111111111111',
+      'Inspect the workflow',
+    );
     await until(() => events.some((event) => event.type === 'approval'));
     const token = events.find((event) => event.type === 'approval').token;
-    await chat.stop('run');
+    await chat.stop('11111111-1111-4111-8111-111111111111');
     await until(() =>
       events.some(
         (event) => event.type === 'turn' && event.status === 'interrupted',
@@ -336,7 +521,8 @@ test('stop settles permissions over ACP before a provider can complete cancellat
       'cancelled',
     );
     assert.throws(
-      () => chat.approve('run', token, 'allow'),
+      () =>
+        chat.approve('11111111-1111-4111-8111-111111111111', token, 'allow'),
       /no longer pending/,
     );
   } finally {
@@ -351,7 +537,7 @@ function activePermissionChat() {
     harness: 'cursor',
     onEvent: (event) => events.push(event),
   });
-  chat.runId = 'run';
+  chat.runId = '11111111-1111-4111-8111-111111111111';
   chat.threadId = 'thread';
   chat.turnId = 'turn';
   chat.agent = { notify: async () => {} };
@@ -376,7 +562,8 @@ for (const status of ['completed', 'interrupted', 'failed']) {
     );
     chat.turnId = 'next-turn';
     assert.throws(
-      () => chat.approve('run', token, 'allow'),
+      () =>
+        chat.approve('11111111-1111-4111-8111-111111111111', token, 'allow'),
       /no longer pending/,
     );
   });
@@ -384,7 +571,7 @@ for (const status of ['completed', 'interrupted', 'failed']) {
 
 test('permissions received while stopping, idle or for another session are cancelled immediately', async () => {
   const { chat, events, params } = activePermissionChat();
-  await chat.stop('run');
+  await chat.stop('11111111-1111-4111-8111-111111111111');
   const stopping = chat.requestPermission(params);
   assert.equal(chat.pendingApprovals.size, 0);
   assert.deepEqual(await stopping, { outcome: { outcome: 'cancelled' } });
@@ -411,7 +598,10 @@ test('provider cancellation invalidates a permission before a late human click',
   assert.equal(chat.pendingApprovals.size, 0);
   assert.deepEqual(await result, { outcome: { outcome: 'cancelled' } });
   assert.equal(events.at(-1).decision, 'cancelled');
-  assert.throws(() => chat.approve('run', token, 'allow'), /no longer pending/);
+  assert.throws(
+    () => chat.approve('11111111-1111-4111-8111-111111111111', token, 'allow'),
+    /no longer pending/,
+  );
 });
 
 test('an allow click without allow_once reports cancellation, never approval', async () => {
@@ -421,7 +611,7 @@ test('an allow click without allow_once reports cancellation, never approval', a
     options: [{ kind: 'allow_always', optionId: 'always' }],
   });
   const token = [...chat.pendingApprovals.keys()][0];
-  chat.approve('run', token, 'allow');
+  chat.approve('11111111-1111-4111-8111-111111111111', token, 'allow');
   assert.deepEqual(await result, { outcome: { outcome: 'cancelled' } });
   assert.equal(events.at(-1).decision, 'cancelled');
 });
@@ -433,7 +623,8 @@ test('permission decisions cannot be applied to a changed session or turn', asyn
     const token = [...chat.pendingApprovals.keys()][0];
     chat[field] = 'different';
     assert.throws(
-      () => chat.approve('run', token, 'allow'),
+      () =>
+        chat.approve('11111111-1111-4111-8111-111111111111', token, 'allow'),
       /no longer pending/,
     );
     assert.deepEqual(await result, { outcome: { outcome: 'cancelled' } });
@@ -579,7 +770,7 @@ test('the multiplexer connects only the selected supported harness', async () =>
   });
   assert.equal(chat.snapshot().selected, 'codex');
   chat.selectHarness('claude');
-  await chat.connect('run-1');
+  await chat.connect('11111111-1111-4111-8111-111111111111');
   assert.deepEqual(calls, ['claude']);
 });
 
@@ -618,7 +809,7 @@ test('authentication failure closes the session and releases pending permissions
   };
   chat.connection = { close() {} };
   chat.agent = {};
-  chat.runId = 'run';
+  chat.runId = '11111111-1111-4111-8111-111111111111';
   chat.threadId = 'thread';
   chat.turnId = 'turn';
   const permission = chat.requestPermission({

@@ -109,19 +109,19 @@ declare global {
       checkForUpdates?(): Promise<void>;
       recoverLocalService?(): Promise<{ ready: boolean }>;
       liveChat?: {
-        connect(runId: string): Promise<{
+        connect(runId: string | null): Promise<{
           connected: boolean;
           uncertain?: boolean;
           setup?: 'missing' | 'invalid-selection' | 'authentication';
         }>;
-        send(runId: string, text: string): Promise<void>;
-        stop(runId: string): Promise<void>;
+        send(runId: string | null, text: string): Promise<void>;
+        stop(runId: string | null): Promise<void>;
         approve(
-          runId: string,
+          runId: string | null,
           token: string,
           decision: 'allow' | 'deny',
         ): Promise<void>;
-        resolveUncertain(runId: string): Promise<void>;
+        resolveUncertain(runId: string | null): Promise<void>;
         harnesses?(): Promise<{
           selected: string;
           harnesses: Array<{

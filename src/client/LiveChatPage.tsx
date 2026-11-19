@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ArrowLeft,
-  MessageSquareText,
-  Send,
-  Square,
-  Settings2,
-} from 'lucide-react';
+import { X, MessageSquareText, Send, Square, Settings2 } from 'lucide-react';
 import { t, useLocale } from './i18n';
 
 type ThreadMessage = {
@@ -14,7 +8,7 @@ type ThreadMessage = {
   text: string;
   meta?: string;
   approvalToken?: string;
-  approvalState?: 'allowed' | 'denied';
+  approvalState?: 'allowed' | 'denied' | 'expired';
   provider?: string;
 };
 
@@ -32,23 +26,42 @@ const LOGIN_COMMANDS: Record<string, string> = {
   antigravity: 'agy acp --login',
 };
 
-/**
- * Desktop-only, full-page projection of a single real local-harness thread.
- * It deliberately has no workflow-command or generic host API surface.
- */
+type ChatContext = { runId: string | null; title?: string };
+type Conversation = { prompt: string; thread: ThreadMessage[] };
+
+function expirePermission(message: ThreadMessage): ThreadMessage {
+  return message.approvalToken && !message.approvalState
+    ? { ...message, approvalState: 'expired', meta: 'Permiso ya no disponible' }
+    : message;
+}
+
+/** Persistent, non-modal Desktop chat. The chosen context is independent of canvas navigation. */
 export function LiveChatPage({
-  runId,
+  runId: canvasRunId,
+  runTitle,
+  open,
   serviceOnline,
   busy = false,
-  onBack,
+  onClose,
+  onActivityChange,
 }: {
   runId?: string;
+  runTitle?: string;
+  open: boolean;
   serviceOnline: boolean;
   busy?: boolean;
-  onBack: () => void;
+  onClose: () => void;
+  onActivityChange: (activity: 'idle' | 'working' | 'approval') => void;
 }) {
   useLocale();
   const liveChat = window.hyperionDesktop?.liveChat;
+  const [context, setContext] = useState<ChatContext>({
+    runId: canvasRunId ?? null,
+    title: runTitle,
+  });
+  const contextChosen = useRef(false);
+  const conversations = useRef(new Map<string | null, Conversation>());
+  const runId = context.runId;
   const [prompt, setPrompt] = useState('');
   const [status, setStatus] = useState<
     'disconnected' | 'connecting' | 'connected'
@@ -72,15 +85,50 @@ export function LiveChatPage({
   const lastSubmitted = useRef('');
 
   useEffect(() => {
-    setPrompt('');
+    if (!contextChosen.current) {
+      setContext({ runId: canvasRunId ?? null, title: runTitle });
+      if (open) contextChosen.current = true;
+    }
+  }, [canvasRunId, runTitle, open]);
+
+  useEffect(() => {
+    if (open) promptRef.current?.focus();
+  }, [open]);
+
+  const pendingApproval = thread.some(
+    (item) => item.approvalToken && !item.approvalState,
+  );
+  const contextLocked =
+    requestBusy ||
+    turnRunning ||
+    pendingApproval ||
+    uncertain ||
+    status === 'connecting';
+  useEffect(() => {
+    onActivityChange(
+      pendingApproval ? 'approval' : turnRunning ? 'working' : 'idle',
+    );
+  }, [pendingApproval, turnRunning, onActivityChange]);
+
+  function changeContext(nextRunId: string | null) {
+    if (contextLocked || nextRunId === runId) return;
+    conversations.current.set(runId, { prompt, thread });
+    const saved = conversations.current.get(nextRunId);
+    contextChosen.current = true;
+    setContext({
+      runId: nextRunId,
+      title: nextRunId === canvasRunId ? runTitle : undefined,
+    });
+    setPrompt(saved?.prompt ?? '');
+    setThread(saved?.thread ?? []);
     setStatus('disconnected');
-    setTurnRunning(false);
-    setUncertain(false);
     setSetupMessage(null);
     setNotice(null);
-    setThread([]);
+    setAuthRequired(false);
     threadId.current = null;
-  }, [runId]);
+    lastSubmitted.current = '';
+    followBottom.current = true;
+  }
 
   useEffect(() => {
     if (!liveChat?.harnesses) return;
@@ -97,6 +145,8 @@ export function LiveChatPage({
     if (!liveChat) return;
     return liveChat.onEvent((value) => {
       const event = value as Record<string, unknown>;
+      // A disposed session may finish emitting after the user changes context.
+      if ('runId' in event && event.runId !== runId) return;
       if (event.type === 'connection' && typeof event.status === 'string') {
         setStatus(event.status as typeof status);
         if (event.status === 'connected') {
@@ -106,6 +156,7 @@ export function LiveChatPage({
         }
         if (event.status === 'disconnected') {
           setTurnRunning(false);
+          setThread((items) => items.map(expirePermission));
           if (event.message || event.code)
             setPrompt((current) => current || lastSubmitted.current);
           const needsLogin = event.code === 'auth-required';
@@ -192,7 +243,7 @@ export function LiveChatPage({
               !item.meta &&
               event.status !== 'completed'
                 ? { ...item, meta: String(event.status) }
-                : item,
+                : expirePermission(item),
             ),
           );
         }
@@ -238,11 +289,17 @@ export function LiveChatPage({
               ? {
                   ...item,
                   approvalState:
-                    event.decision === 'allowed' ? 'allowed' : 'denied',
+                    event.decision === 'allowed'
+                      ? 'allowed'
+                      : event.decision === 'denied'
+                        ? 'denied'
+                        : 'expired',
                   meta:
                     event.decision === 'allowed'
-                      ? t('Permitido para esta acción')
-                      : t('Denegado'),
+                      ? 'Permitido para esta acción'
+                      : event.decision === 'denied'
+                        ? 'Denegado'
+                        : 'Permiso ya no disponible',
                 }
               : item,
           ),
@@ -254,27 +311,32 @@ export function LiveChatPage({
   useEffect(() => {
     const node = threadRef.current;
     if (node && followBottom.current) node.scrollTop = node.scrollHeight;
-  }, [thread]);
+  }, [thread, open]);
 
   useEffect(() => {
     const node = promptRef.current;
     if (!node) return;
     node.style.height = 'auto';
     node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
-  }, [prompt]);
+  }, [prompt, open]);
 
   const canConnect = Boolean(
-    liveChat && runId && serviceOnline && !busy && !requestBusy,
+    liveChat &&
+    serviceOnline &&
+    !busy &&
+    !requestBusy &&
+    !turnRunning &&
+    !pendingApproval,
   );
   const canSend = Boolean(
     liveChat &&
-    runId &&
     serviceOnline &&
     status !== 'connecting' &&
     !authRequired &&
     !uncertain &&
     !busy &&
     !turnRunning &&
+    !pendingApproval &&
     !requestBusy &&
     prompt.trim(),
   );
@@ -283,7 +345,7 @@ export function LiveChatPage({
     'Codex';
 
   async function connect() {
-    if (!canConnect || !liveChat || !runId) return;
+    if (!canConnect || !liveChat) return;
     setRequestBusy(true);
     setNotice(null);
     try {
@@ -302,7 +364,7 @@ export function LiveChatPage({
   }
 
   async function selectHarness(id: string) {
-    if (!liveChat?.selectHarness || requestBusy) return;
+    if (!liveChat?.selectHarness || contextLocked) return;
     setRequestBusy(true);
     setSetupMessage(null);
     setNotice(null);
@@ -323,7 +385,7 @@ export function LiveChatPage({
   }
 
   async function chooseExecutable() {
-    if (!liveChat || requestBusy) return;
+    if (!liveChat || contextLocked) return;
     const choose = liveChat.chooseExecutable || liveChat.chooseCodex;
     if (!choose) return;
     setRequestBusy(true);
@@ -345,7 +407,8 @@ export function LiveChatPage({
   }
 
   async function send() {
-    if (!canSend || !liveChat || !runId) return;
+    if (!canSend || !liveChat) return;
+    const submitted = prompt;
     setRequestBusy(true);
     setNotice(null);
     try {
@@ -354,9 +417,9 @@ export function LiveChatPage({
         if (!result.connected) return;
       }
       followBottom.current = true;
-      lastSubmitted.current = prompt.trim();
-      await liveChat.send(runId, prompt.trim());
-      setPrompt('');
+      lastSubmitted.current = submitted.trim();
+      await liveChat.send(runId, submitted.trim());
+      setPrompt((current) => (current === submitted ? '' : current));
     } catch {
       setNotice(t('No se pudo enviar el mensaje al harness local.'));
     } finally {
@@ -365,7 +428,7 @@ export function LiveChatPage({
   }
 
   async function stop() {
-    if (!liveChat || !runId || !turnRunning || requestBusy) return;
+    if (!liveChat || !turnRunning || requestBusy) return;
     setRequestBusy(true);
     try {
       await liveChat.stop(runId);
@@ -377,7 +440,7 @@ export function LiveChatPage({
   }
 
   async function decide(token: string, decision: 'allow' | 'deny') {
-    if (!liveChat || !runId || requestBusy) return;
+    if (!liveChat || requestBusy) return;
     setRequestBusy(true);
     try {
       await liveChat.approve(runId, token, decision);
@@ -389,7 +452,7 @@ export function LiveChatPage({
   }
 
   async function resolveUncertain() {
-    if (!liveChat || !runId || requestBusy) return;
+    if (!liveChat || requestBusy) return;
     setRequestBusy(true);
     try {
       await liveChat.resolveUncertain(runId);
@@ -419,11 +482,24 @@ export function LiveChatPage({
             : t('Se conectará al enviar');
 
   return (
-    <main className="live-chat-page" data-testid="live-chat-page">
+    <aside
+      id="hyperion-chat-panel"
+      className="live-chat-page"
+      data-testid="live-chat-page"
+      aria-labelledby="live-chat-title"
+      hidden={!open}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && !event.defaultPrevented) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <header className="live-chat-toolbar">
         <div className="live-chat-heading">
           <MessageSquareText size={18} aria-hidden="true" />
-          <h1>{t('Chat')}</h1>
+          <h2 id="live-chat-title">{t('Chat con Hyperion')}</h2>
           <span
             className="live-chat-status"
             data-testid="live-chat-status"
@@ -433,10 +509,6 @@ export function LiveChatPage({
           </span>
         </div>
         <div className="live-chat-toolbar-actions">
-          <button type="button" className="secondary" onClick={onBack}>
-            <ArrowLeft size={15} />
-            {t('Volver al canvas')}
-          </button>
           <button
             type="button"
             className="secondary live-chat-icon-button"
@@ -446,8 +518,55 @@ export function LiveChatPage({
           >
             <Settings2 size={17} />
           </button>
+          <button
+            type="button"
+            className="secondary live-chat-icon-button"
+            aria-label={t('Cerrar chat')}
+            onClick={onClose}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
         </div>
       </header>
+      <section
+        className="live-chat-context"
+        aria-label={t('Contexto del chat')}
+      >
+        <label htmlFor="live-chat-context">{t('Trabajar en')}</label>
+        <select
+          id="live-chat-context"
+          data-testid="live-chat-context"
+          value={runId ?? ''}
+          disabled={contextLocked}
+          aria-describedby="live-chat-context-help"
+          onChange={(event) => changeContext(event.target.value || null)}
+        >
+          {runId && runId !== canvasRunId && (
+            <option value={runId}>{context.title || runId}</option>
+          )}
+          {canvasRunId && (
+            <option value={canvasRunId}>
+              {t('Flujo actual')}: {runTitle || canvasRunId}
+            </option>
+          )}
+          <option value="">{t('Nuevo workflow')}</option>
+        </select>
+        <p id="live-chat-context-help">
+          {contextLocked
+            ? t(
+                'El contexto permanece fijo hasta terminar el turno y resolver sus permisos.',
+              )
+            : runId
+              ? runId !== canvasRunId
+                ? t(
+                    'Este chat sigue vinculado a otro flujo. Cambia el contexto para trabajar en el canvas actual.',
+                  )
+                : t('Los mensajes se envían al flujo seleccionado.')
+              : t(
+                  'Describe lo que quieres crear. Hyperion puede iniciar un workflow nuevo.',
+                )}
+        </p>
+      </section>
       {settingsOpen && (
         <section
           className="live-chat-settings"
@@ -458,7 +577,7 @@ export function LiveChatPage({
             type="button"
             className="secondary"
             data-testid="live-chat-choose-executable"
-            disabled={!liveChat || requestBusy || turnRunning}
+            disabled={!liveChat || contextLocked}
             onClick={() => void chooseExecutable()}
           >
             {t('Elegir ejecutable')}
@@ -479,6 +598,7 @@ export function LiveChatPage({
         className="live-chat-thread"
         data-testid="live-chat-thread"
         role="log"
+        tabIndex={0}
         aria-label={t('Conversación')}
         aria-live="polite"
         aria-relevant="additions"
@@ -502,21 +622,22 @@ export function LiveChatPage({
                 )}
               </p>
               <div className="live-chat-suggestions">
-                {['Resume este flujo', '¿Cuál es el siguiente paso?'].map(
-                  (text) => (
-                    <button
-                      className="secondary"
-                      type="button"
-                      key={text}
-                      onClick={() => {
-                        setPrompt(t(text));
-                        promptRef.current?.focus();
-                      }}
-                    >
-                      {t(text)}
-                    </button>
-                  ),
-                )}
+                {(runId
+                  ? ['Resume este flujo', '¿Cuál es el siguiente paso?']
+                  : ['Ayúdame a crear un workflow']
+                ).map((text) => (
+                  <button
+                    className="secondary"
+                    type="button"
+                    key={text}
+                    onClick={() => {
+                      setPrompt(t(text));
+                      promptRef.current?.focus();
+                    }}
+                  >
+                    {t(text)}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -532,7 +653,7 @@ export function LiveChatPage({
                   : message.role === 'assistant'
                     ? message.provider || harnessLabel
                     : t('Hyperion')}
-                {message.meta ? ` · ${message.meta}` : ''}
+                {message.meta ? ` · ${t(message.meta)}` : ''}
               </p>
               <p>{message.text}</p>
               {message.approvalToken && !message.approvalState && (
@@ -567,15 +688,9 @@ export function LiveChatPage({
         </div>
       </section>
       <div className="live-chat-bottom">
-        {(setupMessage || notice || !runId || !serviceOnline) && (
+        {(setupMessage || notice || !serviceOnline) && (
           <div className="live-chat-notice" role="status">
-            <p>
-              {setupMessage ||
-                notice ||
-                (!runId
-                  ? t('Abre un flujo para conectar un hilo local.')
-                  : t('Servicio local sin conexión'))}
-            </p>
+            <p>{setupMessage || notice || t('Servicio local sin conexión')}</p>
             {authRequired && <code>{LOGIN_COMMANDS[selectedHarness]}</code>}
             {setupMessage && (
               <button
@@ -602,7 +717,7 @@ export function LiveChatPage({
             rows={2}
             maxLength={8000}
             value={prompt}
-            disabled={!liveChat || !runId}
+            disabled={!liveChat}
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={(event) => {
               if (
@@ -624,12 +739,7 @@ export function LiveChatPage({
               id="live-chat-harness"
               data-testid="live-chat-harness"
               value={selectedHarness}
-              disabled={
-                !liveChat?.selectHarness ||
-                requestBusy ||
-                turnRunning ||
-                status === 'connecting'
-              }
+              disabled={!liveChat?.selectHarness || contextLocked}
               onChange={(event) => void selectHarness(event.target.value)}
             >
               {harnesses.map((harness) => (
@@ -675,6 +785,6 @@ export function LiveChatPage({
           )}
         </p>
       </div>
-    </main>
+    </aside>
   );
 }
