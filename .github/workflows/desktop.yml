@@ -25,6 +25,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   package:
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -46,6 +47,7 @@ jobs:
       - run: npm run check
       - run: npx playwright install chromium
       - run: npm run test:desktop
+        timeout-minutes: 10
       - run: npm run desktop:dist -- ${{ matrix.target }}
         env:
           HYPERION_REQUIRE_NOTARIZATION: ${{ runner.os == 'macOS' && inputs.notarized && '1' || '0' }}
@@ -70,6 +72,7 @@ jobs:
             echo "### macOS preview is NOT Apple-notarized; Gatekeeper can block it." >> "$GITHUB_STEP_SUMMARY"
           fi
       - run: npm run test:desktop
+        timeout-minutes: 10
         env:
           HYPERION_DISABLE_UPDATE_CHECK: '1'
           HYPERION_DESKTOP_EXECUTABLE: ${{ github.workspace }}/${{ matrix.executable }}
