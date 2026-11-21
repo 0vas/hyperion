@@ -18,7 +18,7 @@ The `bpmn-lite` profile supports start/end nodes and structured exclusive, inclu
 
 ## Distribution
 
-The published `2026.11.20.1708` preview provides Apple Silicon Macs (arm64) and Windows x64. Both installers and their SHA-256 digests were verified during publication. The macOS DMG has ad-hoc integrity signing: it is **not** Apple-notarized and does not establish Developer ID identity; Windows has no publisher signature. [Download links](../guia/primeros-pasos.md) point to that published release, not a pending build.
+The published `2026.11.21.1657` preview provides Apple Silicon Macs (arm64) and Windows x64. Both installers and their SHA-256 digests were verified during publication. The macOS DMG has ad-hoc integrity signing: it is **not** Apple-notarized and does not establish Developer ID identity; Windows has no publisher signature. [Download links](../guia/primeros-pasos.md) point to that published release, not a pending build.
 
 New builds and publications include only macOS arm64 and Windows x64. Both must pass native and packaged-installer tests; new Intel Mac packages are no longer produced. The historical `v0.4.0-preview.1` release included Apple Silicon, Intel and Windows; its files remain available. Native tests do not certify a real conversation in every AI client.
 
