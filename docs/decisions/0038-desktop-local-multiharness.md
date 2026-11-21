@@ -1,6 +1,6 @@
 # ADR 0038 — Chat local multiharness en Desktop
 
-Estado: **accepted in source; Codex, Cursor y Antigravity verificados con conversación y lectura MCP en Desktop empaquetado; Claude pendiente de autenticación; sin instalador publicado**.
+Estado: **accepted and published in Preview 2026.11.20.1708; Codex, Cursor y Antigravity verificados con conversación y lectura MCP en Desktop empaquetado; Claude pendiente de autenticación**.
 Fecha: 2026-11-18.
 
 ## Decisión
@@ -23,9 +23,9 @@ El chat pasa a una burbuja lateral junto al canvas y admite una selección de fl
 
 Cada turno recibe sólo el UUID validado o `null`, no una copia de datos del workflow ni credenciales. Al cambiar la selección se reemplaza una sesión inactiva; un turno o conexión en curso impide cambiar su destino. La nueva sesión vuelve a recibir la entrada y no arrastra el flujo anterior. Los permisos siguen vinculados a selección (también nula), sesión y turno: no se amplía `allow_once`. Las instrucciones son guía del cliente, no una garantía de obediencia del modelo ni aislamiento del sistema operativo. La UI decide qué selección mostrar; el backend rechaza destinos inválidos y operaciones sobre una selección distinta de la sesión.
 
-Por la aclaración del usuario, el chat exclusivo de Desktop recibe las nueve herramientas MCP de agente existentes, retirando el filtro anterior de siete y el rechazo artificial de retry. No cambia el motor: recuperación requiere reconciliar efectos; revisión exige versión vigente, preserva evidencia y pausa para revisión/reanudación humana; suspensión requiere un conector real. No se exportan comandos humanos ni credenciales humanas. La identidad del coordinador limita las escrituras, aunque otros agentes puedan leer el flujo. Los workers de conectores conservan claim/settle y confirmaciones de entrega; no se delegan al modelo. La matriz completa está en [integración](../integration.md#desktop-entry-instructions-and-workflow-selection-development-source).
+Por la aclaración del usuario, el chat exclusivo de Desktop recibe las nueve herramientas MCP de agente existentes, retirando el filtro anterior de siete y el rechazo artificial de retry. No cambia el motor: recuperación requiere reconciliar efectos; revisión exige versión vigente, preserva evidencia y pausa para revisión/reanudación humana; suspensión requiere un conector real. No se exportan comandos humanos ni credenciales humanas. La identidad del coordinador limita las escrituras, aunque otros agentes puedan leer el flujo. Los workers de conectores conservan claim/settle y confirmaciones de entrega; no se delegan al modelo. La matriz completa está en [integración](../integration.md#desktop-entry-instructions-and-workflow-selection).
 
-Pruebas: transporte ACP simulado en los cuatro proveedores, entrada única sin turno sintético, contexto nulo, consentimiento/cancelación, reconexión y cambio de selección. El lanzador MCP real contra un servicio HTTP sintético crea y lee flujos para las cuatro identidades y conserva idempotencia y límites humanos. No certifica razonamiento autónomo, autenticación Claude ni ejecución nativa Windows. Este cambio de burbuja y personalidad todavía no se publica en un instalador.
+Pruebas: transporte ACP simulado en los cuatro proveedores, entrada única sin turno sintético, contexto nulo, consentimiento/cancelación, reconexión y cambio de selección. El lanzador MCP real contra un servicio HTTP sintético crea y lee flujos para las cuatro identidades y conserva idempotencia y límites humanos. No certifica razonamiento autónomo, autenticación Claude ni ejecución nativa de cada proveedor en Windows. La burbuja y la personalidad compartida se publicaron en Preview `2026.11.20.1708`.
 
 - El canvas sigue siendo autoridad exclusiva para formularios, aprobaciones, correcciones humanas, revisión de cambios y confirmaciones irreversibles.
 - Una sesión ACP vive mientras Desktop siga abierto. Un reinicio no reenvía un turno en curso ni simula una reanudación durable; un error de autenticación pide iniciar sesión en el harness local.
@@ -37,6 +37,10 @@ Pruebas: transporte ACP simulado en los cuatro proveedores, entrada única sin t
 Relacionada: [ADR 0037](0037-desktop-live-codex-chat.md).
 
 Protocolos nativos contrastados con [Cursor ACP](https://cursor.com/docs/cli/acp) y [Antigravity ACP](https://antigravity.google/docs/ide/extensions/acp/). Las pruebas de protocolo usan procesos simulados; la prueba optativa `HYPERION_TEST_HARNESS=cursor HYPERION_TEST_MCP=1 node --test tests/desktop-live-chat-native.mjs` usa un CLI real y un flujo aislado. Permite solo su lectura `hyperion_get_run` si el proveedor solicita permiso; no aprueba operaciones genéricas.
+
+## Publicación: Preview 2026.11.20.1708
+
+La release publicada contiene los instaladores macOS arm64 y Windows x64 construidos desde el commit de release, con tamaños y SHA-256 verificados por el flujo de publicación. Ambos jobs de Desktop superaron las comprobaciones de fuente y del instalador empaquetado. Esta evidencia publica el selector, la burbuja y la entrada compartida; no cambia los límites anteriores: Claude autenticado sigue sin verificarse, no se promete recuperación durable del transcript y la firma macOS es de integridad ad-hoc, no notarización de Apple ni Developer ID.
 
 ## Verificación anterior: preview 2026.11.18.2206
 

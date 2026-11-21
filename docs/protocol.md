@@ -61,7 +61,7 @@ Inventory retains `version`, `channel`, `serviceUrl`, `integrations` and `summar
 
 File failures remain HTTP 200 diagnostics. They neither change configuration status nor authorize replacement. An absent preflight field from an older server means not checked. No raw paths, errors, logs or secrets are added by the preflight. It accepts no client-selected paths or commands, starts no process and makes no network request. Saved conflicting entries and Claude Code's skill are not validated by these shared MCP-file observations.
 
-Readability is a snapshot, not proof of executability, Windows policy/ACL access in Claude, MCP initialization, authentication, a successful tool call or tools enabled in a chat. Those latter fields remain explicitly unverified. The preflight does not repair files or establish why tools were absent on a particular computer. This addition is not yet included in a published installer.
+Readability is a snapshot, not proof of executability, Windows policy/ACL access in Claude, MCP initialization, authentication, a successful tool call or tools enabled in a chat. Those latter fields remain explicitly unverified. The preflight does not repair files or establish why tools were absent on a particular computer. This diagnostic is included in Preview `2026.11.20.1708`; its availability does not turn those checks into proof of a working client session.
 
 ## Plan
 
@@ -213,7 +213,7 @@ An agent creates a linked run with `POST /api/runs` using `{commandId, plan, par
 
 The child records immutable `origin: {runId, revision, title}`. The parent's snapshot, revision and events remain unchanged. SQLite records the relationship atomically with the child and receipt. Each parent supports up to 32 direct continuations. Read responses project `links.previous` and `links.next[]`, each with `id`, `title`, `status` and `request`. SSE refreshes these links without inventing a parent revision. These navigation links sit outside the executable DAG: the canvas connects the prior end to the new start, and both runs retain independent states and coordinators.
 
-Included in Desktop **2026.10.26.1533 UTC · Preview**. Older installers require an update to provide these endpoints. Phase 0 UI keeps **Copiar petición para el chat** and hides **Enviar** until a host-configured send/`ResumeConnector` path exists — MCP alone does not wake a closed chat. Linked-cycle canvas drafts are not auto-pushed.
+Included in Desktop **2026.11.20.1708 UTC · Preview**. Older installers require an update to provide these endpoints. Phase 0 UI keeps **Copiar petición para el chat** and hides **Enviar** until a host-configured send/`ResumeConnector` path exists — MCP alone does not wake a closed chat. Linked-cycle canvas drafts are not auto-pushed.
 
 ## Outbound host prompts (ADR 0036 PR1)
 

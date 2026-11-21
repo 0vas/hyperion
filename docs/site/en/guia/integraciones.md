@@ -4,7 +4,7 @@ Hyperion keeps the same workflow regardless of the tool doing the work. The loca
 
 ## Recommended setup
 
-### Desktop side chat (development source)
+### Desktop side chat
 
 The Desktop-only chat bubble sits beside the canvas. Ask about the selected workflow or create a new one from Home, without inventing or opening a workflow first. Opening the bubble does not send messages or create work automatically.
 
@@ -12,7 +12,7 @@ Codex, Claude Code, Cursor Agent and Antigravity receive the same Hyperion entry
 
 The private MCP offers every existing agent operation: create, read, open, execute eligible steps, record logs and artifacts, recover tasks and revise future work. Only the coordinator may mutate its workflow; changing harness does not transfer that permission. A revision pauses the workflow for the person to review and resume on the canvas. Recovery does not cancel tools or undo external effects: check them before repeating work. Waiting for decisions does not wake a closed chat; suspension needs a genuine installed resume connector. Forms, approvals, human corrections, pause, resume, cancellation and configuration remain human actions, never a credential shared with the harness.
 
-Each message identifies the current selection and requests fresh state through MCP. Changing workflows starts another provider session when no turn is active; previous workflow context is not copied. A request continuing a completed workflow can create a linked one without changing its parent. These instructions are not extra permission, a sandbox, or a guarantee of model compliance. The bubble and shared entry instructions are not yet in a published installer; protocol tests do not certify an authenticated Claude session or every native provider on Windows.
+Each message identifies the current selection and requests fresh state through MCP. Changing workflows starts another provider session when no turn is active; previous workflow context is not copied. A request continuing a completed workflow can create a linked one without changing its parent. These instructions are not extra permission, a sandbox, or a guarantee of model compliance. The bubble and shared entry instructions ship in published Preview `2026.11.20.1708`; protocol tests do not certify an authenticated Claude session or a real conversation for every provider on Windows.
 
 Install Desktop and open **Hyperion → Conectar con mi IA**. The assistant configures:
 
@@ -45,7 +45,7 @@ When the activity reads or writes disk or uses the project terminal, use **Claud
 
 ## Review local configuration
 
-In development source, **Menu → Connections** shows a compact list of apps. The menu groups Connections and Settings, help options, and window (web) or update (Desktop) actions followed by About Hyperion. With an open workflow, **This workflow** includes Original request, Activity, and Pause or Resume when allowed. The full CalVer and channel appear in the menu footer and Connections header.
+In Preview `2026.11.20.1708`, **Menu → Connections** shows a compact list of apps. The menu groups Connections and Settings, help options, and window (web) or update (Desktop) actions followed by About Hyperion. With an open workflow, **This workflow** includes Original request, Activity, and Pause or Resume when allowed. The full CalVer and channel appear in the menu footer and Connections header.
 
 Rows show **Configured locally**, **Not configured**, **Conflict · unchanged**, or **Could not check**. **Configured locally** counts matching files in the catalog, not installed apps or tools loaded in a chat. Select an app name to expand its explanation, actions, and full path with **Copy path**. Only one app expands at a time; the selection survives rechecks and language changes. **Original diagnostic message** expands the text received, whether recognized or unknown, without translation or inferred causes. Copy success is announced only after the clipboard accepts it; a failed copy shows an error. Opening details changes neither files nor workflow answers. Loading or unavailable inventory is never presented as zero configured apps.
 
@@ -53,19 +53,19 @@ Known Hyperion explanations for conflicts and setup failures, and success notice
 
 Open **Diagnostics** below the list to see the service URL, suggestions for investigating failures, and **Adapter files**. This panel preserves the selected app. This checks only whether Hyperion can read this installation’s expected executable and MCP launcher. It does not check execution permission, dependencies, authentication or the client environment; it does not start MCP. **MCP startup and tool call: not checked** and **Tools in this chat: unknown** remain separate. Readable files do not validate a conflicting saved entry or Claude Code’s skill.
 
-A shared notice distinguishes a missing file, a nonregular file, a file Hyperion could not read due to permissions, and an incomplete check. **Could not check** does not prove a file is missing. Older servers without this metadata show **Not checked**, with no invented timestamp. **View diagnostics** opens the existing diagnostic information; **Recheck** refreshes this read-only observation without changing files or registering credentials. There is no automatic repair or replacement. This redesign and these diagnostics are not yet in a published installer.
+A shared notice distinguishes a missing file, a nonregular file, a file Hyperion could not read due to permissions, and an incomplete check. **Could not check** does not prove a file is missing. Older servers without this metadata show **Not checked**, with no invented timestamp. **View diagnostics** opens the existing diagnostic information; **Recheck** refreshes this read-only observation without changing files or registering credentials. There is no automatic repair or replacement. This redesign and these diagnostics ship in Preview `2026.11.20.1708`.
 
 ## Review a conflict
 
-In the development source, **Menu → Connections → app → Resolve conflict…** compares a limited preview. URLs show only scheme, host and port; credentials, paths, queries and fragments are removed. Private environment values are omitted. Arguments are shown only while they follow supported formats; from the first unsupported or ambiguous item, the remaining tail becomes `••••`. The amber cue compares visible values, including permitted environment values.
+**Menu → Connections → app → Resolve conflict…** compares a limited preview. URLs show only scheme, host and port; credentials, paths, queries and fragments are removed. Private environment values are omitted. Arguments are shown only while they follow supported formats; from the first unsupported or ambiguous item, the remaining tail becomes `••••`. The amber cue compares visible values, including permitted environment values.
 
-This preview is not a universal secret detector: executable names, local paths, hosts and client IDs are treated as public metadata. Do not put credentials in them or share configuration files without reviewing them. **Replace connection** still requires confirmation, creates a backup and preserves other MCP servers. This fix is not yet part of a published installer. [Exact policy and limits](https://github.com/0vas/hyperion/blob/main/SECURITY.md#connection-conflict-previews).
+This preview is not a universal secret detector: executable names, local paths, hosts and client IDs are treated as public metadata. Do not put credentials in them or share configuration files without reviewing them. **Replace connection** still requires confirmation, creates a backup and preserves other MCP servers. This fix ships in Preview `2026.11.20.1708`. [Exact policy and limits](https://github.com/0vas/hyperion/blob/main/SECURITY.md#connection-conflict-previews).
 
-In development source, **Cancel**, **Escape**, or clicking outside the confirmation returns to the resolver and focuses **Replace connection**, without writing changes. Closing the resolver returns focus to its originating app control; **Back to canvas** or Escape from Connections returns to its opener. Only the top dialog receives keyboard and pointer input. While saving, the confirmation cannot be dismissed or submitted again. On failure, you can read the error, retry, or cancel; on success, both dialogs close and the list updates. This navigation is not yet in a published installer.
+**Cancel**, **Escape**, or clicking outside the confirmation returns to the resolver and focuses **Replace connection**, without writing changes. Closing the resolver returns focus to its originating app control; **Back to canvas** or Escape from Connections returns to its opener. Only the top dialog receives keyboard and pointer input. While saving, the confirmation cannot be dismissed or submitted again. On failure, you can read the error, retry, or cancel; on success, both dialogs close and the list updates. This navigation ships in Preview `2026.11.20.1708`.
 
 ## If Hyperion is not recognized
 
-In development source, if another Hyperion instance rejects this installation’s credentials at the requested address, the MCP launcher uses the alternate local port selected during startup. It does not change the saved client configuration or stop the other instance. This correction is not yet included in a published installer. Verify a read-only call such as `hyperion_list_runs`: an existing configuration or a visible tool list does not establish that calls work in that chat.
+If another Hyperion instance rejects this installation’s credentials at the requested address, the MCP launcher uses the alternate local port selected during startup. It does not change the saved client configuration or stop the other instance. This correction ships in Preview `2026.11.20.1708`. Verify a read-only call such as `hyperion_list_runs`: an existing configuration or a visible tool list does not establish that calls work in that chat.
 
 1. Check that you selected the right tool in the assistant.
 2. If setup is new, restart it and open a **new** chat (do not regenerate an old non-Hyperion thread). If you already did that and tools are still absent, inspect the actual Hyperion server status and configuration in the client.

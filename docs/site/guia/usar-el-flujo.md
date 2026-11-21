@@ -88,7 +88,7 @@ Puedes decir en el mismo chat: «Ahora traduce esta guía al inglés». El agent
 **Continuar desde aquí**, al final del gráfico, te ayuda a preparar esa petición. **Copiar petición para el chat** es el camino habitual (copiar ≠ entregar). Pega la petición en el chat conectado; el envío automático requiere un conector de envío — MCP solo no despierta el chat (**Enviar** oculto en esta fase). El agente debe crear el recorrido enlazado. Si el proceso sigue abierto y necesitas cambiarlo, usa la revisión del plan; si falló una tarea, usa reintentar.
 
 ::: info Disponibilidad
-Los instaladores **2026.11.18.0021 UTC · Preview** incluyen el chat Codex local experimental, un artefacto HTML complejo e inerte para probar la vista previa aislada, burbujas compactas tipadas con nombres completos accesibles sin cortes y resultados de compuertas con rutas y destinos humanos (vista previa HTML/SVG aislada), el interruptor **Trabajos**, el marco estándar y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
+Los instaladores **2026.11.20.1708 UTC · Preview** incluyen el chat local Desktop para Codex, Claude Code, Cursor Agent y Antigravity, un artefacto HTML complejo e inerte para probar la vista previa aislada, burbujas compactas tipadas con nombres completos accesibles sin cortes y resultados de compuertas con rutas y destinos humanos (vista previa HTML/SVG aislada), el interruptor **Trabajos**, el marco estándar y recorridos enlazados. [Descarga la nueva versión](primeros-pasos.md) si conservas una anterior.
 :::
 
 ## Mueve y ordena los nodos
@@ -101,6 +101,6 @@ Arrastra el asa de puntos sobre una tarjeta o símbolo. Con teclado, enfoca el n
 Las posiciones se conservan en este navegador por flujo, orientación y vista de pasos/trabajos, incluso al recibir actividad del agente. No cambian las dependencias ni el historial, y no se sincronizan con otros dispositivos.
 :::
 
-Disponible en los instaladores **2026.11.18.0021 UTC · Preview**. [Descargar](primeros-pasos.md).
+Disponible en los instaladores **2026.11.20.1708 UTC · Preview**. [Descargar](primeros-pasos.md).
 
 > En la preview publicada 2026.11.20.1708, la burbuja **Chat** mantiene el compositor visible junto al canvas y conecta el proveedor local al enviar el primer mensaje. El selector ofrece Codex, Claude Code, Cursor Agent y Antigravity mediante ACP. Se puede cambiar de proveedor cuando no hay un turno activo, incluso tras un fallo; el borrador se conserva. Las opciones de ejecutable y reconexión están en **Opciones de conexión**. Un fallo de autenticación se muestra como aviso con instrucciones de inicio de sesión, separado de la respuesta del agente. Enter envía; Shift+Enter añade una línea. El primer mensaje proporciona las reglas de colaboración de Hyperion y cada turno aporta la selección actual; el agente lee estado reciente en vez de suponerlo. El canvas mantiene decisiones, aprobaciones y correcciones. No se promete recuperación del transcript después de cerrar Desktop ni compatibilidad con Gemini/ChatGPT. Ambos instaladores pasaron pruebas nativas; Claude autenticado sigue sin verificar. Consulta las [notas y limitaciones de la preview](https://github.com/0vas/hyperion/releases/tag/v2026.11.20.1708).

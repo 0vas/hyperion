@@ -1,6 +1,6 @@
 # ADR 0037 — Chat literal local de Codex en Desktop
 
-Estado: **accepted in source; certificación local realizada, sin instalador publicado todavía**.
+Estado: **histórico; sustituido por ADR 0038 y publicado como chat multiharness en Preview 2026.11.20.1708**. Este ADR conserva la decisión Codex-only original y no describe el alcance actual.
 Fecha: 2026-11-17.
 
 ## Decisión
