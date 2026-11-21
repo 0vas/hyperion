@@ -1,5 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, MessageSquareText, Send, Square, Settings2 } from 'lucide-react';
+import {
+  Bot,
+  Braces,
+  CircleAlert,
+  CircleCheck,
+  CircleDashed,
+  MessageSquareText,
+  MousePointer2,
+  Orbit,
+  Send,
+  Settings2,
+  Square,
+  X,
+} from 'lucide-react';
 import { t, useLocale } from './i18n';
 
 type ThreadMessage = {
@@ -25,6 +38,44 @@ const LOGIN_COMMANDS: Record<string, string> = {
   cursor: 'cursor-agent login',
   antigravity: 'agy acp --login',
 };
+
+function HarnessMark({ id }: { id: string }) {
+  const Icon =
+    id === 'claude'
+      ? Bot
+      : id === 'cursor'
+        ? MousePointer2
+        : id === 'antigravity'
+          ? Orbit
+          : Braces;
+  return (
+    <span className={`live-chat-harness-mark ${id}`} aria-hidden="true">
+      <Icon size={18} strokeWidth={1.8} />
+    </span>
+  );
+}
+
+function harnessStatusLabel(status: string) {
+  if (status === 'ready') return t('Disponible localmente');
+  if (status === 'missing') return t('No instalado');
+  if (status === 'invalid-selection') return t('Requiere configuración');
+  return t('Comprobando disponibilidad');
+}
+
+function HarnessStatus({ status }: { status: string }) {
+  const Icon =
+    status === 'ready'
+      ? CircleCheck
+      : status === 'missing' || status === 'invalid-selection'
+        ? CircleAlert
+        : CircleDashed;
+  return (
+    <span className={`live-chat-harness-availability ${status}`}>
+      <Icon size={12} strokeWidth={2} aria-hidden="true" />
+      {harnessStatusLabel(status)}
+    </span>
+  );
+}
 
 type ChatContext = { runId: string | null; title?: string };
 type Conversation = { prompt: string; thread: ThreadMessage[] };
@@ -732,25 +783,38 @@ export function LiveChatPage({
             placeholder={t('Escribe tu mensaje…')}
           />
           <div className="live-chat-composer-actions">
-            <label className="form-sr-only" htmlFor="live-chat-harness">
-              {t('Proveedor')}
-            </label>
-            <select
-              id="live-chat-harness"
+            <div
+              className="live-chat-harness-picker"
               data-testid="live-chat-harness"
-              value={selectedHarness}
-              disabled={!liveChat?.selectHarness || contextLocked}
-              onChange={(event) => void selectHarness(event.target.value)}
+              role="group"
+              aria-label={t('Elige la IA local')}
             >
-              {harnesses.map((harness) => (
-                <option key={harness.id} value={harness.id}>
-                  {harness.label}
-                  {harness.status === 'missing'
-                    ? ` · ${t('No instalado')}`
-                    : ''}
-                </option>
-              ))}
-            </select>
+              <span className="live-chat-harness-picker-label">
+                {t('IA local')}
+              </span>
+              <div className="live-chat-harness-grid">
+                {harnesses.map((harness) => {
+                  const selected = harness.id === selectedHarness;
+                  return (
+                    <button
+                      key={harness.id}
+                      type="button"
+                      className={`live-chat-harness-card ${selected ? 'selected' : ''}`}
+                      data-testid={`live-chat-harness-${harness.id}`}
+                      aria-pressed={selected}
+                      disabled={!liveChat?.selectHarness || contextLocked}
+                      onClick={() => void selectHarness(harness.id)}
+                    >
+                      <HarnessMark id={harness.id} />
+                      <span className="live-chat-harness-copy">
+                        <span>{harness.label}</span>
+                        <HarnessStatus status={harness.status} />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <span className="live-chat-shortcut">
               {t('Enter para enviar · Shift+Enter para nueva línea')}
             </span>

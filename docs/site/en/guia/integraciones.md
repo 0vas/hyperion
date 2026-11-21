@@ -12,7 +12,20 @@ Codex, Claude Code, Cursor Agent and Antigravity receive the same Hyperion entry
 
 The private MCP offers every existing agent operation: create, read, open, execute eligible steps, record logs and artifacts, recover tasks and revise future work. Only the coordinator may mutate its workflow; changing harness does not transfer that permission. A revision pauses the workflow for the person to review and resume on the canvas. Recovery does not cancel tools or undo external effects: check them before repeating work. Waiting for decisions does not wake a closed chat; suspension needs a genuine installed resume connector. Forms, approvals, human corrections, pause, resume, cancellation and configuration remain human actions, never a credential shared with the harness.
 
-Each message identifies the current selection and requests fresh state through MCP. Changing workflows starts another provider session when no turn is active; previous workflow context is not copied. A request continuing a completed workflow can create a linked one without changing its parent. These instructions are not extra permission, a sandbox, or a guarantee of model compliance. The bubble and shared entry instructions ship in published Preview `2026.11.20.1708`; protocol tests do not certify an authenticated Claude session or a real conversation for every provider on Windows.
+Each message identifies the current selection and requests fresh state through MCP. Changing workflows starts another provider session when no turn is active; previous workflow context is not copied. A request continuing a completed workflow can create a linked one without changing its parent. These instructions are not extra permission, a sandbox, or a guarantee of model compliance. The bubble and shared entry instructions ship in published Preview `2026.11.20.1708`; the visual picker below is being prepared for the next Preview. Protocol tests do not certify an authenticated Claude session or a real conversation for every provider on Windows.
+
+#### Choosing local AI
+
+The composer shows one card per harness with a Hyperion SVG mark, its name, and its local status. The marks identify an option inside Hyperion; they are neither certification nor a substitute for a provider's logos or policies.
+
+| Visible status            | Exact meaning                                                   | It does not mean                                                                                                        |
+| ------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Available locally**     | Desktop resolved a usable absolute executable for that harness. | A signed-in session, loaded MCP tools, or a certified conversation.                                                     |
+| **Not installed**         | It did not find a compatible executable in allowed locations.   | That Desktop will install a CLI, search through a shell, or that the provider is unavailable through every other route. |
+| **Needs setup**           | The previously selected path is no longer valid.                | Credentials or workflows were lost.                                                                                     |
+| **Checking availability** | The main-process safe result has not arrived yet.               | The harness is available or connected.                                                                                  |
+
+Choose another card only between turns: a connection, active turn, or pending permission preserves the selection so work cannot be retargeted. Switching closes the previous idle ACP session and keeps the draft. **Available locally** is never rendered as “authenticated”; if the CLI reports that sign-in is needed, chat says so and offers retry or another harness.
 
 Install Desktop and open **Hyperion → Conectar con mi IA**. The assistant configures:
 

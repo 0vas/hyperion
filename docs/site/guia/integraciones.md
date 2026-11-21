@@ -12,7 +12,20 @@ Codex, Claude Code, Cursor Agent y Antigravity reciben las mismas instrucciones 
 
 El MCP privado ofrece todas las operaciones de agente existentes: crear, leer, abrir, ejecutar pasos elegibles, registrar logs y artefactos, recuperar tareas y revisar trabajo futuro. Solo el coordinador puede modificar su flujo; cambiar de harness no transfiere ese permiso. Una revisión pausa el flujo para que la persona la examine y reanude en el canvas. Recuperar no cancela herramientas ni deshace efectos externos: hay que comprobarlos antes de repetir. Esperar decisiones no despierta un chat cerrado; suspender requiere un conector de reanudación real instalado. Formularios, aprobaciones, correcciones humanas, pausa, reanudación, cancelación y configuración siguen siendo acciones humanas, nunca una credencial compartida con el harness.
 
-Cada mensaje identifica la selección actual y pide leer su estado por MCP. Cambiar de flujo inicia otra sesión del proveedor cuando no hay un turno activo; no copia el contexto anterior. Una petición que continúe un flujo completado puede crear otro enlazado, sin modificar el anterior. Estas instrucciones no son un permiso adicional, un sandbox ni una garantía de que un modelo las siga. La burbuja y esta entrada compartida se incluyen en la Preview publicada `2026.11.20.1708`; las pruebas de protocolo no certifican una sesión autenticada de Claude ni una conversación real para todos los proveedores en Windows.
+Cada mensaje identifica la selección actual y pide leer su estado por MCP. Cambiar de flujo inicia otra sesión del proveedor cuando no hay un turno activo; no copia el contexto anterior. Una petición que continúe un flujo completado puede crear otro enlazado, sin modificar el anterior. Estas instrucciones no son un permiso adicional, un sandbox ni una garantía de que un modelo las siga. La burbuja y esta entrada compartida se incluyen en la Preview publicada `2026.11.20.1708`; el selector visual descrito abajo se está preparando para la siguiente Preview. Las pruebas de protocolo no certifican una sesión autenticada de Claude ni una conversación real para todos los proveedores en Windows.
+
+#### Elegir la IA local
+
+El compositor muestra una tarjeta por harness con una marca SVG de Hyperion, su nombre y su estado local. Las marcas identifican la opción dentro de Hyperion; no son una certificación ni sustituyen los logotipos o políticas de sus proveedores.
+
+| Estado visible                 | Significado exacto                                                   | No significa                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Disponible localmente**      | Desktop resolvió un ejecutable absoluto utilizable para ese harness. | Que haya una sesión iniciada, herramientas MCP cargadas o una conversación certificada.                   |
+| **No instalado**               | No encontró un ejecutable compatible en las rutas permitidas.        | Que Desktop vaya a instalar una CLI, buscar en una shell o que el proveedor no pueda usarse por otra vía. |
+| **Requiere configuración**     | La ruta elegida anteriormente dejó de ser válida.                    | Que se hayan perdido credenciales o workflows.                                                            |
+| **Comprobando disponibilidad** | Aún no llegó el resultado seguro del proceso principal.              | Que el harness esté disponible o conectado.                                                               |
+
+Elige otra tarjeta solo entre turnos: conexión, turno activo o permiso pendiente conservan la selección para no redirigir trabajo. El cambio cierra la sesión ACP inactiva anterior y mantiene el borrador. **Disponible localmente** nunca se traduce como «autenticado»; si la CLI informa que hace falta iniciar sesión, el chat lo indica y ofrece reintentar o elegir otro harness.
 
 Instala Desktop y abre **Hyperion → Conectar con mi IA**. El asistente configura:
 

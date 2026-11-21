@@ -34,7 +34,7 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
         { id: 'claude', label: 'Claude Code', status: 'ready' },
         { id: 'codex', label: 'Codex', status: 'ready' },
         { id: 'cursor', label: 'Cursor Agent', status: 'ready' },
-        { id: 'antigravity', label: 'Antigravity', status: 'ready' },
+        { id: 'antigravity', label: 'Antigravity', status: 'missing' },
       ];
       Object.defineProperty(window, 'hyperionDesktop', {
         configurable: true,
@@ -99,6 +99,12 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     await page.getByRole('button', { name: 'Chat', exact: true }).click();
     const panel = page.getByTestId('live-chat-page');
     const input = panel.getByLabel('Petición para el agente');
+    await expect(panel.getByTestId('live-chat-harness-claude')).toContainText(
+      'Disponible localmente',
+    );
+    await expect(
+      panel.getByTestId('live-chat-harness-antigravity'),
+    ).toContainText('No instalado');
     await input.fill('Ayúdame a revisar este flujo');
     await input.press('Enter');
     await expect(panel.locator('.live-chat-notice')).toContainText(
@@ -108,19 +114,19 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     await expect(panel.getByTestId('live-chat-message-assistant')).toHaveCount(
       0,
     );
-    await panel.getByTestId('live-chat-harness').selectOption('codex');
+    await panel.getByTestId('live-chat-harness-codex').click();
     await expect(input).toHaveValue('Ayúdame a revisar este flujo');
     await expect(panel.locator('.live-chat-notice')).toHaveCount(0);
     await input.press('Enter');
     await expect(
       panel.getByTestId('live-chat-message-assistant'),
     ).toContainText('Puedo ayudarte');
-    await expect(panel.getByTestId('live-chat-harness')).toBeEnabled();
+    await expect(panel.getByTestId('live-chat-harness-codex')).toBeEnabled();
     for (const [id, label] of [
       ['cursor', 'Cursor Agent'],
       ['antigravity', 'Antigravity'],
     ]) {
-      await panel.getByTestId('live-chat-harness').selectOption(id!);
+      await panel.getByTestId(`live-chat-harness-${id}`).click();
       await input.fill('Revisa el flujo');
       await input.press('Enter');
       await expect(
