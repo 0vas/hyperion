@@ -551,7 +551,6 @@ export function createApp(options: Options) {
             listeners.delete(onChange);
             touchPresence();
             if (!listeners.size) waits.delete(run.id);
-            publish(options.store.get(run.id));
           };
           const finish = (value: Run) => {
             if (finished) return;

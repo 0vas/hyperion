@@ -81,3 +81,53 @@ test('a waiting harness receives the real human decision and can resume the depe
     store.close();
   }
 });
+
+test('disconnecting a long wait does not read the store during cleanup', async () => {
+  const { createApp } = await import('../src/server/app.js');
+  const { Store } = await import('../src/server/store.js');
+  const store = new Store(':memory:');
+  const app = createApp({
+    store,
+    agentToken: 'agent',
+    humanToken: 'human',
+    agentId: 'codex',
+  });
+  const url = await app.listen(0);
+  const agent = new HyperionClient({ url, token: 'agent' });
+  const abort = new AbortController();
+  const originalGet = store.get.bind(store);
+  let readsAfterDisconnect = 0;
+  try {
+    const run = await agent.create(
+      {
+        title: 'Disconnect wait',
+        steps: [{ id: 'work', title: 'Work', kind: 'agent' }],
+      },
+      'create-disconnect-wait',
+    );
+    const waiting = fetch(
+      `${url}/api/runs/${run.id}/wait?afterRevision=${run.revision}&timeoutSeconds=30`,
+      {
+        headers: { authorization: 'Bearer agent' },
+        signal: abort.signal,
+      },
+    ).catch(() => undefined);
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      if ((await agent.get(run.id)).agentWaiting) break;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.equal((await agent.get(run.id)).agentWaiting, true);
+    store.get = ((id: string) => {
+      readsAfterDisconnect += 1;
+      return originalGet(id);
+    }) as typeof store.get;
+    abort.abort();
+    await waiting;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(readsAfterDisconnect, 0);
+  } finally {
+    store.get = originalGet;
+    await app.close();
+    store.close();
+  }
+});
