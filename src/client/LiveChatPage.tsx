@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Bot,
-  Braces,
-  CircleAlert,
-  CircleCheck,
-  CircleDashed,
+  Check,
+  ChevronDown,
   MessageSquareText,
-  MousePointer2,
-  Orbit,
   Send,
   Settings2,
   Square,
   X,
 } from 'lucide-react';
+import antigravityMark from './brands/antigravity.svg';
+import claudeMark from './brands/claude.svg';
+import codexMark from './brands/codex.svg';
+import cursorMark from './brands/cursor.svg';
 import { t, useLocale } from './i18n';
 
 type ThreadMessage = {
@@ -39,18 +38,18 @@ const LOGIN_COMMANDS: Record<string, string> = {
   antigravity: 'agy acp --login',
 };
 
+const HARNESS_MARKS: Record<string, string> = {
+  codex: codexMark,
+  claude: claudeMark,
+  cursor: cursorMark,
+  antigravity: antigravityMark,
+};
+
 function HarnessMark({ id }: { id: string }) {
-  const Icon =
-    id === 'claude'
-      ? Bot
-      : id === 'cursor'
-        ? MousePointer2
-        : id === 'antigravity'
-          ? Orbit
-          : Braces;
+  const src = HARNESS_MARKS[id];
   return (
     <span className={`live-chat-harness-mark ${id}`} aria-hidden="true">
-      <Icon size={18} strokeWidth={1.8} />
+      {src ? <img src={src} alt="" /> : <span>{id.slice(0, 1)}</span>}
     </span>
   );
 }
@@ -63,17 +62,20 @@ function harnessStatusLabel(status: string) {
 }
 
 function HarnessStatus({ status }: { status: string }) {
-  const Icon =
-    status === 'ready'
-      ? CircleCheck
-      : status === 'missing' || status === 'invalid-selection'
-        ? CircleAlert
-        : CircleDashed;
   return (
     <span className={`live-chat-harness-availability ${status}`}>
-      <Icon size={12} strokeWidth={2} aria-hidden="true" />
+      <span className="live-chat-harness-status-dot" aria-hidden="true" />
       {harnessStatusLabel(status)}
     </span>
+  );
+}
+
+function HarnessStatusDot({ status }: { status: string }) {
+  return (
+    <span
+      className={`live-chat-harness-status-dot ${status}`}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -124,6 +126,7 @@ export function LiveChatPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [harnessMenuOpen, setHarnessMenuOpen] = useState(false);
   const [harnesses, setHarnesses] = useState<Harness[]>([
     { id: 'codex', label: 'Codex', status: 'unknown' },
   ]);
@@ -133,6 +136,8 @@ export function LiveChatPage({
   const threadRef = useRef<HTMLDivElement>(null);
   const followBottom = useRef(true);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  const harnessPickerRef = useRef<HTMLDivElement>(null);
+  const harnessTriggerRef = useRef<HTMLButtonElement>(null);
   const lastSubmitted = useRef('');
 
   useEffect(() => {
@@ -155,6 +160,20 @@ export function LiveChatPage({
     pendingApproval ||
     uncertain ||
     status === 'connecting';
+
+  useEffect(() => {
+    if (contextLocked) setHarnessMenuOpen(false);
+  }, [contextLocked]);
+
+  useEffect(() => {
+    if (!harnessMenuOpen) return;
+    const closeWhenLeaving = (event: PointerEvent) => {
+      if (!harnessPickerRef.current?.contains(event.target as Node))
+        setHarnessMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', closeWhenLeaving);
+    return () => document.removeEventListener('pointerdown', closeWhenLeaving);
+  }, [harnessMenuOpen]);
   useEffect(() => {
     onActivityChange(
       pendingApproval ? 'approval' : turnRunning ? 'working' : 'idle',
@@ -391,9 +410,11 @@ export function LiveChatPage({
     !requestBusy &&
     prompt.trim(),
   );
-  const harnessLabel =
-    harnesses.find((harness) => harness.id === selectedHarness)?.label ||
-    'Codex';
+  const selectedHarnessDetail = harnesses.find(
+    (harness) => harness.id === selectedHarness,
+  );
+  const harnessLabel = selectedHarnessDetail?.label || 'Codex';
+  const harnessStatus = selectedHarnessDetail?.status || 'unknown';
 
   async function connect() {
     if (!canConnect || !liveChat) return;
@@ -416,6 +437,7 @@ export function LiveChatPage({
 
   async function selectHarness(id: string) {
     if (!liveChat?.selectHarness || contextLocked) return;
+    setHarnessMenuOpen(false);
     setRequestBusy(true);
     setSetupMessage(null);
     setNotice(null);
@@ -784,36 +806,73 @@ export function LiveChatPage({
           />
           <div className="live-chat-composer-actions">
             <div
+              ref={harnessPickerRef}
               className="live-chat-harness-picker"
               data-testid="live-chat-harness"
-              role="group"
-              aria-label={t('Elige la IA local')}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && harnessMenuOpen) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setHarnessMenuOpen(false);
+                  harnessTriggerRef.current?.focus();
+                }
+              }}
             >
-              <span className="live-chat-harness-picker-label">
-                {t('IA local')}
-              </span>
-              <div className="live-chat-harness-grid">
-                {harnesses.map((harness) => {
-                  const selected = harness.id === selectedHarness;
-                  return (
-                    <button
-                      key={harness.id}
-                      type="button"
-                      className={`live-chat-harness-card ${selected ? 'selected' : ''}`}
-                      data-testid={`live-chat-harness-${harness.id}`}
-                      aria-pressed={selected}
-                      disabled={!liveChat?.selectHarness || contextLocked}
-                      onClick={() => void selectHarness(harness.id)}
-                    >
-                      <HarnessMark id={harness.id} />
-                      <span className="live-chat-harness-copy">
-                        <span>{harness.label}</span>
-                        <HarnessStatus status={harness.status} />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <button
+                ref={harnessTriggerRef}
+                type="button"
+                className="live-chat-harness-trigger"
+                data-testid="live-chat-harness-trigger"
+                aria-haspopup="menu"
+                aria-expanded={harnessMenuOpen}
+                aria-controls="live-chat-harness-menu"
+                aria-label={`${t('Elige la IA local')}: ${harnessLabel} (${harnessStatusLabel(harnessStatus)})`}
+                disabled={!liveChat?.selectHarness || contextLocked}
+                onClick={() => setHarnessMenuOpen((isOpen) => !isOpen)}
+              >
+                <HarnessMark id={selectedHarness} />
+                <span className="live-chat-harness-trigger-label">
+                  {harnessLabel}
+                </span>
+                <HarnessStatusDot status={harnessStatus} />
+                <ChevronDown
+                  className="live-chat-harness-trigger-chevron"
+                  size={15}
+                  aria-hidden="true"
+                />
+              </button>
+              {harnessMenuOpen && (
+                <div
+                  id="live-chat-harness-menu"
+                  className="live-chat-harness-menu"
+                  data-testid="live-chat-harness-menu"
+                  role="menu"
+                  aria-label={t('Elige la IA local')}
+                >
+                  {harnesses.map((harness) => {
+                    const selected = harness.id === selectedHarness;
+                    return (
+                      <button
+                        key={harness.id}
+                        type="button"
+                        className={`live-chat-harness-option ${selected ? 'selected' : ''}`}
+                        data-testid={`live-chat-harness-${harness.id}`}
+                        role="menuitemradio"
+                        aria-checked={selected}
+                        disabled={!liveChat?.selectHarness || contextLocked}
+                        onClick={() => void selectHarness(harness.id)}
+                      >
+                        <HarnessMark id={harness.id} />
+                        <span className="live-chat-harness-option-copy">
+                          <span>{harness.label}</span>
+                          <HarnessStatus status={harness.status} />
+                        </span>
+                        {selected && <Check size={15} aria-hidden="true" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <span className="live-chat-shortcut">
               {t('Enter para enviar · Shift+Enter para nueva línea')}

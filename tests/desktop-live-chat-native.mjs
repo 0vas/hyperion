@@ -103,12 +103,11 @@ test(
         assert.ok(
           (await input.inputValue()).includes('Conversación nativa verificada'),
         );
+        await page.getByTestId('live-chat-harness-trigger').click();
         await page.getByTestId('live-chat-harness-codex').click();
-        assert.equal(
-          await page
-            .getByTestId('live-chat-harness-codex')
-            .getAttribute('aria-pressed'),
-          'true',
+        assert.match(
+          await page.getByTestId('live-chat-harness-trigger').innerText(),
+          /Codex/,
         );
         console.log(
           `Verified ${harness} auth recovery, not an authenticated conversation.`,
@@ -159,8 +158,10 @@ test(
       await page.locator('.canvas-main').waitFor({ state: 'visible' });
       assert.equal(await input.inputValue(), 'Borrador conservado');
       for (const provider of ['claude', 'codex', 'cursor', 'antigravity']) {
+        await page.getByTestId('live-chat-harness-trigger').click();
         await page.getByTestId(`live-chat-harness-${provider}`).click();
       }
+      await page.getByTestId('live-chat-harness-trigger').click();
       await page.getByTestId(`live-chat-harness-${harness}`).click();
       assert.equal(await input.inputValue(), 'Borrador conservado');
       await page.screenshot({ path: join(home, 'chat-native.png') });

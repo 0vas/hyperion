@@ -99,6 +99,17 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     await page.getByRole('button', { name: 'Chat', exact: true }).click();
     const panel = page.getByTestId('live-chat-page');
     const input = panel.getByLabel('Petición para el agente');
+    const harnessTrigger = panel.getByTestId('live-chat-harness-trigger');
+    const chooseHarness = async (id: string) => {
+      if (!(await panel.getByTestId(`live-chat-harness-${id}`).count()))
+        await harnessTrigger.click();
+      await panel.getByTestId(`live-chat-harness-${id}`).click();
+    };
+    await expect(harnessTrigger).toContainText('Claude Code');
+    await expect(harnessTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(panel.getByTestId('live-chat-harness-menu')).toHaveCount(0);
+    await harnessTrigger.click();
+    await expect(harnessTrigger).toHaveAttribute('aria-expanded', 'true');
     await expect(panel.getByTestId('live-chat-harness-claude')).toContainText(
       'Disponible localmente',
     );
@@ -114,19 +125,20 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     await expect(panel.getByTestId('live-chat-message-assistant')).toHaveCount(
       0,
     );
-    await panel.getByTestId('live-chat-harness-codex').click();
+    await chooseHarness('codex');
+    await expect(harnessTrigger).toContainText('Codex');
     await expect(input).toHaveValue('Ayúdame a revisar este flujo');
     await expect(panel.locator('.live-chat-notice')).toHaveCount(0);
     await input.press('Enter');
     await expect(
       panel.getByTestId('live-chat-message-assistant'),
     ).toContainText('Puedo ayudarte');
-    await expect(panel.getByTestId('live-chat-harness-codex')).toBeEnabled();
+    await expect(harnessTrigger).toBeEnabled();
     for (const [id, label] of [
       ['cursor', 'Cursor Agent'],
       ['antigravity', 'Antigravity'],
     ]) {
-      await panel.getByTestId(`live-chat-harness-${id}`).click();
+      await chooseHarness(id!);
       await input.fill('Revisa el flujo');
       await input.press('Enter');
       await expect(
