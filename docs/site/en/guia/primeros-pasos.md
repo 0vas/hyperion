@@ -12,11 +12,11 @@ You need a compatible AI tool connected to Hyperion. Set up the connection once;
 
 <Downloads />
 
-Choose the installer for your computer. On Apple Silicon Macs, open the DMG and move Hyperion to **Applications** before connecting your AI. On Windows, open the EXE. Preview 2026.11.24.1412 has ad-hoc integrity signing: it is **not Apple-notarized and does not establish Developer ID identity**. Windows has no publisher signature.
+Choose the installer for your computer. On Apple Silicon Macs, open the DMG and move Hyperion to **Applications** before connecting your AI. On Windows, open the EXE. Beta 2026.11.24.2225 has ad-hoc integrity signing: it is **not Apple-notarized and does not establish Developer ID identity**. Windows has no publisher signature.
 
 ### macOS blocks the app
 
-This preview is not notarized, so Gatekeeper may block Hyperion. “Apple could not verify Hyperion.app is free of malware” alone does not establish download corruption; confirm you downloaded the official release before deciding whether to trust it.
+This Beta is not notarized, so Gatekeeper may block Hyperion. “Apple could not verify Hyperion.app is free of malware” alone does not establish download corruption; confirm you downloaded the official release before deciding whether to trust it.
 
 If macOS still blocks an official copy:
 
@@ -109,9 +109,9 @@ On **packaged Desktop**, Hyperion checks for updates at startup. If a newer buil
 
 From CalVer **2026.10.12.0638 UTC**, the menu checks GitHub and offers an installer for your computer. **Update and restart** downloads the official installer, checks size and SHA-256, then applies it and relaunches Hyperion (on macOS it replaces this app after `codesign`; on Windows it runs the verified NSIS installer). **Download installer…** saves the file for a manual install. Cancel with **Hyperion → Cancel download**. Workflows remain in local storage. Updating is not a canvas workflow.
 
-**The first migration from 0.4 or 0.5.1 to CalVer is manual from this page**: the old updater does not recognize the new tags. Public versions use **YYYY.MM.DD.HHmm UTC**, including hours and minutes; Preview is a separate channel. Subsequent updates are compared chronologically.
+**The first migration from 0.4 or 0.5.1 to CalVer is manual from this page**: the old updater does not recognize the new tags. Public versions use **YYYY.MM.DD.HHmm UTC**, including hours and minutes; Preview, Beta, and Stable are separate channels. Preview receives all three levels; Beta receives Beta and Stable; Stable receives Stable only. Subsequent updates are compared chronologically.
 
-Version 0.4.0 requires a manual upgrade. Its macOS bundle has an incomplete signature; downloading the same installer again does not fix it. The current Apple Silicon preview passes ad-hoc integrity verification but is not Apple-notarized. If macOS blocks installation, consult [Apple’s guide](https://support.apple.com/102445); do not disable system-wide protection.
+Version 0.4.0 requires a manual upgrade. Its macOS bundle has an incomplete signature; downloading the same installer again does not fix it. The current Apple Silicon Beta passes ad-hoc integrity verification but is not Apple-notarized. If macOS blocks installation, consult [Apple’s guide](https://support.apple.com/102445); do not disable system-wide protection.
 
 Starting with **2026.10.12.2101**, opening the updated app automatically backs up and restarts the older service from the same installation. Workflows, files, answers and history remain intact; tasks are not executed again. You do not need to restart your computer. The backup remains in `backups` inside the local data directory.
 

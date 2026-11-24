@@ -12,13 +12,13 @@ Necesitas una herramienta de IA compatible y Hyperion conectado a ella. La conex
 
 <Downloads />
 
-[Descargar Hyperion Desktop](https://github.com/0vas/hyperion/releases/tag/v2026.11.24.1412).
+[Descargar Hyperion Desktop Beta](https://github.com/0vas/hyperion/releases/tag/v2026.11.24.2225).
 
-Elige el instalador para tu equipo: `.dmg` para Mac Apple Silicon y `.exe` para Windows x64. Ábrelo e instala la aplicación. En Mac, mueve Hyperion a **Aplicaciones** antes de conectar tu IA. La preview 2026.11.24.1412 tiene firma de integridad ad-hoc: **no está notarizada por Apple ni acredita Developer ID**. Windows no tiene firma de editor.
+Elige el instalador para tu equipo: `.dmg` para Mac Apple Silicon y `.exe` para Windows x64. Ábrelo e instala la aplicación. En Mac, mueve Hyperion a **Aplicaciones** antes de conectar tu IA. La Beta 2026.11.24.2225 tiene firma de integridad ad-hoc: **no está notarizada por Apple ni acredita Developer ID**. Windows no tiene firma de editor.
 
 ### macOS bloquea la app
 
-Esta preview no está notarizada y Gatekeeper puede bloquear Hyperion. El aviso «Apple could not verify Hyperion.app is free of malware» no demuestra por sí mismo que la descarga esté dañada; comprueba que descargaste la copia del repositorio oficial antes de decidir si confías en ella.
+Esta Beta no está notarizada y Gatekeeper puede bloquear Hyperion. El aviso «Apple could not verify Hyperion.app is free of malware» no demuestra por sí mismo que la descarga esté dañada; comprueba que descargaste la copia del repositorio oficial antes de decidir si confías en ella.
 
 Si macOS sigue bloqueando una copia oficial:
 
@@ -117,9 +117,9 @@ En el **Desktop empaquetado**, Hyperion comprueba actualizaciones al arrancar. S
 
 Desde la versión CalVer **2026.10.12.0638 UTC**, el menú consulta GitHub y ofrece el instalador de tu equipo. Con **Actualizar y reiniciar**, descarga el instalador oficial, verifica tamaño y SHA-256 y aplica el cambio reiniciando Hyperion (en macOS reemplaza esta app tras `codesign`; en Windows lanza el instalador NSIS verificado). **Descargar instalador…** guarda el archivo para instalarlo a mano. Puedes cancelar desde **Hyperion → Cancelar descarga**. Tus flujos permanecen en el almacenamiento local. La actualización no es un flujo del canvas.
 
-**La primera migración desde 0.4 o 0.5.1 a CalVer es manual desde esta página**: el actualizador antiguo no reconoce las nuevas etiquetas. La versión pública usa **AAAA.MM.DD.HHMM UTC**, con hora y minuto; el canal Preview se muestra por separado. Las siguientes actualizaciones se comparan cronológicamente.
+**La primera migración desde 0.4 o 0.5.1 a CalVer es manual desde esta página**: el actualizador antiguo no reconoce las nuevas etiquetas. La versión pública usa **AAAA.MM.DD.HHMM UTC**, con hora y minuto; Preview, Beta y Stable son canales separados. Preview recibe los tres niveles; Beta recibe Beta y Stable; Stable recibe solo Stable. Las siguientes actualizaciones se comparan cronológicamente.
 
-La versión 0.4.0 necesita una actualización manual. Su bundle macOS tiene una firma incompleta; volver a descargar el mismo instalador no corrige esa firma. La preview actual de Apple Silicon pasa la verificación de integridad ad-hoc, pero no está notarizada por Apple. Si macOS bloquea la instalación, consulta la [guía de Apple](https://support.apple.com/102445); no desactives la protección global del equipo.
+La versión 0.4.0 necesita una actualización manual. Su bundle macOS tiene una firma incompleta; volver a descargar el mismo instalador no corrige esa firma. La Beta actual de Apple Silicon pasa la verificación de integridad ad-hoc, pero no está notarizada por Apple. Si macOS bloquea la instalación, consulta la [guía de Apple](https://support.apple.com/102445); no desactives la protección global del equipo.
 
 Desde **2026.10.12.2101**, al abrir la app actualizada, Hyperion respalda y reinicia automáticamente el servicio antiguo de la misma instalación. Conserva flujos, archivos, respuestas e historial; no vuelve a ejecutar tareas. No necesitas reiniciar el ordenador. La copia previa queda en `backups` dentro del almacenamiento local.
 

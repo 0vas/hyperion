@@ -40,7 +40,7 @@ Cuando el trabajo toca **archivos, carpetas o la terminal del proyecto**, **Clau
 
 Durante pasos agente, Code puede usar shell y archivos locales; debe reflejar progreso en Logs de Hyperion (latidos en trabajo largo) y `fail` ante permiso denegado o timeout—no dejar el paso «En curso» huérfano.
 
-**[Descargar Hyperion Desktop — Preview 2026.11.24.1412](https://github.com/0vas/hyperion/releases/tag/v2026.11.24.1412)**: incluye DMG para Apple Silicon y EXE para Windows x64, el chat local multiharness con selector compacto y la recuperación de servicio. Ambos instaladores y sus SHA-256 fueron verificados al publicar. El DMG tiene firma de integridad ad-hoc, no está notarizado por Apple ni acredita Developer ID; macOS puede pedir **Abrir igualmente**. Windows no tiene firma de editor. Intel macOS no se publica y la release estable sigue pendiente.
+**[Descargar Hyperion Desktop — Beta 2026.11.24.2225](https://github.com/0vas/hyperion/releases/tag/v2026.11.24.2225)**: pre-release con DMG para Apple Silicon y EXE para Windows x64, el chat local multiharness con selector compacto, la exclusión entre Menú y Chat y la recuperación de servicio. Ambos instaladores y sus SHA-256 fueron verificados al publicar. El DMG tiene firma de integridad ad-hoc, no está notarizado por Apple ni acredita Developer ID; macOS puede pedir **Abrir igualmente**. Windows no tiene firma de editor. Intel macOS no se publica y la release estable sigue pendiente.
 
 | Aplicación     | Qué prepara el asistente                                                             |
 | -------------- | ------------------------------------------------------------------------------------ |

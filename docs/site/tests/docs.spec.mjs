@@ -75,7 +75,13 @@ test('a new reader can find setup and search for retry', async ({ page }) => {
   await page.getByRole('link', { name: 'Empezar', exact: true }).click();
   await expect(page.locator('h1')).toHaveText('Tu primer flujo');
   await expect(
-    page.getByRole('link', { name: 'Descargar Hyperion Desktop', exact: true }),
+    page.getByRole('link', {
+      name:
+        publishedRelease.channel === 'beta'
+          ? 'Descargar Hyperion Desktop Beta'
+          : 'Descargar Hyperion Desktop',
+      exact: true,
+    }),
   ).toHaveAttribute(
     'href',
     `https://github.com/0vas/hyperion/releases/tag/v${publishedRelease.version}`,
