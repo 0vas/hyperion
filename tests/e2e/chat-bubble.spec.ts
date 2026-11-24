@@ -192,6 +192,34 @@ test('browser SPA does not expose the Desktop-only chat navigation', async ({
   await expect(page.getByTestId('live-chat-page')).toHaveCount(0);
 });
 
+test('opening Connections closes the Desktop chat instead of layering panels', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'es');
+    await installContextBridge(page);
+    await page.goto('/');
+
+    await page.getByTestId('chat-bubble').click();
+    await expect(page.getByTestId('live-chat-page')).toBeVisible();
+
+    await chooseFromAppMenu(page, 'Conexiones');
+    await expect(page.getByRole('dialog')).toContainText('Conexiones');
+    await expect(page.getByTestId('live-chat-page')).toBeHidden();
+    await expect(page.getByTestId('chat-bubble')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  } finally {
+    await context.close();
+  }
+});
+
 type ChatCall = { method: string; runId: string | null; text?: string };
 
 async function installContextBridge(page: Page, locale: 'es' | 'en' = 'es') {

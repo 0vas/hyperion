@@ -1292,9 +1292,10 @@ test('architecture leads with an interactive visual journey and hides reference 
     });
     await expect(page.locator('.VPSidebar')).toBeVisible();
     await expect(
-      page
-        .locator('.VPSidebar')
-        .getByRole('link', { name: en ? 'Architecture' : 'Arquitectura', exact: true }),
+      page.locator('.VPSidebar').getByRole('link', {
+        name: en ? 'Architecture' : 'Arquitectura',
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(journey.locator('svg.architecture-journey')).toBeVisible({
       timeout: 3000,

@@ -865,8 +865,8 @@ export function LiveChatPage({
                         <HarnessMark id={harness.id} />
                         <span className="live-chat-harness-option-copy">
                           <span>{harness.label}</span>
-                          <HarnessStatus status={harness.status} />
                         </span>
+                        <HarnessStatus status={harness.status} />
                         {selected && <Check size={15} aria-hidden="true" />}
                       </button>
                     );

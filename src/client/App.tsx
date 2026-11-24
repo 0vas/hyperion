@@ -855,6 +855,7 @@ export function App() {
     'idle' | 'working' | 'approval'
   >('idle');
   const chatTrigger = useRef<HTMLButtonElement>(null);
+  const reopenChatAfterDialog = useRef(false);
   useEffect(() => {
     document.documentElement.classList.toggle('electron', isElectron);
   }, [isElectron]);
@@ -2086,6 +2087,25 @@ export function App() {
     </div>
   );
   const dialogOpen = Boolean(popup || help || confirmation);
+  // The workflow picker is navigation, not a competing settings surface: a
+  // running chat must stay bound to its original workflow while it is shown.
+  const chatBlockingDialog = Boolean(
+    help || confirmation || (popup && popup !== 'runs'),
+  );
+  useEffect(() => {
+    // A blocking configuration dialog owns focus and the visual layer. Hide
+    // chat while it is open, then restore a panel the user had deliberately
+    // opened, preserving the conversation instead of layering two surfaces.
+    if (chatBlockingDialog) {
+      reopenChatAfterDialog.current ||= chatOpen;
+      if (chatOpen) setChatOpen(false);
+      return;
+    }
+    if (reopenChatAfterDialog.current) {
+      reopenChatAfterDialog.current = false;
+      setChatOpen(true);
+    }
+  }, [chatBlockingDialog, chatOpen]);
   useEffect(() => {
     if (!resultadoOpen || dialogOpen) return;
     const onKey = (event: KeyboardEvent) => {
