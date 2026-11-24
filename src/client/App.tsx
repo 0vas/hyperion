@@ -2092,6 +2092,9 @@ export function App() {
   const chatBlockingDialog = Boolean(
     help || confirmation || (popup && popup !== 'runs'),
   );
+  // Effects run after a render. Derive the visible state as well so a modal
+  // and the non-modal chat can never share the visual layer for one frame.
+  const chatSurfaceOpen = chatOpen && !chatBlockingDialog;
   useEffect(() => {
     // A blocking configuration dialog owns focus and the visual layer. Hide
     // chat while it is open, then restore a panel the user had deliberately
@@ -2237,9 +2240,10 @@ export function App() {
               className="chat-bubble"
               data-testid="chat-bubble"
               aria-label={t('Chat')}
-              aria-expanded={chatOpen}
+              aria-expanded={chatSurfaceOpen}
               aria-controls="hyperion-chat-panel"
-              onClick={() => setChatOpen(!chatOpen)}
+              disabled={chatBlockingDialog}
+              onClick={() => setChatOpen(!chatSurfaceOpen)}
             >
               <MessageSquareText size={22} aria-hidden="true" />
               <span>{t('Chat')}</span>
@@ -2254,10 +2258,11 @@ export function App() {
             <LiveChatPage
               runId={run?.id}
               runTitle={run?.title}
-              open={chatOpen}
+              open={chatSurfaceOpen}
               serviceOnline={online}
               busy={busy || dialogOpen}
               onActivityChange={setChatActivity}
+              onOpenConnections={openConnections}
               onClose={() => {
                 setChatOpen(false);
                 chatTrigger.current?.focus();

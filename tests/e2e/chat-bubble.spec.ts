@@ -100,6 +100,11 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     const panel = page.getByTestId('live-chat-page');
     const input = panel.getByLabel('Petición para el agente');
     const harnessTrigger = panel.getByTestId('live-chat-harness-trigger');
+    await expect(
+      panel.getByRole('button', { name: 'Opciones de conexión' }),
+    ).toHaveCount(0);
+    await expect(panel.locator('.live-chat-footnote')).toHaveCount(0);
+    await expect(panel.locator('.live-chat-empty h2')).toHaveCount(0);
     const chooseHarness = async (id: string) => {
       if (!(await panel.getByTestId(`live-chat-harness-${id}`).count()))
         await harnessTrigger.click();
@@ -108,6 +113,7 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     await expect(harnessTrigger).toContainText('Claude Code');
     await expect(harnessTrigger).toHaveAttribute('aria-expanded', 'false');
     await expect(panel.getByTestId('live-chat-harness-menu')).toHaveCount(0);
+    await page.setViewportSize({ width: 918, height: 780 });
     await harnessTrigger.click();
     await expect(harnessTrigger).toHaveAttribute('aria-expanded', 'true');
     await expect(panel.getByTestId('live-chat-harness-claude')).toContainText(
@@ -116,6 +122,22 @@ test('failed auth permits a provider change, preserves a draft and keeps the com
     await expect(
       panel.getByTestId('live-chat-harness-antigravity'),
     ).toContainText('No instalado');
+    const menu = panel.getByTestId('live-chat-harness-menu');
+    const menuBox = await menu.boundingBox();
+    const triggerBox = await harnessTrigger.boundingBox();
+    const panelBox = await panel.boundingBox();
+    expect(menuBox).not.toBeNull();
+    expect(triggerBox).not.toBeNull();
+    expect(panelBox).not.toBeNull();
+    expect(menuBox!.x).toBeGreaterThanOrEqual(panelBox!.x);
+    expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(
+      panelBox!.x + panelBox!.width,
+    );
+    expect(menuBox!.y).toBeLessThan(triggerBox!.y);
+    expect(menuBox!.y).toBeGreaterThanOrEqual(panelBox!.y);
+    await harnessTrigger.press('Escape');
+    await expect(harnessTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(harnessTrigger).toBeFocused();
     await input.fill('Ayúdame a revisar este flujo');
     await input.press('Enter');
     await expect(panel.locator('.live-chat-notice')).toContainText(
@@ -190,6 +212,31 @@ test('browser SPA does not expose the Desktop-only chat navigation', async ({
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Chat' })).toHaveCount(0);
   await expect(page.getByTestId('live-chat-page')).toHaveCount(0);
+});
+
+test('Desktop chat reserves canvas space at intermediate desktop widths', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+    viewport: { width: 918, height: 780 },
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'es');
+    await installContextBridge(page);
+    await page.goto('/');
+
+    await page.getByTestId('chat-bubble').click();
+    const panelBox = await page.getByTestId('live-chat-page').boundingBox();
+    const canvasBox = await page.locator('.canvas-main').boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(canvasBox).not.toBeNull();
+    expect(canvasBox!.x + canvasBox!.width).toBeLessThanOrEqual(panelBox!.x);
+  } finally {
+    await context.close();
+  }
 });
 
 test('opening Connections closes the Desktop chat instead of layering panels', async ({
@@ -750,13 +797,14 @@ test('Desktop live Codex chat renders protocol events and makes a real stop requ
     await page.goto(`/?run=${run.id}`);
     await page.getByRole('button', { name: 'Chat' }).click();
     const panel = page.getByTestId('live-chat-page');
-    await panel.getByRole('button', { name: 'Opciones de conexión' }).click();
-    await panel.getByTestId('live-chat-connect').click();
-    await expect(panel.getByTestId('live-chat-status')).toContainText(
-      'Sesión lista',
-    );
+    await expect(
+      panel.getByRole('button', { name: 'Opciones de conexión' }),
+    ).toHaveCount(0);
     await panel.getByLabel('Petición para el agente').fill('Inicia la tarea');
     await panel.getByTestId('live-chat-send').click();
+    await expect(panel.getByTestId('live-chat-status')).toContainText(
+      'Trabajando…',
+    );
     await expect(panel.getByTestId('live-chat-message-you')).toContainText(
       'Inicia la tarea',
     );
@@ -777,7 +825,7 @@ test('Desktop live Codex chat renders protocol events and makes a real stop requ
   }
 });
 
-test('Desktop keeps live chat disabled offline and offers executable selection and retry guidance', async ({
+test('Desktop sends connection setup to Connections instead of expanding chat settings', async ({
   browser,
   request,
 }) => {
@@ -827,18 +875,17 @@ test('Desktop keeps live chat disabled offline and offers executable selection a
     await page.getByRole('button', { name: 'Chat' }).click();
     const panel = page.getByTestId('live-chat-page');
     await expect(panel.getByTestId('live-chat-send')).toBeDisabled();
-    await panel.getByRole('button', { name: 'Opciones de conexión' }).click();
-    await panel.getByTestId('live-chat-connect').click();
+    await panel.getByLabel('Petición para el agente').fill('Inicia la tarea');
+    await panel.getByTestId('live-chat-send').click();
     await expect(panel.locator('.live-chat-notice')).toContainText(
       'Codex is not installed',
     );
-    await panel.getByTestId('live-chat-choose-executable').click();
-    await expect(panel.locator('.live-chat-notice')).toContainText(
-      'Codex seleccionado',
-    );
-    await expect(panel.getByTestId('live-chat-connect')).toContainText(
-      'Reconectar',
-    );
+    await expect(
+      panel.getByRole('button', { name: 'Opciones de conexión' }),
+    ).toHaveCount(0);
+    await panel.getByTestId('live-chat-open-connections').click();
+    await expect(page.getByRole('dialog')).toContainText('Conexiones');
+    await expect(panel).toBeHidden();
   } finally {
     await context.close();
   }

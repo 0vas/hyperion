@@ -18,7 +18,7 @@ While Connections, Settings, Help, or a confirmation is open, Desktop hides chat
 
 #### Choosing local AI
 
-The composer preserves room to write: a compact dropdown shows the selected provider's locally bundled SVG mark, name, and availability indicator. Opening it shows every harness with readable status. The marks are bundled locally, never fetched at runtime, and do not certify or imply provider endorsement.
+The composer preserves room to write: a compact dropdown shows the selected provider's locally bundled SVG mark, name, and availability indicator. Opening it keeps the menu within the panel and shows every harness with readable status. The marks are bundled locally, never fetched at runtime, and do not certify or imply provider endorsement.
 
 | Visible status            | Exact meaning                                                   | It does not mean                                                                                                        |
 | ------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +27,7 @@ The composer preserves room to write: a compact dropdown shows the selected prov
 | **Needs setup**           | The previously selected path is no longer valid.                | Credentials or workflows were lost.                                                                                     |
 | **Checking availability** | The main-process safe result has not arrived yet.               | The harness is available or connected.                                                                                  |
 
-Choose another harness from the menu only between turns: a connection, active turn, or pending permission preserves the selection so work cannot be retargeted. Switching closes the previous idle ACP session and keeps the draft. **Available locally** is never rendered as “authenticated”; if the CLI reports that sign-in is needed, chat says so and offers retry or another harness.
+Choose another harness from the menu only between turns: a connection, active turn, or pending permission preserves the selection so work cannot be retargeted. Switching closes the previous idle ACP session and keeps the draft. **Available locally** is never rendered as “authenticated”. When a harness needs setup, location, or sign-in, chat leads to **Connections**; that setup does not expand inside the composer.
 
 Install Desktop and open **Hyperion → Conectar con mi IA**. The assistant configures:
 

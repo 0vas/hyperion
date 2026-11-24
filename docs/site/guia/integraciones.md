@@ -18,7 +18,7 @@ Mientras Conexiones, Ajustes, Ayuda o una confirmación están abiertos, Desktop
 
 #### Elegir la IA local
 
-El compositor conserva espacio para escribir: un selector desplegable compacto muestra la marca SVG local del proveedor elegido, su nombre y un indicador de disponibilidad. Al abrirlo, el menú muestra todos los harness con el estado legible. Las marcas se empaquetan localmente, no se cargan desde la red y no son una certificación ni respaldo del proveedor.
+El compositor conserva espacio para escribir: un selector desplegable compacto muestra la marca SVG local del proveedor elegido, su nombre y un indicador de disponibilidad. Al abrirlo, el menú permanece dentro del panel y muestra todos los harness con el estado legible. Las marcas se empaquetan localmente, no se cargan desde la red y no son una certificación ni respaldo del proveedor.
 
 | Estado visible                 | Significado exacto                                                   | No significa                                                                                              |
 | ------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -27,7 +27,7 @@ El compositor conserva espacio para escribir: un selector desplegable compacto m
 | **Requiere configuración**     | La ruta elegida anteriormente dejó de ser válida.                    | Que se hayan perdido credenciales o workflows.                                                            |
 | **Comprobando disponibilidad** | Aún no llegó el resultado seguro del proceso principal.              | Que el harness esté disponible o conectado.                                                               |
 
-Elige otro harness desde el menú solo entre turnos: conexión, turno activo o permiso pendiente conservan la selección para no redirigir trabajo. El cambio cierra la sesión ACP inactiva anterior y mantiene el borrador. **Disponible localmente** nunca se traduce como «autenticado»; si la CLI informa que hace falta iniciar sesión, el chat lo indica y ofrece reintentar o elegir otro harness.
+Elige otro harness desde el menú solo entre turnos: conexión, turno activo o permiso pendiente conservan la selección para no redirigir trabajo. El cambio cierra la sesión ACP inactiva anterior y mantiene el borrador. **Disponible localmente** nunca se traduce como «autenticado». Si hace falta configurar, localizar o volver a autenticar un harness, el aviso lleva a **Conexiones**; esa configuración no se abre dentro del compositor.
 
 Instala Desktop y abre **Hyperion → Conectar con mi IA**. El asistente configura:
 

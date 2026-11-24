@@ -84,10 +84,8 @@ test('live chat page has no human command or API commit path', () => {
   assert.match(source, /liveChat\.stop/);
   assert.match(source, /live-chat-thread/);
   assert.match(source, /live-chat-composer/);
-  assert.match(
-    source,
-    /Las decisiones y aprobaciones del flujo se realizan en el canvas/,
-  );
+  assert.match(source, /onOpenConnections/);
+  assert.match(source, /Abrir conexiones/);
 });
 
 test('Desktop persistently mounts its chat bubble and panel beside the canvas', () => {
@@ -97,7 +95,8 @@ test('Desktop persistently mounts its chat bubble and panel beside the canvas', 
     /\{isElectron && \(\s*<>[\s\S]*?data-testid="chat-bubble"[\s\S]*?<LiveChatPage([\s\S]*?)\/>\s*<\/>\s*\)\}/,
   );
   assert.ok(desktopChat, 'Desktop owns the bubble and persistent chat panel');
-  assert.match(desktopChat[1]!, /open=\{chatOpen\}/);
+  assert.match(desktopChat[1]!, /open=\{chatSurfaceOpen\}/);
+  assert.match(desktopChat[1]!, /onOpenConnections=\{openConnections\}/);
   assert.match(panel, /hidden=\{!open\}/);
   assert.match(app, /<main className="canvas-main">/);
   assert.doesNotMatch(app, /desktopView/);

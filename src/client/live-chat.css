@@ -5,22 +5,22 @@
   bottom: max(24px, env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 9px 14px;
-  border: 1px solid color-mix(in srgb, var(--gold) 72%, var(--line));
-  border-radius: 999px;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--stone) 94%, var(--gold));
-  box-shadow: 0 8px 24px #0000001c;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, var(--line));
+  border-radius: 11px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--stone) 96%, transparent);
+  box-shadow: 0 4px 12px #00000012;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 .chat-bubble-activity {
-  max-width: 140px;
-  padding-left: 8px;
-  border-left: 1px solid currentColor;
+  max-width: 110px;
+  padding-left: 6px;
+  border-left: 1px solid color-mix(in srgb, currentColor 45%, transparent);
   font-size: 10px;
 }
 .live-chat-page {
@@ -42,7 +42,9 @@
 .live-chat-page[hidden] {
   display: none;
 }
-@media (min-width: 1000px) {
+/* Below 900px the chat becomes a contained sheet. At and above that width,
+   reserve a canvas column instead of letting the persistent panel overlap it. */
+@media (min-width: 900px) {
   .canvas-app .canvas-shell[data-chat-open='true'] .canvas-topbar {
     right: 0;
   }
@@ -131,7 +133,7 @@
   align-items: center;
   column-gap: 10px;
   row-gap: 4px;
-  padding: 10px 16px;
+  padding: 7px 14px;
   border-bottom: 1px solid var(--line);
 }
 .live-chat-context label {
@@ -143,38 +145,51 @@
 .live-chat-context select {
   display: block;
   width: 100%;
-  min-height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--glass);
+  min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, var(--line));
+  border-radius: 7px;
+  background: transparent;
   color: var(--ink);
-  padding: 6px 8px;
+  padding: 5px 7px;
   font: inherit;
   font-size: 13px;
   text-overflow: ellipsis;
 }
 .live-chat-context p {
-  grid-column: 2;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.live-chat-context p.live-chat-context-notice {
+  position: static;
+  grid-column: 1 / -1;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
   color: var(--muted);
   font-size: 10px;
   line-height: 1.5;
   margin: 0;
+  white-space: normal;
 }
 .live-chat-toolbar {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
 }
 .live-chat-heading,
 .live-chat-toolbar-actions,
 .live-chat-composer-actions,
 .live-chat-message-actions,
-.live-chat-suggestions,
-.live-chat-settings {
+.live-chat-suggestions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -190,7 +205,8 @@
 }
 .live-chat-heading h2 {
   font: inherit;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
   margin: 0;
 }
 .live-chat-status {
@@ -224,22 +240,18 @@
   background: color-mix(in srgb, var(--ink) 9%, var(--stone));
 }
 .live-chat-icon-button {
-  width: 36px;
+  width: 30px;
+  min-height: 30px !important;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
   padding: 0;
   justify-content: center;
 }
-.live-chat-settings {
-  flex-wrap: wrap;
-  flex: 0 0 auto;
-  padding: 12px 18px;
-  font-size: 13px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  max-height: 25%;
-  overflow-y: auto;
-}
-.live-chat-settings > span {
-  margin-right: auto;
-  color: var(--muted);
+.live-chat-icon-button:hover:not(:disabled) {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, var(--stone));
 }
 .live-chat-thread {
   flex: 1 1 auto;
@@ -251,40 +263,35 @@
 .live-chat-transcript {
   width: min(780px, 100%);
   margin: 0 auto;
-  padding: 16px 16px;
+  padding: 14px 16px;
   box-sizing: border-box;
 }
 .live-chat-empty {
-  padding: 18px 0 16px;
-  text-align: center;
-}
-.live-chat-empty-symbol {
-  display: inline-flex;
-  padding: 9px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--gold) 12%, transparent);
-  color: var(--gold);
-}
-.live-chat-empty h2 {
-  margin: 12px 0 7px;
-  font-size: 19px;
-  font-weight: 560;
-  letter-spacing: -0.025em;
+  padding: 12px 0;
 }
 .live-chat-empty p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
-  max-width: 330px;
-  margin: 0 auto;
+  max-width: 32ch;
+  margin: 0;
 }
 .live-chat-suggestions {
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  margin-top: 18px;
+  gap: 6px;
+  margin-top: 10px;
 }
-.live-chat-suggestions button {
+.live-chat-suggestion {
+  min-height: 28px !important;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--gold);
+  background: transparent;
   font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .live-chat-message {
   margin: 0 0 24px;
@@ -332,8 +339,10 @@
   width: min(780px, 100%);
   margin: 0 auto;
   padding: 8px 12px 12px;
-  max-height: 55%;
-  overflow-y: auto;
+  /* The provider menu opens above its compact trigger. Keep it out of a
+     scrolling wrapper so it remains fully visible and clickable. */
+  max-height: none;
+  overflow: visible;
   box-sizing: border-box;
 }
 .live-chat-composer {
@@ -452,11 +461,11 @@
 }
 .live-chat-harness-menu {
   position: absolute;
-  z-index: 4;
+  z-index: 2;
   bottom: calc(100% + 6px);
   left: 0;
-  width: min(246px, calc(100vw - 56px));
-  max-height: min(230px, 38vh);
+  width: min(232px, calc(100% + 56px));
+  max-height: min(184px, 34dvh);
   overflow-y: auto;
   padding: 4px;
   border: 1px solid color-mix(in srgb, var(--ink) 25%, var(--line));
@@ -521,6 +530,31 @@
 [data-theme='dark'] .live-chat-harness-availability.ready {
   color: #74d6a0;
 }
+[data-theme='dark'] .live-chat-page {
+  border-color: #64727d;
+  box-shadow: 0 18px 44px #0000005c;
+}
+[data-theme='dark']
+  .live-chat-page
+  :is(.live-chat-context, .live-chat-toolbar) {
+  border-color: #56646e;
+}
+[data-theme='dark'] .live-chat-composer {
+  border-color: #70808b;
+  background: #202a32;
+}
+[data-theme='dark'] .live-chat-harness-trigger {
+  border-color: #687781;
+  background: #202a32;
+}
+[data-theme='dark'] .live-chat-harness-menu {
+  border-color: #70808b;
+  background: #202a32;
+}
+[data-theme='dark'] .live-chat-harness-option:hover:not(:disabled),
+[data-theme='dark'] .live-chat-harness-option:focus-visible {
+  background: #2d3a44;
+}
 @media (prefers-reduced-motion: no-preference) {
   .live-chat-harness-trigger,
   .live-chat-harness-option {
@@ -548,22 +582,16 @@
   outline: 2px solid var(--gold);
   outline-offset: 3px;
 }
-.live-chat-footnote {
-  color: var(--muted);
-  font-size: 10px;
-  text-align: center;
-  margin: 9px 0 0;
-}
 .live-chat-notice {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--gold) 7%, var(--stone));
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--gold);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--ink) 3%, var(--stone));
   font-size: 12px;
 }
 .live-chat-notice p {
@@ -579,7 +607,7 @@
   margin-left: auto;
   font-size: 12px;
 }
-@media (max-width: 780px) {
+@media (max-width: 899px) {
   .live-chat-page {
     inset: 92px 12px 88px;
     width: auto;
@@ -608,9 +636,6 @@
   .live-chat-shortcut {
     display: none;
   }
-  .live-chat-settings {
-    padding: 10px 14px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .live-chat-page button:active:not(:disabled) {
@@ -629,8 +654,7 @@
   .live-chat-context {
     padding: 8px 14px;
   }
-  .live-chat-context p,
-  .live-chat-footnote {
+  .live-chat-context p {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -639,7 +663,6 @@
   }
   .live-chat-bottom {
     padding: 6px 12px 10px;
-    max-height: 50%;
   }
   .live-chat-composer {
     padding: 8px;

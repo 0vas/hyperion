@@ -4,7 +4,6 @@ import {
   ChevronDown,
   MessageSquareText,
   Send,
-  Settings2,
   Square,
   X,
 } from 'lucide-react';
@@ -96,6 +95,7 @@ export function LiveChatPage({
   serviceOnline,
   busy = false,
   onClose,
+  onOpenConnections,
   onActivityChange,
 }: {
   runId?: string;
@@ -104,6 +104,7 @@ export function LiveChatPage({
   serviceOnline: boolean;
   busy?: boolean;
   onClose: () => void;
+  onOpenConnections: () => void;
   onActivityChange: (activity: 'idle' | 'working' | 'approval') => void;
 }) {
   useLocale();
@@ -125,7 +126,6 @@ export function LiveChatPage({
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [harnessMenuOpen, setHarnessMenuOpen] = useState(false);
   const [harnesses, setHarnesses] = useState<Harness[]>([
     { id: 'codex', label: 'Codex', status: 'unknown' },
@@ -457,28 +457,6 @@ export function LiveChatPage({
     }
   }
 
-  async function chooseExecutable() {
-    if (!liveChat || contextLocked) return;
-    const choose = liveChat.chooseExecutable || liveChat.chooseCodex;
-    if (!choose) return;
-    setRequestBusy(true);
-    try {
-      const result = await choose();
-      if (result.selected)
-        setSetupMessage(
-          t('{0} seleccionado. Usa Reintentar para iniciar el hilo local.', {
-            0: harnessLabel,
-          }),
-        );
-    } catch {
-      setSetupMessage(
-        t('No se pudo guardar la aplicación del harness seleccionada.'),
-      );
-    } finally {
-      setRequestBusy(false);
-    }
-  }
-
   async function send() {
     if (!canSend || !liveChat) return;
     const submitted = prompt;
@@ -584,16 +562,7 @@ export function LiveChatPage({
         <div className="live-chat-toolbar-actions">
           <button
             type="button"
-            className="secondary live-chat-icon-button"
-            aria-label={t('Opciones de conexión')}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen(!settingsOpen)}
-          >
-            <Settings2 size={17} />
-          </button>
-          <button
-            type="button"
-            className="secondary live-chat-icon-button"
+            className="live-chat-icon-button"
             aria-label={t('Cerrar chat')}
             onClick={onClose}
           >
@@ -624,7 +593,14 @@ export function LiveChatPage({
           )}
           <option value="">{t('Nuevo workflow')}</option>
         </select>
-        <p id="live-chat-context-help">
+        <p
+          id="live-chat-context-help"
+          className={
+            contextLocked || runId !== canvasRunId
+              ? 'live-chat-context-notice'
+              : undefined
+          }
+        >
           {contextLocked
             ? t(
                 'El contexto permanece fijo hasta terminar el turno y resolver sus permisos.',
@@ -640,32 +616,6 @@ export function LiveChatPage({
                 )}
         </p>
       </section>
-      {settingsOpen && (
-        <section
-          className="live-chat-settings"
-          aria-label={t('Opciones de conexión')}
-        >
-          <span>{t('Usa el proveedor instalado en tu equipo.')}</span>
-          <button
-            type="button"
-            className="secondary"
-            data-testid="live-chat-choose-executable"
-            disabled={!liveChat || contextLocked}
-            onClick={() => void chooseExecutable()}
-          >
-            {t('Elegir ejecutable')}
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            data-testid="live-chat-connect"
-            disabled={!canConnect || turnRunning}
-            onClick={() => void (uncertain ? resolveUncertain() : connect())}
-          >
-            {uncertain ? t('Resolver turno incierto') : t('Reconectar')}
-          </button>
-        </section>
-      )}
       <section
         ref={threadRef}
         className="live-chat-thread"
@@ -685,10 +635,6 @@ export function LiveChatPage({
         <div className="live-chat-transcript">
           {thread.length === 0 && (
             <div className="live-chat-empty">
-              <span className="live-chat-empty-symbol">
-                <MessageSquareText size={25} />
-              </span>
-              <h2>{t('¿Qué quieres hacer?')}</h2>
               <p>
                 {t(
                   'Conversa con tu IA local y lleva el trabajo al canvas de Hyperion.',
@@ -700,7 +646,7 @@ export function LiveChatPage({
                   : ['Ayúdame a crear un workflow']
                 ).map((text) => (
                   <button
-                    className="secondary"
+                    className="live-chat-suggestion"
                     type="button"
                     key={text}
                     onClick={() => {
@@ -773,6 +719,27 @@ export function LiveChatPage({
                 onClick={() => void connect()}
               >
                 {t('Reintentar')}
+              </button>
+            )}
+            {(setupMessage || !serviceOnline) && (
+              <button
+                type="button"
+                className="secondary"
+                data-testid="live-chat-open-connections"
+                onClick={onOpenConnections}
+              >
+                {t('Abrir conexiones')}
+              </button>
+            )}
+            {uncertain && (
+              <button
+                type="button"
+                className="secondary"
+                data-testid="live-chat-resolve-uncertain"
+                disabled={requestBusy}
+                onClick={() => void resolveUncertain()}
+              >
+                {t('Resolver turno incierto')}
               </button>
             )}
           </div>
@@ -902,11 +869,6 @@ export function LiveChatPage({
             )}
           </div>
         </section>
-        <p className="live-chat-footnote">
-          {t(
-            'Las decisiones y aprobaciones del flujo se realizan en el canvas.',
-          )}
-        </p>
       </div>
     </aside>
   );
