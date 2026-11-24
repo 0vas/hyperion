@@ -2092,9 +2092,10 @@ export function App() {
   const chatBlockingDialog = Boolean(
     help || confirmation || (popup && popup !== 'runs'),
   );
-  // Effects run after a render. Derive the visible state as well so a modal
-  // and the non-modal chat can never share the visual layer for one frame.
-  const chatSurfaceOpen = chatOpen && !chatBlockingDialog;
+  // Menu, dialog, and chat are mutually exclusive visual surfaces. Keep
+  // chatOpen intact while Menu is open so its conversation and draft return
+  // exactly as they were when Menu closes.
+  const chatSurfaceOpen = chatOpen && !chatBlockingDialog && !menuOpen;
   useEffect(() => {
     // A blocking configuration dialog owns focus and the visual layer. Hide
     // chat while it is open, then restore a panel the user had deliberately
@@ -2143,7 +2144,7 @@ export function App() {
     <div className="app-shell canvas-app" data-connected={online}>
       <div
         className="canvas-shell"
-        data-chat-open={isElectron && chatOpen}
+        data-chat-open={isElectron && chatSurfaceOpen}
         inert={dialogOpen}
         onClickCapture={(event) => {
           const button = (event.target as HTMLElement).closest('button');
@@ -2243,7 +2244,17 @@ export function App() {
               aria-expanded={chatSurfaceOpen}
               aria-controls="hyperion-chat-panel"
               disabled={chatBlockingDialog}
-              onClick={() => setChatOpen(!chatSurfaceOpen)}
+              onMouseDown={(event) => {
+                // AppMenu closes on a document mousedown. Keep this click as
+                // an explicit handoff so its click handler can open chat.
+                if (menuOpen) event.stopPropagation();
+              }}
+              onClick={() => {
+                if (menuOpen) {
+                  setMenuOpen(false);
+                  setChatOpen(true);
+                } else setChatOpen(!chatSurfaceOpen);
+              }}
             >
               <MessageSquareText size={22} aria-hidden="true" />
               <span>{t('Chat')}</span>

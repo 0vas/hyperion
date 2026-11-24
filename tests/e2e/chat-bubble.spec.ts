@@ -6,7 +6,7 @@ import {
 } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
-import { chooseFromAppMenu } from './app-menu';
+import { chooseFromAppMenu, openAppMenu } from './app-menu';
 import { mockConnectionHome, setAppearance } from './connection-fixtures';
 
 const credentials = () =>
@@ -212,6 +212,45 @@ test('browser SPA does not expose the Desktop-only chat navigation', async ({
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Chat' })).toHaveCount(0);
   await expect(page.getByTestId('live-chat-page')).toHaveCount(0);
+});
+
+test('Desktop Menu and chat are mutually exclusive while preserving the chat draft', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'es');
+    await installContextBridge(page);
+    await page.goto('/');
+
+    const chat = page.getByTestId('live-chat-page');
+    const chatTrigger = page.getByTestId('chat-bubble');
+    const prompt = chat.getByLabel('Petición para el agente');
+    await chatTrigger.click();
+    await prompt.fill('Conservar este borrador');
+
+    await openAppMenu(page);
+    await expect(chat).toBeHidden();
+    await expect(chatTrigger).toHaveAttribute('aria-expanded', 'false');
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu', { name: 'Menú' })).toBeHidden();
+    await expect(chat).toBeVisible();
+    await expect(prompt).toHaveValue('Conservar este borrador');
+    await expect(prompt).toBeFocused();
+
+    await openAppMenu(page);
+    await chatTrigger.click();
+    await expect(page.getByRole('menu', { name: 'Menú' })).toBeHidden();
+    await expect(chat).toBeVisible();
+    await expect(prompt).toBeFocused();
+  } finally {
+    await context.close();
+  }
 });
 
 test('Desktop chat reserves canvas space at intermediate desktop widths', async ({
