@@ -12,7 +12,7 @@ You need a compatible AI tool connected to Hyperion. Set up the connection once;
 
 <Downloads />
 
-Choose the installer for your computer. On Apple Silicon Macs, open the DMG and move Hyperion to **Applications** before connecting your AI. On Windows, open the EXE. Preview 2026.11.24.0219 has ad-hoc integrity signing: it is **not Apple-notarized and does not establish Developer ID identity**. Windows has no publisher signature.
+Choose the installer for your computer. On Apple Silicon Macs, open the DMG and move Hyperion to **Applications** before connecting your AI. On Windows, open the EXE. Preview 2026.11.24.0321 has ad-hoc integrity signing: it is **not Apple-notarized and does not establish Developer ID identity**. Windows has no publisher signature.
 
 ### macOS blocks the app
 
