@@ -6,7 +6,7 @@ Hyperion keeps the same workflow regardless of the tool doing the work. The loca
 
 ### Desktop side chat
 
-The Desktop-only chat bubble sits beside the canvas. Ask about the selected workflow or create a new one from Home, without inventing or opening a workflow first. Opening the bubble does not send messages or create work automatically.
+The Desktop-only chat bubble sits beside the canvas. Work on the selected workflow or start a new one from Home, without inventing or opening a workflow first. Opening the bubble or connecting a provider does not send messages or create work automatically. Every actual Desktop Chat request without a selected workflow first creates one through Hyperion, retaining the original text in `plan.request`, before it receives a substantive response. With a selected workflow, the harness first reads its state and then continues eligible work or proposes an explicit revision; it does not answer a general query outside that workflow.
 
 Codex, Claude Code, Cursor Agent and Antigravity receive the same Hyperion entry instructions: collaborate clearly, be concise and proactive, reply in your language, and turn your intent into a visible workflow with real evidence. Only missing information is requested; scope questions, forms and approvals stay on the canvas. A provider's one-time tool permission does not approve a workflow.
 

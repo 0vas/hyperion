@@ -53,3 +53,18 @@ test('entry instructions expose agent recovery and revision without human impers
     /does not expose plan revision|amend, retry/,
   );
 });
+
+test('every real chat message is bound to a Hyperion workflow before a substantive reply', () => {
+  assert.match(
+    HYPERION_ENTRY_PROMPT,
+    /Never provide a substantive direct answer outside an associated Hyperion workflow/,
+  );
+  assert.match(
+    HYPERION_ENTRY_PROMPT,
+    /no workflow is selected.*hyperion_create_run.*plan\.request.*before offering a substantive response/i,
+  );
+  assert.match(
+    HYPERION_ENTRY_PROMPT,
+    /workflow is selected.*read.*continue.*revise/i,
+  );
+});

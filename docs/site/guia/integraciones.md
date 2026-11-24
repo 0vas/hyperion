@@ -6,7 +6,7 @@ Hyperion mantiene el mismo proceso independientemente de la herramienta que real
 
 ### Chat lateral de Desktop
 
-La burbuja de chat, exclusiva de Desktop, permanece al costado del canvas. Puedes pedir ayuda sobre el flujo seleccionado o crear uno nuevo desde Inicio, sin inventar ni abrir antes un flujo. Abrir la burbuja no envía mensajes ni crea trabajo automáticamente.
+La burbuja de chat, exclusiva de Desktop, permanece al costado del canvas. Puedes trabajar sobre el flujo seleccionado o iniciar uno nuevo desde Inicio, sin inventar ni abrir antes un flujo. Abrir la burbuja o conectar un proveedor no envía mensajes ni crea trabajo automáticamente. Cada petición real de Desktop Chat sin flujo seleccionado crea primero un flujo mediante Hyperion, con el texto original en `plan.request`, antes de recibir una respuesta sustantiva. Con un flujo seleccionado, el harness primero lee su estado y luego continúa trabajo elegible o propone una revisión explícita; no responde una consulta general fuera de ese flujo.
 
 Codex, Claude Code, Cursor Agent y Antigravity reciben las mismas instrucciones de entrada de Hyperion: colaborar con claridad, ser concisos y proactivos, responder en tu idioma y convertir tu intención en un flujo visible con evidencia real. Solo se solicitan los datos que faltan; las preguntas de alcance, formularios y aprobaciones siguen en el canvas. Los permisos puntuales del proveedor no aprueban un workflow.
 

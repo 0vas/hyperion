@@ -225,6 +225,8 @@ for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
           for (const rule of [
             'language',
             'hyperion_active',
+            'substantive direct answer',
+            'plan.request',
             'parentRunId',
             'commandId',
             'expectedRevision',
