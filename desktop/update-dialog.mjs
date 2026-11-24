@@ -7,6 +7,7 @@ import { join } from 'node:path';
 function channelLabel(channel) {
   const value = String(channel || 'preview').toLowerCase();
   if (value === 'stable') return 'Stable';
+  if (value === 'beta') return 'Beta';
   return 'Preview';
 }
 
@@ -78,7 +79,7 @@ export function createUpdateController({
               0: currentVersion,
               1: channelLabel(channel),
               2: update.version,
-              3: channelLabel(channel),
+              3: channelLabel(update.channel || channel),
             },
           ),
           buttons: [

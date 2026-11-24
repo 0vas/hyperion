@@ -6,6 +6,14 @@ import PlatformIcon from './PlatformIcon.vue';
 const { lang } = useData();
 const release = `https://github.com/0vas/hyperion/releases/download/v${published.version}/`;
 const releaseDate = `${published.version.slice(0, 10).replaceAll('.', '-')}T${published.version.slice(11, 13)}:${published.version.slice(13)}:00Z`;
+const channelLabel =
+  published.channel === 'stable'
+    ? lang.value === 'es'
+      ? 'Estable'
+      : 'Stable'
+    : published.channel === 'beta'
+      ? 'Beta'
+      : 'Preview';
 const installers = [
   {
     name: 'macOS · Apple Silicon',
@@ -34,16 +42,7 @@ const installers = [
     <div class="download-version">
       <span>{{ lang === 'es' ? 'Versión' : 'Version' }}</span>
       <time :datetime="releaseDate">{{ published.version }}</time>
-      <span
-        >UTC ·
-        {{
-          published.channel === 'preview'
-            ? 'Preview'
-            : lang === 'es'
-              ? 'Estable'
-              : 'Stable'
-        }}</span
-      >
+      <span>UTC · {{ channelLabel }}</span>
     </div>
     <div class="download-grid">
       <a
@@ -91,8 +90,8 @@ const installers = [
     <aside v-else class="download-status">
       <strong>{{
         lang === 'es'
-          ? 'macOS: esta preview aún no está notarizada por Apple'
-          : 'macOS: this preview is not yet notarized by Apple'
+          ? `macOS: esta ${channelLabel} aún no está notarizada por Apple`
+          : `macOS: this ${channelLabel} is not yet notarized by Apple`
       }}</strong>
       <p>
         {{

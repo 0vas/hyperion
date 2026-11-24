@@ -26,7 +26,7 @@ Local chat uses the same ACP boundary for Codex, Claude Code, Cursor Agent and A
 
 The shared launcher can replace an older authenticated service from the same installation after verifying its process identity and creating an integrity-checked SQLite backup. This preserves workflow state and external tasks; it adds no shutdown endpoint or chat wakeup. [Runtime upgrade lifecycle](https://github.com/0vas/hyperion/blob/main/docs/decisions/0034-runtime-replacement-on-upgrade.md).
 
-Desktop also checks GitHub releases and downloads installers after confirmation, validating size and SHA-256. macOS ad-hoc integrity is not notarization. [Distribution and update decision](https://github.com/0vas/hyperion/blob/main/docs/decisions/0031-desktop-integrity-and-updates.md).
+Desktop also checks GitHub releases and downloads installers after confirmation, validating size and SHA-256. It classifies Preview, Beta, and Stable from matching release names and prerelease state before deciding which channel may update. macOS ad-hoc integrity is not notarization. [Distribution and update decision](https://github.com/0vas/hyperion/blob/main/docs/decisions/0031-desktop-integrity-and-updates.md) · [Beta channel](https://github.com/0vas/hyperion/blob/main/docs/decisions/0039-beta-release-channel.md).
 
 ::: info What is available
 Engine, canvas, persistence and continuation queue are implemented. Resuming a closed chat requires a real installed connector; native connectors remain pending.

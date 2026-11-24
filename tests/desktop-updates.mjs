@@ -22,13 +22,22 @@ const asset = (version, suffix = 'mac-arm64.dmg') => ({
   browser_download_url: `https://github.com/0vas/hyperion/releases/download/v${version}/Hyperion-${version}-${suffix}`,
   digest: 'sha256:' + createHash('sha256').update(bytes).digest('hex'),
 });
-const release = (v, extra = {}) => ({
-  tag_name: `v${v}`,
-  prerelease: v.includes('-'),
-  draft: false,
-  assets: [asset(v)],
-  ...extra,
-});
+const release = (v, extra = {}) => {
+  const {
+    channel = v.includes('preview') ? 'preview' : 'stable',
+    prerelease = channel !== 'stable',
+    name = `Hyperion ${v} ${channel[0].toUpperCase()}${channel.slice(1)}`,
+    ...rest
+  } = extra;
+  return {
+    tag_name: `v${v}`,
+    name,
+    prerelease,
+    draft: false,
+    assets: [asset(v)],
+    ...rest,
+  };
+};
 test('updates select newer compatible releases numerically and respect the preview channel', () => {
   const releases = [
     release('0.5.2-preview.1'),
@@ -144,7 +153,7 @@ test('CalVer orders releases by UTC date and minute, preserves channels and neve
   const options = [
     release('2026.10.12.0640'),
     release('2026.10.12.0639'),
-    release('2026.10.13.0000', { prerelease: true }),
+    release('2026.10.13.0000', { channel: 'preview' }),
   ];
   assert.equal(
     selectRelease(options, '2026.10.12.0638', 'darwin', 'arm64').version,
@@ -189,4 +198,93 @@ test('CalVer orders releases by UTC date and minute, preserves channels and neve
       null,
     );
   }
+});
+
+test('explicitly named release channels route previews, betas, and stable installs safely', () => {
+  const candidates = [
+    release('2026.11.24.1415', { channel: 'preview' }),
+    release('2026.11.24.1416', { channel: 'beta' }),
+    release('2026.11.24.1417', { channel: 'stable' }),
+  ];
+  assert.equal(
+    selectRelease(candidates, '2026.11.24.1412', 'darwin', 'arm64', 'preview')
+      .channel,
+    'stable',
+  );
+  assert.equal(
+    selectRelease(
+      candidates.slice(0, 2),
+      '2026.11.24.1412',
+      'darwin',
+      'arm64',
+      'beta',
+    ).channel,
+    'beta',
+  );
+  assert.equal(
+    selectRelease(candidates, '2026.11.24.1412', 'darwin', 'arm64', 'stable')
+      .channel,
+    'stable',
+  );
+  for (const candidate of candidates)
+    assert.equal(
+      selectRelease(
+        [candidate],
+        '2026.11.24.1412',
+        'darwin',
+        'arm64',
+        'preview',
+      )?.channel,
+      candidate.name.split(' ').at(-1).toLowerCase(),
+    );
+  assert.equal(
+    selectRelease(
+      [release('2026.11.24.1418', { channel: 'preview' })],
+      '2026.11.24.1412',
+      'darwin',
+      'arm64',
+      'beta',
+    ),
+    null,
+  );
+  assert.equal(
+    selectRelease(
+      [release('2026.11.24.1418', { channel: 'beta' })],
+      '2026.11.24.1412',
+      'darwin',
+      'arm64',
+      'stable',
+    ),
+    null,
+  );
+  assert.equal(
+    selectRelease(
+      [release('2026.11.24.1419', { channel: 'preview' })],
+      '2026.11.24.1412',
+      'darwin',
+      'arm64',
+      'stable',
+    ),
+    null,
+  );
+});
+
+test('CalVer channels require matching explicit release names and prerelease state', () => {
+  const malformed = [
+    release('2026.11.24.1415', { channel: 'beta', prerelease: false }),
+    release('2026.11.24.1416', { channel: 'preview', prerelease: false }),
+    release('2026.11.24.1417', { channel: 'stable', prerelease: true }),
+    release('2026.11.24.1418', { name: 'Hyperion 2026.11.24.1418' }),
+  ];
+  for (const candidate of malformed)
+    assert.equal(
+      selectRelease(
+        [candidate],
+        '2026.11.24.1412',
+        'darwin',
+        'arm64',
+        'preview',
+      ),
+      null,
+    );
 });

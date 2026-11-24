@@ -47,6 +47,13 @@ test('public CalVer, runtime, native build and package metadata stay consistent'
   );
   assert.ok(parseCalVer('2028.02.29.1200'));
   assert.equal(parseCalVer('2027.02.29.1200'), null);
+  assert.doesNotThrow(() =>
+    releaseVersions({
+      version: '2026.12.31.2358',
+      timezone: 'UTC',
+      channel: 'beta',
+    }),
+  );
 });
 
 test('public macOS packaging fails before building when notarization credentials are absent', () => {

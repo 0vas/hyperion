@@ -1431,8 +1431,12 @@ test('CalVer minute and macOS opening instructions remain visible in both themes
         );
         await expect(downloads.locator('.download-status')).toContainText(
           locale
-            ? 'this preview is not yet notarized by Apple'
-            : 'esta preview aún no está notarizada por Apple',
+            ? `this ${
+                publishedRelease.channel === 'beta' ? 'Beta' : 'preview'
+              } is not yet notarized by Apple`
+            : `esta ${
+                publishedRelease.channel === 'beta' ? 'Beta' : 'preview'
+              } aún no está notarizada por Apple`,
         );
         await expect(downloads.locator('.download-status')).not.toContainText(
           locale

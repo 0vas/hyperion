@@ -26,7 +26,7 @@ El chat local usa la misma frontera ACP para Codex, Claude Code, Cursor Agent y 
 
 El lanzador compartido puede sustituir el servicio antiguo autenticado de la misma instalación después de verificar su proceso y crear un respaldo consistente de SQLite. Conserva el estado de los flujos y las tareas externas; no añade un endpoint de apagado ni reanudación del chat. [Ciclo de actualización del runtime](https://github.com/0vas/hyperion/blob/main/docs/decisions/0034-runtime-replacement-on-upgrade.md).
 
-Desktop también comprueba releases de GitHub y descarga instaladores tras confirmación, validando tamaño y SHA-256. La integridad ad-hoc de macOS no equivale a notarización. [Decisión de distribución y actualizaciones](https://github.com/0vas/hyperion/blob/main/docs/decisions/0031-desktop-integrity-and-updates.md).
+Desktop también comprueba releases de GitHub y descarga instaladores tras confirmación, validando tamaño y SHA-256. Clasifica Preview, Beta y Stable mediante nombre de release y estado pre-release coherentes antes de decidir qué canal puede actualizarse. La integridad ad-hoc de macOS no equivale a notarización. [Decisión de distribución y actualizaciones](https://github.com/0vas/hyperion/blob/main/docs/decisions/0031-desktop-integrity-and-updates.md) · [canal Beta](https://github.com/0vas/hyperion/blob/main/docs/decisions/0039-beta-release-channel.md).
 
 ::: info Lo que está disponible
 Motor, canvas, persistencia y cola de reanudación implementados. Retomar un chat cerrado requiere un conector real instalado; los conectores nativos siguen pendientes.

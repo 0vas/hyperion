@@ -253,6 +253,27 @@ test('automatic check with no update stays quiet; manual names CalVer and channe
   assert.match(messages[0].detail, /2026\.10\.12\.2204 \(Preview\)/);
 });
 
+test('the update dialog identifies a Beta installer as Beta', async () => {
+  const messages = [];
+  const controller = createUpdateController({
+    app,
+    channel: 'preview',
+    getWindow: () => undefined,
+    check: async () => ({ ...update, channel: 'beta' }),
+    dialog: {
+      showMessageBox: async (_window, message) => {
+        messages.push(message);
+        return { response: 1 };
+      },
+    },
+  });
+  await controller.check();
+  assert.match(
+    messages[0].detail,
+    /Tienes 2026\.10\.12\.2204 \(Preview\).*Beta/,
+  );
+});
+
 test('update dialog never touches workflow command surfaces', () => {
   const source = readFileSync(
     fileURLToPath(new URL('../desktop/update-dialog.mjs', import.meta.url)),

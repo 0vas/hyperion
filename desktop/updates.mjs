@@ -4,6 +4,12 @@ import { open, rename, rm } from 'node:fs/promises';
 
 const releasesURL =
   'https://api.github.com/repos/0vas/hyperion/releases?per_page=30';
+const channels = new Set(['preview', 'beta', 'stable']);
+const eligibleChannels = {
+  preview: new Set(['preview', 'beta', 'stable']),
+  beta: new Set(['beta', 'stable']),
+  stable: new Set(['stable']),
+};
 function version(value) {
   const calendar = parseCalVer(value);
   if (calendar) return calendar;
@@ -35,6 +41,34 @@ function compare(a, b) {
   }
   return 0;
 }
+function explicitChannel(release, value) {
+  const match = new RegExp(
+    `^Hyperion\\s+${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(Preview|Beta|Stable)$`,
+    'i',
+  ).exec(String(release.name || '').trim());
+  return match?.[1].toLowerCase() || null;
+}
+function releaseChannel(release, next) {
+  if (typeof release.prerelease !== 'boolean') return null;
+  const label = explicitChannel(release, release.tag_name.replace(/^v/, ''));
+  if (label) {
+    // Preview and Beta releases must be marked prerelease. A stable release
+    // must not be: the two independent signals prevent accidental promotion.
+    if ((label === 'stable') === Boolean(release.prerelease)) return null;
+    return label;
+  }
+  // Public CalVer tags do not encode a channel. Require the reviewed release
+  // name so a GitHub prerelease alone cannot be mistaken for Beta or Preview.
+  if (next.calver) return null;
+  // Keep legacy SemVer updates working; their prerelease suffix is explicit.
+  if (Boolean(next.pre) !== Boolean(release.prerelease)) return null;
+  return next.pre ? 'preview' : 'stable';
+}
+function installedChannel(channel, installed) {
+  const normalized = String(channel || '').toLowerCase();
+  if (channels.has(normalized)) return normalized;
+  return installed.pre ? 'preview' : 'stable';
+}
 function validAsset(asset, tag) {
   return (
     asset &&
@@ -61,16 +95,18 @@ export function selectRelease(releases, current, platform, arch, channel) {
         ? 'win-x64.exe'
         : null;
   if (!suffix) return null;
+  const installedOn = installedChannel(channel, installed);
   return (
     releases
       .flatMap((release) => {
         const next = version(release.tag_name || '');
+        const nextChannel = next && releaseChannel(release, next);
         if (
           release.draft ||
           !next ||
           compare(next, installed) <= 0 ||
-          ((channel || (installed.pre ? 'preview' : 'stable')) !== 'preview' &&
-            (release.prerelease || next.pre))
+          !nextChannel ||
+          !eligibleChannels[installedOn].has(nextChannel)
         )
           return [];
         const name = `Hyperion-${release.tag_name.replace(/^v/, '')}-${suffix}`;
@@ -83,6 +119,7 @@ export function selectRelease(releases, current, platform, arch, channel) {
                 version: release.tag_name.replace(/^v/, ''),
                 tag: release.tag_name,
                 asset,
+                channel: nextChannel,
               },
             ]
           : [];

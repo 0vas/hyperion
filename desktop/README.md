@@ -50,7 +50,7 @@ Si el servicio no inicia, Desktop mantiene un diálogo con Reintentar, Ver diagn
 
 ## Actualizaciones desde la aplicación
 
-**Hyperion → Buscar actualizaciones…** consulta las últimas 30 releases públicas de `0vas/hyperion`, excluye borradores y elige una versión superior con instalador para el sistema y arquitectura actuales. Las versiones preview también reciben previews; una versión estable solo recibe estables.
+**Hyperion → Buscar actualizaciones…** consulta las últimas 30 releases públicas de `0vas/hyperion`, excluye borradores y elige una versión superior con instalador para el sistema y arquitectura actuales. Cada release CalVer debe llamarse exactamente `Hyperion AAAA.MM.DD.HHMM Preview`, `Beta` o `Stable`, y Preview/Beta deben estar marcadas como pre-release en GitHub. Preview puede recibir Preview, Beta o Stable; Beta recibe Beta o Stable; Stable recibe únicamente Stable. Una etiqueta o estado de pre-release incoherente se rechaza, en vez de promover accidentalmente un instalador.
 
 Solo el **Desktop empaquetado** programa una comprobación automática al arrancar (unos segundos después de abrir, y si el asistente de conexión sigue abierto se pospone hasta cerrarlo). No es un hard gate: si hay una versión elegible, un diálogo nativo advierte que **conviene actualizar**, muestra CalVer y canal instalados frente a los disponibles, y pide consentimiento (**Actualizar y reiniciar** / **Ahora no** / **Descargar instalador…**). Sin actualización o sin red, la comprobación automática permanece en silencio. `npm start` / Desktop sin empaquetar y el canvas web **no** hacen auto-check (por diseño; usa el menú solo en Desktop). `HYPERION_DISABLE_UPDATE_CHECK` desactiva la automática. Fallos de red en una comprobación manual sí muestran error. La actualización no es un flujo Hyperion: no crea runs ni altera el DAG.
 
@@ -60,9 +60,9 @@ La marca canónica es `docs/site/public/brand/hyperion-titan.png`; Desktop y el 
 
 ## Versiones CalVer y bloqueo de macOS
 
-Desde `2026.10.12.0638`, la identidad pública es **AAAA.MM.DD.HHMM UTC**: el minuto queda fijado al preparar la release en `src/release.json`. El canal (`preview` o `stable`) es independiente. No se renombra una release antigua ni se reutiliza su versión para binarios distintos. `npm run release:sync` actualiza la codificación de compatibilidad de npm; `desktop/release-version.cjs` genera números nativos para Apple/Windows. Esos campos técnicos no representan incrementos SemVer. Runtime, etiquetas, instaladores, menú Acerca de y web muestran CalVer.
+Desde `2026.10.12.0638`, la identidad pública es **AAAA.MM.DD.HHMM UTC**: el minuto queda fijado al preparar la release en `src/release.json`. El canal (`preview`, `beta` o `stable`) es independiente. No se renombra una release antigua ni se reutiliza su versión para binarios distintos. `npm run release:sync` actualiza la codificación de compatibilidad de npm; `desktop/release-version.cjs` genera números nativos para Apple/Windows. Esos campos técnicos no representan incrementos SemVer. Runtime, etiquetas, instaladores, menú Acerca de y web muestran CalVer.
 
-**La 0.5.1 no entiende etiquetas CalVer: la primera migración es manual desde la web.** Las siguientes actualizaciones usan el comparador CalVer. Un canal estable no recibe previews; un fallo de red no significa estar actualizado.
+**La 0.5.1 no entiende etiquetas CalVer: la primera migración es manual desde la web.** Las siguientes actualizaciones usan el comparador CalVer. Un canal estable no recibe pre-releases y Beta no recibe Preview; un fallo de red no significa estar actualizado.
 
 El aviso «Apple could not verify Hyperion.app is free of malware» bloquea esta preview por falta de notarización; sellar con firma ad-hoc no lo elimina. Si el usuario decide confiar en su copia oficial, después de intentar abrirla puede elegir **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente**, confirmar y volver a abrir. Es una excepción para esa app; no debe desactivarse Gatekeeper globalmente. [Procedimiento de Apple](https://support.apple.com/en-us/102445). No confundirlo con avisos de malware detectado o de app dañada: requieren diagnóstico.
 

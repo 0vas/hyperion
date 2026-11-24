@@ -20,7 +20,7 @@ function releaseVersions(release) {
   if (
     !parsed ||
     release.timezone !== 'UTC' ||
-    !['preview', 'stable'].includes(release.channel)
+    !['preview', 'beta', 'stable'].includes(release.channel)
   )
     throw new Error('Invalid UTC CalVer release metadata');
   const [year, month, day, hour, minute] = parsed.numbers;

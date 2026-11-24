@@ -39,12 +39,20 @@ jobs:
           const source = api(`contents/src/release.json?ref=${run.head_sha}`);
           const metadata = JSON.parse(Buffer.from(source.content, 'base64').toString());
           assert.match(metadata.version, /^20\d{2}\.\d{2}\.\d{2}\.\d{4}$/);
+          assert.ok(['preview', 'beta', 'stable'].includes(metadata.channel));
           const tag = `v${metadata.version}`;
           const release = api('releases?per_page=100').find(r => r.tag_name === tag);
           assert.ok(release?.draft, 'Only an existing draft may be published; never replace a public release');
           assert.equal(release.target_commitish, run.head_sha);
           assert.ok(release.body?.length > 100, 'Reviewed release notes required');
-          appendFileSync(process.env.GITHUB_OUTPUT, `version=${metadata.version}\ntag=${tag}\nrelease_id=${release.id}\n`);
+          const channelLabel = `${metadata.channel[0].toUpperCase()}${metadata.channel.slice(1)}`;
+          assert.equal(release.name, `Hyperion ${metadata.version} ${channelLabel}`);
+          assert.equal(
+            release.prerelease,
+            metadata.channel !== 'stable',
+            'Preview and Beta drafts must be GitHub prereleases; Stable drafts must not',
+          );
+          appendFileSync(process.env.GITHUB_OUTPUT, `version=${metadata.version}\ntag=${tag}\nchannel=${metadata.channel}\nrelease_id=${release.id}\n`);
           JS
       - uses: actions/download-artifact@v4
         with:
