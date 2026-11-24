@@ -1,5 +1,5 @@
 ---
-sidebar: false
+sidebar: true
 aside: false
 pageClass: architecture-page
 ---

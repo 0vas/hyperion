@@ -1290,6 +1290,12 @@ test('architecture leads with an interactive visual journey and hides reference 
       name: en ? 'From request to result' : 'De la petición al resultado',
       exact: true,
     });
+    await expect(page.locator('.VPSidebar')).toBeVisible();
+    await expect(
+      page
+        .locator('.VPSidebar')
+        .getByRole('link', { name: en ? 'Architecture' : 'Arquitectura', exact: true }),
+    ).toBeVisible();
     await expect(journey.locator('svg.architecture-journey')).toBeVisible({
       timeout: 3000,
     });
