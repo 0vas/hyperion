@@ -2,7 +2,7 @@
 
 Electron aloja el mismo canvas del navegador y usa el mismo servicio HTTP local autenticado. El proceso del chat conserva la ejecución: Desktop presenta decisiones y resultados. El usuario elige split/escritorio en la conversación; el adaptador `open RUN_ID desktop` lanza la instalación registrada en su primer arranque.
 
-La [Beta 2026.11.24.2225](https://github.com/0vas/hyperion/releases/tag/v2026.11.24.2225) está publicada como pre-release para macOS Apple Silicon y Windows x64. Ambos instaladores pasaron pruebas nativas de fuente y paquete sobre el mismo commit; sus tamaños y SHA-256 se verificaron antes de publicar. macOS tiene firma de integridad ad-hoc, no notarización de Apple. Claude autenticado sigue sin verificar.
+La [Beta 2026.11.24.2323](https://github.com/0vas/hyperion/releases/tag/v2026.11.24.2323) está publicada como pre-release para macOS Apple Silicon y Windows x64. Ambos instaladores pasaron pruebas nativas de fuente y paquete sobre el mismo commit; sus tamaños y SHA-256 se verificaron antes de publicar. macOS tiene firma de integridad ad-hoc, no notarización de Apple. Claude autenticado sigue sin verificar.
 
 ## Chat local multiharness
 
@@ -74,7 +74,7 @@ La web usa `docs/site/.vitepress/release.json` como registro de la última relea
 
 ## Chat local experimental
 
-La Beta publicada 2026.11.24.2225 incorpora cuatro adaptadores ACP, el selector desplegable compacto con marcas SVG locales de los proveedores y la exclusión entre Menú y Chat. Las pruebas nativas de ambos sistemas no certifican conversaciones autenticadas con los cuatro proveedores: Claude autenticado sigue sin verificar y la evidencia previa de conversaciones reales corresponde a macOS. Gemini y ChatGPT quedan fuera. **Enviar** W1/W2 es otro transporte: entrega ≠ ejecución.
+La Beta publicada 2026.11.24.2323 incorpora cuatro adaptadores ACP, el selector desplegable compacto con marcas SVG locales de los proveedores, la exclusión entre Menú y Chat y el contrato que obliga a crear o continuar un workflow antes de una respuesta sustantiva. Las pruebas nativas de ambos sistemas no certifican conversaciones autenticadas con los cuatro proveedores: Claude autenticado sigue sin verificar y la evidencia previa de conversaciones reales corresponde a macOS. Gemini y ChatGPT quedan fuera. **Enviar** W1/W2 es otro transporte: entrega ≠ ejecución.
 
 ## Interface language
 
