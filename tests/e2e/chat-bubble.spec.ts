@@ -308,76 +308,479 @@ test('opening Connections closes the Desktop chat instead of layering panels', a
 
 type ChatCall = { method: string; runId: string | null; text?: string };
 
-async function installContextBridge(page: Page, locale: 'es' | 'en' = 'es') {
-  await page.addInitScript((locale) => {
-    const calls: ChatCall[] = [];
-    let threadId = '';
-    Object.assign(window, { chatTestCalls: calls });
-    const emit = (event: Record<string, unknown>) =>
-      window.dispatchEvent(
-        new CustomEvent('chat-test-event', { detail: event }),
-      );
-    Object.defineProperty(window, 'hyperionDesktop', {
-      configurable: true,
-      value: {
-        getLanguage: async () => ({ preference: locale, locale }),
-        onLanguageChanged: () => () => {},
-        setLanguage: async () => {},
-        liveChat: {
-          harnesses: async () => ({
-            selected: 'codex',
-            harnesses: [{ id: 'codex', label: 'Codex', status: 'ready' }],
-          }),
-          connect: async (runId: string | null) => {
-            calls.push({ method: 'connect', runId });
-            threadId = `thread-${runId ?? 'new'}`;
-            emit({ type: 'connection', status: 'connected' });
-            emit({ type: 'thread', runId, threadId });
-            return { connected: true };
-          },
-          send: async (runId: string | null, text: string) => {
-            calls.push({ method: 'send', runId, text });
-            emit({ type: 'user-message', threadId, text });
-            emit({ type: 'turn', threadId, status: 'running' });
-            emit({
-              type: 'approval',
-              threadId,
-              token: `permission-${threadId}`,
-            });
-          },
-          approve: async (
-            runId: string | null,
-            token: string,
-            decision: string,
-          ) => {
-            calls.push({ method: 'approve', runId });
-            emit({
-              type: 'approval-resolved',
-              threadId,
-              token,
-              decision: decision === 'allow' ? 'allowed' : 'denied',
-            });
-          },
-          stop: async (runId: string | null) => {
-            calls.push({ method: 'stop', runId });
-            emit({ type: 'turn', threadId, status: 'interrupted' });
-          },
-          onEvent: (callback: (event: unknown) => void) => {
-            const receive = (event: Event) =>
-              callback((event as CustomEvent).detail);
-            window.addEventListener('chat-test-event', receive);
-            return () => window.removeEventListener('chat-test-event', receive);
+async function installContextBridge(
+  page: Page,
+  locale: 'es' | 'en' = 'es',
+  permissionMode = false,
+) {
+  await page.addInitScript(
+    ({ locale, permissionMode }) => {
+      const calls: ChatCall[] = [];
+      let threadId = '';
+      Object.assign(window, { chatTestCalls: calls });
+      const emit = (event: Record<string, unknown>) =>
+        window.dispatchEvent(
+          new CustomEvent('chat-test-event', { detail: event }),
+        );
+      Object.defineProperty(window, 'hyperionDesktop', {
+        configurable: true,
+        value: {
+          getLanguage: async () => ({ preference: locale, locale }),
+          onLanguageChanged: () => () => {},
+          setLanguage: async () => {},
+          liveChat: {
+            harnesses: async () => ({
+              selected: 'codex',
+              harnesses: [{ id: 'codex', label: 'Codex', status: 'ready' }],
+            }),
+            connect: async (runId: string | null) => {
+              calls.push({ method: 'connect', runId });
+              threadId = `thread-${runId ?? 'new'}`;
+              emit({ type: 'connection', status: 'connected' });
+              emit({ type: 'thread', runId, threadId });
+              if (permissionMode)
+                emit({
+                  type: 'permission-mode',
+                  runId,
+                  threadId,
+                  mode: 'manual',
+                });
+              return { connected: true };
+            },
+            send: async (runId: string | null, text: string) => {
+              calls.push({ method: 'send', runId, text });
+              emit({ type: 'user-message', threadId, text });
+              emit({ type: 'turn', threadId, status: 'running' });
+              emit({
+                type: 'approval',
+                threadId,
+                token: `permission-${threadId}`,
+                ...(permissionMode
+                  ? {
+                      toolName: 'hyperion_get_run',
+                      label: 'The local harness requests permission.',
+                      autoEligible: false,
+                    }
+                  : {}),
+              });
+            },
+            approve: async (
+              runId: string | null,
+              token: string,
+              decision: string,
+            ) => {
+              calls.push({ method: 'approve', runId });
+              emit({
+                type: 'approval-resolved',
+                threadId,
+                token,
+                decision: decision === 'allow' ? 'allowed' : 'denied',
+              });
+            },
+            stop: async (runId: string | null) => {
+              calls.push({ method: 'stop', runId });
+              emit({ type: 'turn', threadId, status: 'interrupted' });
+              if (permissionMode)
+                emit({
+                  type: 'permission-mode',
+                  runId,
+                  threadId,
+                  mode: 'manual',
+                });
+            },
+            ...(permissionMode
+              ? {
+                  setPermissionMode: async (
+                    runId: string | null,
+                    requestedThreadId: string,
+                    mode: string,
+                  ) => {
+                    calls.push({
+                      method: 'setPermissionMode',
+                      runId,
+                      text: `${requestedThreadId}:${mode}`,
+                    });
+                    if (
+                      document.documentElement.dataset.rejectPermissionMode ===
+                      'true'
+                    )
+                      throw new Error('Mode rejected');
+                    if (
+                      document.documentElement.dataset.delayPermissionMode ===
+                      'true'
+                    ) {
+                      await new Promise<void>((resolve) =>
+                        Object.assign(window, { chatResolveMode: resolve }),
+                      );
+                      return { mode, threadId };
+                    }
+                    emit({ type: 'permission-mode', runId, threadId, mode });
+                    return { mode, threadId };
+                  },
+                }
+              : {}),
+            onEvent: (callback: (event: unknown) => void) => {
+              const receive = (event: Event) =>
+                callback((event as CustomEvent).detail);
+              window.addEventListener('chat-test-event', receive);
+              return () =>
+                window.removeEventListener('chat-test-event', receive);
+            },
           },
         },
-      },
-    });
-  }, locale);
+      });
+    },
+    { locale, permissionMode },
+  );
 }
 
 const chatCalls = (page: Page) =>
   page.evaluate(
     () => (window as unknown as { chatTestCalls: ChatCall[] }).chatTestCalls,
   );
+
+test('session permission mode is explicit, reversible and never changes optimistically', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+    viewport: { width: 390, height: 844 },
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'en');
+    await installContextBridge(page, 'en', true);
+    await page.goto('/');
+    await page.getByTestId('chat-bubble').click();
+    const mode = page.getByLabel('Provider permissions');
+    await expect(mode).toHaveValue('manual');
+    await expect(mode).toBeDisabled();
+    await page.getByLabel('Request for the agent').fill('Review this workflow');
+    await page.getByTestId('live-chat-send').click();
+    await expect(mode).toBeEnabled();
+    await expect(
+      page.getByText('Read the workflow', { exact: true }),
+    ).toBeVisible();
+    await page.evaluate(
+      () => (document.documentElement.dataset.rejectPermissionMode = 'true'),
+    );
+    await mode.selectOption('auto-hyperion');
+    await expect(mode).toHaveValue('manual');
+    await expect(
+      page.getByText('Could not change the permission mode.'),
+    ).toBeVisible();
+    await page.evaluate(
+      () => (document.documentElement.dataset.rejectPermissionMode = 'false'),
+    );
+    await mode.selectOption('auto-hyperion');
+    await expect(mode).toHaveValue('auto-hyperion');
+    await expect(page.getByTestId('live-chat-approval-allow')).toBeVisible();
+    await expect(
+      page.getByText('This action still requires your permission.'),
+    ).toBeVisible();
+    await page.evaluate(() =>
+      window.dispatchEvent(
+        new CustomEvent('chat-test-event', {
+          detail: {
+            type: 'permission-mode',
+            runId: null,
+            threadId: 'stale',
+            mode: 'manual',
+          },
+        }),
+      ),
+    );
+    await expect(mode).toHaveValue('auto-hyperion');
+    await mode.selectOption('manual');
+    await expect(mode).toHaveValue('manual');
+    await mode.selectOption('auto-hyperion');
+    await page.getByTestId('live-chat-stop').click();
+    await expect(mode).toHaveValue('manual');
+    await page.getByLabel('Request for the agent').fill('Continue reviewing');
+    await page.getByTestId('live-chat-send').click();
+    await page.evaluate(
+      () => (document.documentElement.dataset.delayPermissionMode = 'true'),
+    );
+    await mode.selectOption('auto-hyperion');
+    await expect(mode).toHaveValue('manual');
+    await page.getByTestId('live-chat-stop').click();
+    await page.evaluate(() =>
+      (window as unknown as { chatResolveMode: () => void }).chatResolveMode(),
+    );
+    await expect(mode).toBeEnabled();
+    await expect(mode).toHaveValue('manual');
+    expect(
+      (await chatCalls(page))
+        .filter((call) => call.method === 'setPermissionMode')
+        .every(
+          (call) => call.runId === null && call.text?.startsWith('thread-new:'),
+        ),
+    ).toBe(true);
+  } finally {
+    await context.close();
+  }
+});
+
+for (const locale of ['es', 'en'] as const) {
+  test(`backend public labels localize without changing replies or evidence (${locale})`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      userAgent: 'Hyperion synthetic Electron/44.0',
+    });
+    const page = await context.newPage();
+    try {
+      await mockConnectionHome(page);
+      await setAppearance(page, 'light', locale);
+      await installContextBridge(page, locale, true);
+      await page.goto('/');
+      await page.getByTestId('chat-bubble').click();
+      await page.locator('#live-chat-prompt').fill('Inspect workflow');
+      await page.getByTestId('live-chat-send').click();
+      await page.getByTestId('live-chat-approval-allow').click();
+      await page.evaluate(() => {
+        const events = [
+          {
+            type: 'action',
+            turnId: 'turn-public',
+            toolCallId: 'read',
+            itemId: 'read',
+            label: 'Read workflow',
+            toolName: 'hyperion_get_run',
+            status: 'completed',
+            summary: 'Read workflow',
+          },
+          {
+            type: 'action',
+            turnId: 'turn-public',
+            toolCallId: 'edit',
+            itemId: 'edit',
+            label: 'Edit content',
+            status: 'failed',
+            summary: 'Edit content',
+          },
+          {
+            type: 'assistant-delta',
+            itemId: 'answer-public',
+            text: 'Read workflow\nEdit content',
+          },
+          {
+            type: 'approval',
+            turnId: 'turn-public',
+            toolCallId: 'list',
+            token: 'public-permission',
+            toolName: 'hyperion_list_runs',
+            autoEligible: false,
+            label: 'List workflows',
+          },
+        ];
+        for (const event of events)
+          window.dispatchEvent(
+            new CustomEvent('chat-test-event', {
+              detail: { runId: null, threadId: 'thread-new', ...event },
+            }),
+          );
+      });
+      const panel = page.getByTestId('live-chat-page');
+      await panel.getByTestId('live-chat-activity').locator('summary').click();
+      const rows = panel.getByTestId('live-chat-activity-row');
+      await expect(rows.nth(0).locator(':scope > span').first()).toContainText(
+        locale === 'es' ? 'Consultar el flujo' : 'Read the workflow',
+      );
+      await expect(
+        rows.nth(0).locator('.live-chat-activity-summary'),
+      ).toHaveText('Read workflow');
+      await expect(rows.nth(1).locator(':scope > span').first()).toContainText(
+        locale === 'es' ? 'Editar contenido' : 'Edit content',
+      );
+      await expect(panel.getByTestId('live-chat-activity-error')).toContainText(
+        locale === 'es' ? 'Editar contenido' : 'Edit content',
+      );
+      await expect(
+        panel.getByTestId('live-chat-activity-error').locator('span'),
+      ).toHaveText('Edit content');
+      await expect(
+        panel.getByTestId('live-chat-message-assistant').locator('p').last(),
+      ).toHaveText('Read workflow\nEdit content');
+      const permission = panel.getByTestId('live-chat-message-system');
+      await expect(permission).toContainText(
+        locale === 'es' ? 'Listar flujos' : 'List workflows',
+      );
+      await panel.getByTestId('live-chat-approval-allow').click();
+      const history = panel.getByTestId('live-chat-permission-history').last();
+      await history.locator('summary').click();
+      await expect(history).toContainText(
+        locale === 'es' ? 'Listar flujos' : 'List workflows',
+      );
+    } finally {
+      await context.close();
+    }
+  });
+
+  test(`tool updates are compact, correlated and leave results and permissions readable (${locale})`, async ({
+    browser,
+  }, testInfo) => {
+    const context = await browser.newContext({
+      userAgent: 'Hyperion synthetic Electron/44.0',
+      viewport: { width: 390, height: 844 },
+      reducedMotion: 'reduce',
+    });
+    const page = await context.newPage();
+    try {
+      await mockConnectionHome(page);
+      await setAppearance(page, 'light', locale);
+      await installContextBridge(page, locale, true);
+      await page.goto('/');
+      await page.getByTestId('chat-bubble').click();
+      await page
+        .getByLabel(
+          locale === 'es' ? 'Petición para el agente' : 'Request for the agent',
+        )
+        .fill('Review the workflow');
+      await page.getByTestId('live-chat-send').click();
+      await expect(page.getByTestId('live-chat-status')).toHaveText(
+        locale === 'es' ? 'Esperando permiso' : 'Waiting for permission',
+      );
+      await page.getByTestId('live-chat-approval-allow').click();
+      await expect(
+        page.getByTestId('live-chat-permission-history').locator('summary'),
+      ).toBeFocused();
+      const emit = async (events: Record<string, unknown>[]) =>
+        page.evaluate((events) => {
+          for (const event of events)
+            window.dispatchEvent(
+              new CustomEvent('chat-test-event', {
+                detail: { threadId: 'thread-new', ...event },
+              }),
+            );
+        }, events);
+      await emit([
+        ...Array.from({ length: 8 }, (_, i) => ({
+          type: 'action',
+          toolCallId: `call-${i}`,
+          label: `Read workflow ${i}`,
+          status: 'running',
+        })),
+        ...Array.from({ length: 8 }, (_, i) => ({
+          type: 'action',
+          toolCallId: `call-${i}`,
+          label: 'Harness action updated',
+          status: 'completed',
+        })),
+        {
+          type: 'assistant-delta',
+          itemId: 'answer',
+          text: 'The review is ready.\n\nAll original content stays visible.',
+        },
+        { type: 'action', toolCallId: 'call-0', status: 'completed' },
+        {
+          type: 'assistant-delta',
+          itemId: 'answer',
+          text: '\nNext: choose a date.',
+        },
+        { type: 'turn', status: 'completed' },
+      ]);
+      const panel = page.getByTestId('live-chat-page');
+      await expect(panel.getByTestId('live-chat-activity')).toHaveCount(1);
+      await expect(
+        panel.getByTestId('live-chat-activity').locator('summary'),
+      ).toContainText(locale === 'es' ? '8 acciones' : '8 actions');
+      await expect(
+        panel.getByTestId('live-chat-message-assistant'),
+      ).toHaveCount(1);
+      await expect(
+        panel.getByTestId('live-chat-message-assistant'),
+      ).toContainText('Next: choose a date.');
+      await expect(
+        panel.getByText('Harness action updated', { exact: true }),
+      ).toHaveCount(0);
+      const summary = panel
+        .getByTestId('live-chat-activity')
+        .locator('summary');
+      await summary.focus();
+      await summary.press('Enter');
+      await expect(panel.getByTestId('live-chat-activity-row')).toHaveCount(8);
+      await expect(summary).toBeFocused();
+      await summary.press('Enter');
+      await emit([
+        {
+          type: 'action',
+          toolCallId: 'failure',
+          label: 'Load artifact',
+          status: 'failed',
+          error: 'Artifact unavailable',
+        },
+      ]);
+      await expect(panel.getByTestId('live-chat-activity-error')).toContainText(
+        'Artifact unavailable',
+      );
+      await expect(panel.getByTestId('live-chat-activity-error')).toBeVisible();
+      await page
+        .locator('#live-chat-permission-mode')
+        .selectOption('auto-hyperion');
+      for (const theme of ['light', 'dark'] as const) {
+        await page.evaluate(
+          (theme) => (document.documentElement.dataset.theme = theme),
+          theme,
+        );
+        for (const width of [390, 1280]) {
+          await page.setViewportSize({ width, height: 844 });
+          expect(
+            await panel.evaluate(
+              (node) => node.scrollWidth <= node.clientWidth,
+            ),
+          ).toBe(true);
+          const violations = (
+            await new AxeBuilder({ page })
+              .include('[data-testid="live-chat-page"]')
+              .analyze()
+          ).violations;
+          expect(violations).toEqual([]);
+          await page.screenshot({
+            path: testInfo.outputPath(`activity-${theme}-${width}.png`),
+          });
+        }
+      }
+      await emit([
+        {
+          type: 'assistant-delta',
+          itemId: 'answer',
+          text: '\nOriginal detail.\n'.repeat(60),
+        },
+      ]);
+      const input = page.locator('#live-chat-prompt');
+      await input.focus();
+      const transcript = panel.getByTestId('live-chat-thread');
+      await transcript.evaluate((node) => {
+        node.scrollTop = 0;
+        node.dispatchEvent(new Event('scroll'));
+      });
+      await emit([
+        {
+          type: 'action',
+          toolCallId: 'call-0',
+          status: 'completed',
+          summary: 'Workflow loaded',
+        },
+      ]);
+      await expect(input).toBeFocused();
+      expect(await transcript.evaluate((node) => node.scrollTop)).toBe(0);
+      await emit([
+        {
+          type: 'action',
+          threadId: 'stale-thread',
+          toolCallId: 'stale',
+          label: 'Stale event',
+          status: 'failed',
+        },
+      ]);
+      await expect(panel.getByText('Stale event')).toHaveCount(0);
+    } finally {
+      await context.close();
+    }
+  });
+}
 
 test('an interrupted turn expires unanswered permission cards and releases context switching', async ({
   browser,
@@ -842,7 +1245,7 @@ test('Desktop live Codex chat renders protocol events and makes a real stop requ
     await panel.getByLabel('Petición para el agente').fill('Inicia la tarea');
     await panel.getByTestId('live-chat-send').click();
     await expect(panel.getByTestId('live-chat-status')).toContainText(
-      'Trabajando…',
+      'Esperando permiso',
     );
     await expect(panel.getByTestId('live-chat-message-you')).toContainText(
       'Inicia la tarea',
@@ -854,11 +1257,12 @@ test('Desktop live Codex chat renders protocol events and makes a real stop requ
     await expect(
       panel.getByTestId('live-chat-message-assistant'),
     ).toContainText('La tarea empezó.');
+    await panel.getByTestId('live-chat-activity').locator('summary').click();
     await expect(panel.getByText('Hyperion: hyperion_step')).toBeVisible();
     await panel.getByTestId('live-chat-stop').click();
     await expect(
       panel.getByTestId('live-chat-message-assistant'),
-    ).toContainText('interrupted');
+    ).toContainText('Interrumpido');
   } finally {
     await context.close();
   }

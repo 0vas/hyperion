@@ -122,6 +122,11 @@ declare global {
           decision: 'allow' | 'deny',
         ): Promise<void>;
         resolveUncertain(runId: string | null): Promise<void>;
+        setPermissionMode?(
+          runId: string | null,
+          threadId: string,
+          mode: 'manual' | 'auto-hyperion',
+        ): Promise<{ mode: 'manual' | 'auto-hyperion'; threadId: string }>;
         harnesses?(): Promise<{
           selected: string;
           harnesses: Array<{

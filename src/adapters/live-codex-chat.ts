@@ -4,13 +4,20 @@
  */
 export type LiveChatTurnStatus =
   'running' | 'completed' | 'failed' | 'interrupted';
+export type LiveChatPermissionMode = 'manual' | 'auto-hyperion';
 export type LiveChatEvent =
   | {
       type: 'connection';
       status: 'connecting' | 'connected' | 'disconnected';
       message?: string;
     }
-  | { type: 'thread'; runId: string; threadId: string }
+  | { type: 'thread'; runId: string | null; threadId: string }
+  | {
+      type: 'permission-mode';
+      runId: string | null;
+      threadId: string;
+      mode: LiveChatPermissionMode;
+    }
   | {
       type: 'uncertain';
       runId: string;
@@ -27,23 +34,43 @@ export type LiveChatEvent =
     }
   | {
       type: 'action';
+      runId?: string | null;
       threadId: string;
-      itemId: string;
-      status: 'requested' | 'running' | 'succeeded' | 'failed';
+      turnId?: string;
+      itemId?: string;
+      toolCallId?: string;
+      toolName?: string;
+      summary?: string;
+      status:
+        | 'requested'
+        | 'pending'
+        | 'running'
+        | 'succeeded'
+        | 'completed'
+        | 'failed'
+        | 'cancelled';
       label: string;
     }
   | {
       type: 'approval';
+      runId?: string | null;
       threadId: string;
+      turnId?: string;
+      toolCallId?: string;
+      toolName?: string;
+      autoEligible?: boolean;
       /** Renderer token, not the App Server JSON-RPC request id. */
       token: string;
       label: string;
     }
   | {
       type: 'approval-resolved';
+      runId?: string | null;
       threadId: string;
+      turnId?: string;
+      toolCallId?: string;
       token: string;
-      decision: 'allowed' | 'denied';
+      decision: 'allowed' | 'denied' | 'cancelled';
     };
 
 export const INTERACTIVE_HYPERION_TOOLS = new Set([

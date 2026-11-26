@@ -114,6 +114,11 @@ export class LiveHarnessChat {
     return this.active().approve(runId, token, decision);
   }
 
+  setPermissionMode(runId, threadId, mode) {
+    if (!this.chat) throw new Error('Connect a local chat session first.');
+    return this.chat.setPermissionMode(runId, threadId, mode);
+  }
+
   resolveUncertain(runId) {
     return this.active().resolveUncertain(runId);
   }

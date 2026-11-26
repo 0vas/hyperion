@@ -386,6 +386,23 @@ if (!app.requestSingleInstanceLock()) {
         await getLiveChat().stop(runId);
       });
       ipcMain.handle(
+        'hyperion:live-chat:permission-mode',
+        (event, runId, threadId, mode) => {
+          validateDesktopSender(event);
+          liveRun(runId);
+          if (
+            typeof threadId !== 'string' ||
+            !threadId ||
+            threadId.length > 512 ||
+            !['manual', 'auto-hyperion'].includes(mode)
+          )
+            throw new Error(
+              'A valid session and permission mode are required.',
+            );
+          return getLiveChat().setPermissionMode(runId, threadId, mode);
+        },
+      );
+      ipcMain.handle(
         'hyperion:live-chat:approve',
         async (event, runId, token, decision) => {
           validateDesktopSender(event);

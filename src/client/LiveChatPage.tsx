@@ -12,16 +12,75 @@ import claudeMark from './brands/claude.svg';
 import codexMark from './brands/codex.svg';
 import cursorMark from './brands/cursor.svg';
 import { t, useLocale } from './i18n';
+import {
+  activityNeedsAttention,
+  activityStatusLabel,
+  appendAssistant,
+  groupTranscript,
+  localizePublicActionLabel,
+  settleActivities,
+  updateActivity,
+  type ThreadMessage,
+} from './live-chat-transcript';
 
-type ThreadMessage = {
-  id: string;
-  role: 'you' | 'system' | 'assistant';
-  text: string;
-  meta?: string;
-  approvalToken?: string;
-  approvalState?: 'allowed' | 'denied' | 'expired';
-  provider?: string;
-};
+function ActivityGroup({ items }: { items: ThreadMessage[] }) {
+  const attention = items.filter(activityNeedsAttention);
+  const active = items.some((item) =>
+    ['pending', 'running', 'in_progress'].includes(item.activity!.status),
+  );
+  return (
+    <div className="live-chat-activity-group">
+      <details className="live-chat-activity" data-testid="live-chat-activity">
+        <summary>
+          <span>
+            {t('Actividad')} ·{' '}
+            {items.length === 1
+              ? t('1 acción')
+              : t('{0} acciones', { 0: items.length })}
+          </span>
+          <span className="live-chat-activity-state">
+            {attention.length
+              ? t('Requiere atención')
+              : active
+                ? t('En curso')
+                : t('Ver detalles')}
+          </span>
+        </summary>
+        <ul>
+          {items.map((item) => (
+            <li key={item.id} data-testid="live-chat-activity-row">
+              <span>
+                {localizePublicActionLabel(item.text, t) ||
+                  t('Acción del proveedor')}
+                {item.activity?.summary && (
+                  <span className="live-chat-activity-summary">
+                    {item.activity.summary}
+                  </span>
+                )}
+              </span>
+              <span className="live-chat-activity-state">
+                {t(activityStatusLabel(item.activity!.status))}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </details>
+      {attention.map((item) => (
+        <p
+          className="live-chat-activity-error"
+          data-testid="live-chat-activity-error"
+          key={item.id}
+        >
+          <strong>{t(activityStatusLabel(item.activity!.status))}</strong> ·{' '}
+          {localizePublicActionLabel(item.text, t) || t('Acción del proveedor')}
+          {(item.activity?.error || item.activity?.summary) && (
+            <span>{item.activity.error || item.activity.summary}</span>
+          )}
+        </p>
+      ))}
+    </div>
+  );
+}
 
 type Harness = { id: string; label: string; status: string };
 const PROVIDER_LABELS: Record<string, string> = {
@@ -36,6 +95,29 @@ const LOGIN_COMMANDS: Record<string, string> = {
   cursor: 'cursor-agent login',
   antigravity: 'agy acp --login',
 };
+
+function permissionLabel(message: ThreadMessage): string {
+  const labels: Record<string, string> = {
+    hyperion_list_runs: 'Consultar flujos',
+    hyperion_get_run: 'Consultar el flujo',
+    hyperion_wait: 'Esperar un cambio del flujo',
+    hyperion_create_run: 'Crear un flujo',
+    hyperion_revise_plan: 'Proponer una revisión del plan',
+    hyperion_step: 'Actualizar un paso del flujo',
+  };
+  const generic =
+    !message.text ||
+    [
+      'The local harness requests permission.',
+      'Codex requests permission to use the bounded Hyperion action.',
+      `Hyperion: ${message.toolName}`,
+    ].includes(message.text);
+  if (!generic) return localizePublicActionLabel(message.text, t);
+  return t(
+    (message.toolName && labels[message.toolName]) ||
+      'El proveedor solicita permiso para esta acción.',
+  );
+}
 
 const HARNESS_MARKS: Record<string, string> = {
   codex: codexMark,
@@ -122,6 +204,10 @@ export function LiveChatPage({
   >('disconnected');
   const [turnRunning, setTurnRunning] = useState(false);
   const [requestBusy, setRequestBusy] = useState(false);
+  const [permissionMode, setPermissionMode] = useState<
+    'manual' | 'auto-hyperion'
+  >('manual');
+  const [modeBusy, setModeBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -139,6 +225,10 @@ export function LiveChatPage({
   const harnessPickerRef = useRef<HTMLDivElement>(null);
   const harnessTriggerRef = useRef<HTMLButtonElement>(null);
   const lastSubmitted = useRef('');
+  const assistantTurn = useRef(0);
+  const currentAssistantIds = useRef(new Set<string>());
+  const permissionFocus = useRef<string | null>(null);
+  const modeVersion = useRef(0);
 
   useEffect(() => {
     if (!contextChosen.current) {
@@ -156,6 +246,7 @@ export function LiveChatPage({
   );
   const contextLocked =
     requestBusy ||
+    modeBusy ||
     turnRunning ||
     pendingApproval ||
     uncertain ||
@@ -192,6 +283,8 @@ export function LiveChatPage({
     setPrompt(saved?.prompt ?? '');
     setThread(saved?.thread ?? []);
     setStatus('disconnected');
+    setPermissionMode('manual');
+    modeVersion.current += 1;
     setSetupMessage(null);
     setNotice(null);
     setAuthRequired(false);
@@ -225,8 +318,13 @@ export function LiveChatPage({
           setAuthRequired(false);
         }
         if (event.status === 'disconnected') {
+          threadId.current = null;
+          setPermissionMode('manual');
+          modeVersion.current += 1;
           setTurnRunning(false);
-          setThread((items) => items.map(expirePermission));
+          setThread((items) =>
+            settleActivities(items, 'unconfirmed').map(expirePermission),
+          );
           if (event.message || event.code)
             setPrompt((current) => current || lastSubmitted.current);
           const needsLogin = event.code === 'auth-required';
@@ -272,8 +370,18 @@ export function LiveChatPage({
       const eventThreadId =
         typeof event.threadId === 'string' ? event.threadId : null;
       if (!eventThreadId || eventThreadId !== threadId.current) return;
+      if (
+        event.type === 'permission-mode' &&
+        (event.mode === 'manual' || event.mode === 'auto-hyperion')
+      ) {
+        setPermissionMode(event.mode);
+        modeVersion.current += 1;
+        return;
+      }
       const eventText = typeof event.text === 'string' ? event.text : null;
       if (event.type === 'user-message' && eventText !== null) {
+        assistantTurn.current += 1;
+        currentAssistantIds.current.clear();
         setThread((items) => [
           ...items,
           { id: crypto.randomUUID(), role: 'you', text: eventText },
@@ -282,37 +390,37 @@ export function LiveChatPage({
       }
       if (event.type === 'assistant-delta' && eventText !== null) {
         const itemId =
-          typeof event.itemId === 'string' ? event.itemId : 'assistant';
-        setThread((items) => {
-          const last = items.at(-1);
-          if (last?.role === 'assistant' && last.id === itemId)
-            return [
-              ...items.slice(0, -1),
-              { ...last, text: last.text + eventText },
-            ];
-          return [
-            ...items,
-            {
-              id: itemId,
-              role: 'assistant',
-              text: eventText,
-              provider: PROVIDER_LABELS[selectedHarness] || selectedHarness,
-            },
-          ];
-        });
+          typeof event.itemId === 'string'
+            ? event.itemId
+            : `assistant-${assistantTurn.current}`;
+        const id = `${eventThreadId}:${assistantTurn.current}:${itemId}`;
+        currentAssistantIds.current.add(id);
+        setThread((items) =>
+          appendAssistant(
+            items,
+            id,
+            eventText,
+            PROVIDER_LABELS[selectedHarness] || selectedHarness,
+          ),
+        );
         return;
       }
       if (event.type === 'turn' && typeof event.status === 'string') {
         if (event.status === 'running') setTurnRunning(true);
         else {
           setTurnRunning(false);
+          if (event.status !== 'completed') {
+            setPermissionMode('manual');
+            modeVersion.current += 1;
+          }
           if (event.status === 'completed') lastSubmitted.current = '';
           setThread((items) =>
-            items.map((item) =>
+            settleActivities(items, String(event.status)).map((item) =>
               item.role === 'assistant' &&
+              currentAssistantIds.current.has(item.id) &&
               !item.meta &&
               event.status !== 'completed'
-                ? { ...item, meta: String(event.status) }
+                ? { ...item, meta: activityStatusLabel(String(event.status)) }
                 : expirePermission(item),
             ),
           );
@@ -320,33 +428,33 @@ export function LiveChatPage({
         return;
       }
       const eventLabel = typeof event.label === 'string' ? event.label : null;
-      if (event.type === 'action' && eventLabel !== null) {
-        setThread((items) => [
-          ...items,
-          {
-            id: crypto.randomUUID(),
-            role: 'system',
-            text: eventLabel,
-            meta: String(event.status || 'running'),
-          },
-        ]);
+      if (event.type === 'action') {
+        setThread((items) =>
+          updateActivity(items, event, eventThreadId, crypto.randomUUID()),
+        );
         return;
       }
       const approvalToken =
         typeof event.token === 'string' ? event.token : null;
       if (event.type === 'approval' && approvalToken !== null) {
-        setThread((items) => [
-          ...items,
-          {
-            id: crypto.randomUUID(),
-            role: 'system',
-            text:
-              eventLabel ||
-              t('El proveedor solicita permiso para esta acción.'),
-            meta: t('Permiso del proveedor'),
-            approvalToken,
-          },
-        ]);
+        setThread((items) =>
+          items.some((item) => item.approvalToken === approvalToken)
+            ? items
+            : [
+                ...items,
+                {
+                  id: crypto.randomUUID(),
+                  role: 'system',
+                  text: eventLabel || '',
+                  meta: 'Permiso del proveedor',
+                  toolName:
+                    typeof event.toolName === 'string'
+                      ? event.toolName
+                      : undefined,
+                  approvalToken,
+                },
+              ],
+        );
         return;
       }
       if (
@@ -380,6 +488,19 @@ export function LiveChatPage({
 
   useEffect(() => {
     const node = threadRef.current;
+    if (permissionFocus.current) {
+      const summary = Array.from(
+        node?.querySelectorAll<HTMLElement>('[data-permission-token]') ?? [],
+      ).find(
+        (element) =>
+          element.dataset.permissionToken === permissionFocus.current,
+      );
+      if (summary) {
+        if (document.activeElement === document.body)
+          summary.focus({ preventScroll: true });
+        permissionFocus.current = null;
+      }
+    }
     if (node && followBottom.current) node.scrollTop = node.scrollHeight;
   }, [thread, open]);
 
@@ -430,6 +551,7 @@ export function LiveChatPage({
         ),
       );
       setStatus('disconnected');
+      setPermissionMode('manual');
     } finally {
       setRequestBusy(false);
     }
@@ -446,6 +568,8 @@ export function LiveChatPage({
       setSelectedHarness(snapshot.selected);
       setHarnesses(snapshot.harnesses);
       setStatus('disconnected');
+      setPermissionMode('manual');
+      modeVersion.current += 1;
       setAuthRequired(false);
       setUncertain(false);
       threadId.current = null;
@@ -490,8 +614,41 @@ export function LiveChatPage({
     }
   }
 
+  async function changePermissionMode(mode: 'manual' | 'auto-hyperion') {
+    const currentThread = threadId.current;
+    if (
+      !liveChat?.setPermissionMode ||
+      !currentThread ||
+      status !== 'connected' ||
+      modeBusy
+    )
+      return;
+    setModeBusy(true);
+    const version = modeVersion.current;
+    setNotice(null);
+    try {
+      const result = await liveChat.setPermissionMode(
+        runId,
+        currentThread,
+        mode,
+      );
+      if (
+        threadId.current === currentThread &&
+        modeVersion.current === version &&
+        result.threadId === currentThread
+      )
+        setPermissionMode(result.mode);
+    } catch {
+      setNotice(t('No se pudo cambiar el modo de permisos.'));
+    } finally {
+      setModeBusy(false);
+    }
+  }
+
   async function decide(token: string, decision: 'allow' | 'deny') {
     if (!liveChat || requestBusy) return;
+    if (document.activeElement?.closest('.live-chat-message-actions'))
+      permissionFocus.current = token;
     setRequestBusy(true);
     try {
       await liveChat.approve(runId, token, decision);
@@ -524,13 +681,15 @@ export function LiveChatPage({
     ? t('Servicio local sin conexión')
     : status === 'connecting'
       ? t('Conectando')
-      : turnRunning
-        ? t('Trabajando…')
-        : authRequired
-          ? t('Inicia sesión para continuar')
-          : status === 'connected'
-            ? t('Sesión lista')
-            : t('Se conectará al enviar');
+      : pendingApproval
+        ? t('Esperando permiso')
+        : turnRunning
+          ? t('Turno en curso')
+          : authRequired
+            ? t('Inicia sesión para continuar')
+            : status === 'connected'
+              ? t('Sesión lista')
+              : t('Se conectará al enviar');
 
   return (
     <aside
@@ -660,53 +819,123 @@ export function LiveChatPage({
               </div>
             </div>
           )}
-          {thread.map((message) => (
-            <article
-              key={message.id}
-              className={`live-chat-message ${message.role}`}
-              data-testid={`live-chat-message-${message.role}`}
-            >
-              <p className="live-chat-message-role">
-                {message.role === 'you'
-                  ? t('Tú')
-                  : message.role === 'assistant'
-                    ? message.provider || harnessLabel
-                    : t('Hyperion')}
-                {message.meta ? ` · ${t(message.meta)}` : ''}
-              </p>
-              <p>{message.text}</p>
-              {message.approvalToken && !message.approvalState && (
-                <div className="live-chat-message-actions">
-                  <button
-                    type="button"
-                    className="primary"
-                    data-testid="live-chat-approval-allow"
-                    disabled={requestBusy}
-                    onClick={() => void decide(message.approvalToken!, 'allow')}
-                  >
-                    {t('Permitir para esta acción')}
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary"
-                    data-testid="live-chat-approval-deny"
-                    disabled={requestBusy}
-                    onClick={() => void decide(message.approvalToken!, 'deny')}
-                  >
-                    {t('Denegar')}
-                  </button>
-                </div>
-              )}
-            </article>
-          ))}
-          {turnRunning && (
-            <p className="live-chat-working" role="status">
-              {harnessLabel} · {t('Trabajando…')}
-            </p>
-          )}
+          {groupTranscript(thread).map((group) => {
+            if (group.kind === 'activity')
+              return <ActivityGroup key={group.id} items={group.items} />;
+            const message = group.message;
+            if (message.approvalToken && message.approvalState)
+              return (
+                <details
+                  key={message.id}
+                  className="live-chat-permission-history"
+                  data-testid="live-chat-permission-history"
+                >
+                  <summary data-permission-token={message.approvalToken}>
+                    {t(message.meta || 'Permiso del proveedor')}
+                  </summary>
+                  <p>{permissionLabel(message)}</p>
+                  {message.toolName && <code>{message.toolName}</code>}
+                </details>
+              );
+            return (
+              <article
+                key={message.id}
+                className={`live-chat-message ${message.role}`}
+                data-testid={`live-chat-message-${message.role}`}
+              >
+                <p className="live-chat-message-role">
+                  {message.role === 'you'
+                    ? t('Tú')
+                    : message.role === 'assistant'
+                      ? message.provider || harnessLabel
+                      : t('Hyperion')}
+                  {message.meta ? ` · ${t(message.meta)}` : ''}
+                </p>
+                <p>
+                  {message.approvalToken
+                    ? permissionLabel(message)
+                    : message.text}
+                </p>
+                {message.approvalToken && message.toolName && (
+                  <code className="live-chat-permission-tool">
+                    {message.toolName}
+                  </code>
+                )}
+                {message.approvalToken && !message.approvalState && (
+                  <>
+                    {permissionMode === 'auto-hyperion' && (
+                      <p className="live-chat-permission-hint">
+                        {t('Esta acción todavía requiere tu permiso.')}
+                      </p>
+                    )}
+                    <div className="live-chat-message-actions">
+                      <button
+                        type="button"
+                        className="primary"
+                        data-testid="live-chat-approval-allow"
+                        disabled={requestBusy}
+                        onClick={() =>
+                          void decide(message.approvalToken!, 'allow')
+                        }
+                      >
+                        {t('Permitir para esta acción')}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary"
+                        data-testid="live-chat-approval-deny"
+                        disabled={requestBusy}
+                        onClick={() =>
+                          void decide(message.approvalToken!, 'deny')
+                        }
+                      >
+                        {t('Denegar')}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
       <div className="live-chat-bottom">
+        {liveChat?.setPermissionMode && (
+          <div className="live-chat-permission-mode">
+            <label htmlFor="live-chat-permission-mode">
+              {t('Permisos del proveedor')}
+            </label>
+            <select
+              id="live-chat-permission-mode"
+              value={permissionMode}
+              disabled={
+                status !== 'connected' ||
+                !threadId.current ||
+                modeBusy ||
+                !serviceOnline
+              }
+              aria-describedby="live-chat-permission-scope"
+              onChange={(event) =>
+                void changePermissionMode(
+                  event.target.value as 'manual' | 'auto-hyperion',
+                )
+              }
+            >
+              <option value="manual">{t('Preguntar')}</option>
+              <option value="auto-hyperion">
+                {t('Auto Hyperion (esta sesión)')}
+              </option>
+            </select>
+            <details className="live-chat-permission-help">
+              <summary>{t('Alcance del permiso')}</summary>
+              <p id="live-chat-permission-scope">
+                {t(
+                  'Auto permite solo herramientas de coordinación Hyperion verificadas en esta sesión. Otras acciones siguen pidiendo permiso. Las decisiones humanas se responden en el canvas. Vuelve a Preguntar para revocar; detener o desconectar restablece Preguntar.',
+                )}
+              </p>
+            </details>
+          </div>
+        )}
         {(setupMessage || notice || !serviceOnline) && (
           <div className="live-chat-notice" role="status">
             <p>{setupMessage || notice || t('Servicio local sin conexión')}</p>

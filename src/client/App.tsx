@@ -2719,20 +2719,22 @@ export function App() {
                                   ) : (
                                     <Pause size={17} />
                                   )}
-                                  <p>
-                                    {kind === 'active-wait'
-                                      ? t(
-                                          'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
-                                        )
-                                      : kind === 'permission'
+                                  <div className="step-hint-body">
+                                    <p>
+                                      {kind === 'active-wait'
                                         ? t(
-                                            'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
+                                            'El agente tiene este paso en curso. Revisa Actividad para ver lo que ya registró.',
                                           )
-                                        : t(
-                                            'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
-                                          )}
+                                        : kind === 'permission'
+                                          ? t(
+                                              'Este paso sigue en curso, pero el chat se detuvo tras un acceso denegado. No hay agente esperando.',
+                                            )
+                                          : t(
+                                              'Este paso sigue marcado en curso, pero no hay un chat esperando. El agente no está avanzando solo.',
+                                            )}
+                                    </p>
                                     {kind !== 'active-wait' && live && (
-                                      <>
+                                      <div className="step-hint-actions">
                                         <button
                                           className="secondary"
                                           disabled={busy || !online}
@@ -2748,9 +2750,9 @@ export function App() {
                                             ? t('Pega la petición en tu chat')
                                             : t('Copiar continuación')}
                                         </button>
-                                      </>
+                                      </div>
                                     )}
-                                  </p>
+                                  </div>
                                 </div>
                               );
                             })()}
@@ -2762,30 +2764,36 @@ export function App() {
                           }) && (
                             <div className="step-hint wake-continuation-cta">
                               <Bot size={17} />
-                              <p>
-                                {t(
-                                  'Hay trabajo de agente listo y el chat no está en espera. Copia la continuación (incluye todos los pasos listos) y pégala en el chat conectado. MCP solo no despierta el chat.',
-                                )}
-                                <button
-                                  className="secondary"
-                                  onClick={copyPrompt}
-                                >
-                                  {copied
-                                    ? t('Pega la petición en tu chat')
-                                    : t('Copiar continuación')}
-                                </button>
-                                {canSendWakeContinuation ? (
+                              <div className="step-hint-body">
+                                <p>
+                                  {t(
+                                    'Hay trabajo de agente listo y el chat no está en espera. Copia la continuación (incluye todos los pasos listos) y pégala en el chat conectado. MCP solo no despierta el chat.',
+                                  )}
+                                </p>
+                                <div className="step-hint-actions">
                                   <button
-                                    type="button"
                                     className="secondary"
-                                    disabled={busy || !online}
-                                    onClick={() => void sendWakeContinuation()}
+                                    onClick={copyPrompt}
                                   >
-                                    <Send size={15} />
-                                    {t('Enviar')}
+                                    {copied
+                                      ? t('Pega la petición en tu chat')
+                                      : t('Copiar continuación')}
                                   </button>
-                                ) : null}
-                              </p>
+                                  {canSendWakeContinuation ? (
+                                    <button
+                                      type="button"
+                                      className="secondary"
+                                      disabled={busy || !online}
+                                      onClick={() =>
+                                        void sendWakeContinuation()
+                                      }
+                                    >
+                                      <Send size={15} />
+                                      {t('Enviar')}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              </div>
                             </div>
                           )}
                           {step.status === 'ready' &&

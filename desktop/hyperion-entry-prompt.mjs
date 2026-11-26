@@ -25,13 +25,30 @@ export function validateChatRunId(runId) {
   return runId;
 }
 
-export function hyperionPromptBlocks({ runId, text, includeEntry }) {
+export function hyperionPromptBlocks({
+  runId,
+  text,
+  includeEntry,
+  serverName = 'hyperion_active',
+}) {
   validateChatRunId(runId);
+  if (!/^hyperion_active(?:_[0-9a-f]{32})?$/.test(serverName))
+    throw new Error('Invalid private Hyperion server identity.');
   return [
-    ...(includeEntry ? [{ type: 'text', text: HYPERION_ENTRY_PROMPT }] : []),
+    ...(includeEntry
+      ? [
+          {
+            type: 'text',
+            text: HYPERION_ENTRY_PROMPT.replaceAll(
+              'hyperion_active',
+              serverName,
+            ),
+          },
+        ]
+      : []),
     {
       type: 'text',
-      text: `Hyperion selection for this turn (metadata, not authorization): ${JSON.stringify({ selectedRunId: runId })}. ${runId === null ? 'No workflow is selected. Do not reuse a previous selection or invent a run ID. This actual user message is a new workflow request: create it through hyperion_create_run with its original text in plan.request before offering a substantive response, unless an explicitly named existing target is genuinely ambiguous and needs clarification.' : 'Read this workflow through hyperion_active before responding; continue eligible ready work or revise only for an explicit scope change. Selection does not imply permission to mutate it.'} Read fresh state rather than assuming prior revisions or decisions. The next content block is the user message.`,
+      text: `Hyperion selection for this turn (metadata, not authorization): ${JSON.stringify({ selectedRunId: runId })}. ${runId === null ? 'No workflow is selected. Do not reuse a previous selection or invent a run ID. This actual user message is a new workflow request: create it through hyperion_create_run with its original text in plan.request before offering a substantive response, unless an explicitly named existing target is genuinely ambiguous and needs clarification.' : `Read this workflow through ${serverName} before responding; continue eligible ready work or revise only for an explicit scope change. Selection does not imply permission to mutate it.`} Read fresh state rather than assuming prior revisions or decisions. The next content block is the user message.`,
     },
     { type: 'text', text },
   ];

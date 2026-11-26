@@ -6,7 +6,11 @@ The Hyperion Desktop bubble opens a nonmodal side panel beside the workflow with
 
 While Connections, Settings, Help, or a confirmation is open, chat hides and returns only if the person had it open; its draft and local session remain intact.
 
+In current source, tool calls are grouped under **Activity**, collapsed by default and expandable with the keyboard. Updates with the same call ID share one row; events without an ID stay separate. Agent replies retain their content, and failures or unconfirmed results stay visible outside the disclosure. **Turn in progress** only means the provider has an open turn: it does not certify execution or success of a canvas task. **Waiting for permission** identifies a pending authorization, and resolved permission history stays collapsed. This presentation requires a build containing the change; it does not imply availability in a published installer.
+
 The chat carries the goal, short progress and continuation when needed. Scope, paths and decisions live in canvas forms—not in a parallel chat questionnaire.
+
+In that build, **Provider permissions** offers **Ask** (the default) or **Auto Hyperion (this session)** once connected. Auto allows only verified coordination calls, once per call; it does not grant shell, file access, unknown tools, or canvas decisions, and provider policy still applies. Requests outside its scope remain visible. Open **Permission scope** to review the limit. Returning to Ask revokes Auto and cancels pending requests; stopping, failure, disconnection, or a context/provider change also resets the mode. It is not persisted across sessions, and older Desktop bridges without support do not show the selector. Auto does not itself prevent a canvas task from being abandoned for lack of progress.
 
 <GuideLens kind="canvas" />
 

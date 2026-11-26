@@ -6,7 +6,11 @@ La burbuja de Hyperion Desktop abre un panel lateral no modal junto al workflow,
 
 Mientras Conexiones, Ajustes, Ayuda o una confirmación están abiertos, el chat se oculta y vuelve después solo si la persona lo tenía abierto; conserva el borrador y la sesión local.
 
+En las fuentes actuales, las llamadas aparecen agrupadas en **Actividad**, contraída y desplegable con teclado. Cada identificador de llamada actualiza una sola fila; sin identificador, los eventos se conservan por separado. Las respuestas del agente conservan su contenido y los fallos o resultados sin confirmar siguen visibles fuera del desplegable. **Turno en curso** solo indica que el proveedor mantiene un turno abierto: no certifica ejecución ni éxito de una tarea del canvas. **Esperando permiso** identifica una autorización pendiente, y el historial de permisos resueltos queda contraído. Esta presentación requiere una compilación que incluya el cambio; no implica que ya esté publicada en un instalador.
+
 El chat define el objetivo, el progreso breve y la continuación cuando haga falta. El alcance, las rutas y las decisiones viven en formularios del canvas—no en un cuestionario paralelo en el chat.
+
+En esa compilación, **Permisos del proveedor** permite elegir **Preguntar** (predeterminado) o **Auto Hyperion (esta sesión)** una vez conectado. Auto solo permite llamadas de coordinación verificadas, una vez por llamada; no concede shell, acceso a archivos, herramientas desconocidas ni decisiones del canvas, y respeta la política del proveedor. Las solicitudes fuera del alcance siguen visibles. Abre **Alcance del permiso** para revisar el límite. Volver a Preguntar revoca Auto y cancela solicitudes pendientes; detener, fallar, desconectar o cambiar contexto/proveedor también restablece el modo. No se persiste entre sesiones y el selector no aparece en versiones del bridge que no lo soportan. Auto no evita por sí mismo que una tarea del canvas sea abandonada por falta de progreso.
 
 <GuideLens kind="canvas" />
 

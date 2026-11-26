@@ -52,11 +52,24 @@
 
 .resultado-header {
   display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 16px 16px 12px;
   border-bottom: 1px solid var(--line, #e4dfd4);
+}
+
+.resultado-heading {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resultado-heading .status-tag {
+  max-width: 100%;
+  white-space: normal;
 }
 
 .resultado-eyebrow {
@@ -77,9 +90,27 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.resultado-header-actions > button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.resultado-header-actions > button svg {
+  flex-shrink: 0;
+}
+
+.resultado-header-actions > .modal-close {
+  position: static;
+  flex-shrink: 0;
 }
 
 .resultado-back-canvas,
@@ -107,6 +138,64 @@
 .resultado-lead-in {
   margin: 0 0 10px;
   font-weight: 600;
+}
+
+/* Guidance actions are a separate row, never part of the notice's line box. */
+.resultado-stage .step-hint {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.resultado-stage .step-hint > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.resultado-stage .step-hint-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.resultado-stage .step-hint p {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.resultado-stage .step-hint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.canvas-app .resultado-stage .step-hint-actions button.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  background: var(--stone);
+  border-color: var(--line);
+  transition: none;
+}
+
+.canvas-app .resultado-stage .step-hint-actions button.secondary:hover {
+  background: var(--node-surface);
+}
+
+.resultado-stage .step-hint-actions button > svg {
+  flex-shrink: 0;
 }
 
 .resultado-empty,
@@ -356,6 +445,15 @@
   .resultado-back-canvas,
   .resultado-sheet-toggle {
     display: inline-flex;
+  }
+
+  .resultado-heading,
+  .resultado-header-actions {
+    flex-basis: 100%;
+  }
+
+  .resultado-header-actions > .ghost-button {
+    flex: 1 1 0;
   }
 }
 

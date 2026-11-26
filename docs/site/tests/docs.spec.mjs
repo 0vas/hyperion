@@ -27,6 +27,17 @@ const localePaths = [
   'guia/el-paisaje',
   'en/guia/the-landscape',
 ];
+
+async function openMobileNavigation(page, en = false) {
+  const toggle = page.getByRole('banner').getByRole('button', {
+    name: en ? 'Menu' : 'Navegación móvil',
+    exact: true,
+  });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#VPNavScreen')).toBeVisible();
+}
 test('all guides load under the Pages subpath with working internal links and no local service', async ({
   page,
   request,
@@ -69,6 +80,105 @@ test('all guides load under the Pages subpath with working internal links and no
     expect((await request.get(href)).status(), href).toBe(200);
   expect(failures).toEqual([]);
 });
+
+for (const guide of [
+  {
+    locale: 'es',
+    path: 'guia/el-paisaje',
+    headings: [
+      'Por qué existe Hyperion',
+      'Qué significa «paisaje»',
+      'De los problemas a las decisiones de diseño',
+      'Quién hace qué',
+      'Tú en el bucle',
+      'Un ejemplo: preparar una propuesta para un taller',
+      'Qué garantiza el registro y cuáles son sus límites',
+      'Cuándo aporta valor',
+    ],
+    approval: 'Mientras decides, ese paso final sigue bloqueado.',
+    limits: [
+      'No es un sandbox del agente',
+      'La evidencia contiene solo lo que se envía.',
+      'MCP no despierta cualquier sesión de chat.',
+    ],
+    cta: 'Empieza con tu primer flujo',
+  },
+  {
+    locale: 'en',
+    path: 'en/guia/the-landscape',
+    headings: [
+      'Why Hyperion exists',
+      'What “landscape” means',
+      'From problems to design choices',
+      'Who does what',
+      'You in the loop',
+      'An example: preparing a workshop proposal',
+      'What the record guarantees and where it stops',
+      'When it adds value',
+    ],
+    approval: 'While you decide, that final step remains blocked.',
+    limits: [
+      'It is not an agent sandbox',
+      'Evidence contains only what is submitted.',
+      'MCP does not wake any arbitrary chat session.',
+    ],
+    cta: 'Start with your first workflow',
+  },
+]) {
+  test(`landscape motivation, example and limits remain readable in ${guide.locale}`, async ({
+    page,
+  }) => {
+    await page.goto(`/hyperion/${guide.path}.html`);
+    const article = page.locator('.vp-doc');
+    for (const heading of guide.headings) {
+      await expect(
+        article.getByRole('heading', { name: heading, level: 2 }),
+      ).toHaveCount(1);
+    }
+    await expect(article.locator('h3')).toHaveCount(5);
+    const example = article.locator('ol').filter({ hasText: guide.approval });
+    await expect(example).toHaveCount(1);
+    await expect(example.locator(':scope > li')).toHaveCount(5);
+    for (const limit of guide.limits)
+      await expect(article).toContainText(limit);
+    for (const destination of [
+      'usar-el-flujo',
+      'integraciones',
+      'reanudacion',
+      'limites',
+    ]) {
+      await expect(
+        article.locator(`a[href$="/${destination}.html"]`),
+      ).toHaveCount(1);
+    }
+    await expect(article.locator('.landscape-loop')).toHaveCount(1);
+    await expect(
+      article.getByRole('link', { name: guide.cta, exact: true }),
+    ).toHaveAttribute('href', /primeros-pasos/);
+
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const theme of ['light', 'dark']) {
+        await page.emulateMedia({
+          colorScheme: theme,
+          reducedMotion: 'reduce',
+        });
+        await page.evaluate((dark) => {
+          document.documentElement.classList.toggle('dark', dark);
+        }, theme === 'dark');
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        ).toBe(true);
+        await page.screenshot({
+          path: `../../test-results/docs/landscape-${guide.locale}-${width}-${theme}.png`,
+          fullPage: true,
+        });
+      }
+    }
+  });
+}
 
 test('a new reader can find setup and search for retry', async ({ page }) => {
   await page.goto('/hyperion/');
@@ -124,12 +234,19 @@ test('mobile navigation and reading remain accessible in both themes', async ({
       });
     }
   }
-  await page.goto('/hyperion/guia/primeros-pasos.html');
-  await page.getByRole('button', { name: /Navegación móvil/ }).click();
-  await page.getByRole('link', { name: 'Guía', exact: true }).click();
-  await expect(page.locator('h1')).toContainText(
-    'Un paisaje para el trabajo de tu IA',
-  );
+  for (const en of [false, true]) {
+    await page.goto(`/hyperion/${en ? 'en/' : ''}guia/primeros-pasos.html`);
+    await openMobileNavigation(page, en);
+    await page
+      .getByRole('link', { name: en ? 'Guide' : 'Guía', exact: true })
+      .click();
+    await expect(page.locator('h1')).toContainText(
+      en
+        ? 'A landscape for your AI’s work'
+        : 'Un paisaje para el trabajo de tu IA',
+    );
+    await expect(page.locator('#VPNavScreen')).not.toBeVisible();
+  }
 });
 
 test('language switch preserves the page and English search stays in English', async ({
@@ -874,7 +991,7 @@ test('cinematic landing stays readable in split windows and small phones', async
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     }
     if (width === 320) {
-      await page.getByRole('button', { name: /Navegación móvil/ }).click();
+      await openMobileNavigation(page);
       await page.getByRole('link', { name: 'Guía', exact: true }).click();
       await expect(page.locator('h1')).toContainText(
         'Un paisaje para el trabajo de tu IA',
@@ -922,21 +1039,35 @@ test('home theme switch changes the actual page and preserves it across navigati
 }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/hyperion/');
-  await expect(page.locator('.cinema-guides')).toHaveCount(0);
-  const title = page.locator('#landscape-title');
-  const lightColor = await title.evaluate((el) => getComputedStyle(el).color);
-  await page.getByRole('switch', { name: 'Cambiar tema' }).click();
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(title).not.toHaveCSS('color', lightColor);
-  const darkColor = await title.evaluate((el) => getComputedStyle(el).color);
-  await page.getByRole('switch', { name: 'Cambiar tema' }).click();
-  await expect(title).toHaveCSS('color', lightColor);
-  await page.reload();
-  await expect(title).toHaveCSS('color', lightColor);
-  await expect(title).not.toHaveCSS('color', darkColor);
-  await page.getByRole('link', { name: 'Contribuir', exact: true }).click();
-  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  for (const en of [false, true]) {
+    await page.goto(`/hyperion/${en ? 'en/' : ''}`);
+    await expect(page.locator('.cinema-guides')).toHaveCount(0);
+    const title = page.locator('#landscape-title');
+    const lightColor = await title.evaluate((el) => getComputedStyle(el).color);
+    const themeSwitch = page.getByRole('switch', {
+      name: en ? 'Appearance' : 'Cambiar tema',
+      exact: true,
+    });
+    await expect(themeSwitch).toHaveAttribute('aria-checked', 'false');
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    await expect(title).not.toHaveCSS('color', lightColor);
+    const darkColor = await title.evaluate((el) => getComputedStyle(el).color);
+    await expect(themeSwitch).toHaveAttribute('aria-checked', 'true');
+    await themeSwitch.click();
+    await expect(themeSwitch).toHaveAttribute('aria-checked', 'false');
+    await expect(title).toHaveCSS('color', lightColor);
+    await page.reload();
+    await expect(title).toHaveCSS('color', lightColor);
+    await expect(title).not.toHaveCSS('color', darkColor);
+    await page
+      .getByRole('link', {
+        name: en ? 'Contribute' : 'Contribuir',
+        exact: true,
+      })
+      .click();
+    await expect(page.locator('html')).not.toHaveClass(/dark/);
+  }
 });
 
 test('repository is discoverable with Shields badges and SVG actions in both languages', async ({
@@ -960,18 +1091,28 @@ test('repository is discoverable with Shields badges and SVG actions in both lan
       'https://github.com/0vas/hyperion',
     );
     await expect(repo.locator('svg')).toHaveCount(2);
-    for (const theme of ['light', 'dark']) {
-      await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-      expect(
-        (
-          await new AxeBuilder({ page })
-            .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-            .analyze()
-        ).violations,
-      ).toEqual([]);
-      await page.screenshot({
-        path: `../../test-results/docs/contribute-${theme}-${en ? 'en' : 'es'}.png`,
-      });
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const theme of ['light', 'dark']) {
+        await page.emulateMedia({
+          colorScheme: theme,
+          reducedMotion: 'reduce',
+        });
+        if (theme === 'dark')
+          await expect(page.locator('html')).toHaveClass(/dark/);
+        else await expect(page.locator('html')).not.toHaveClass(/dark/);
+        await expect(page.locator('.vp-doc .lang').first()).toHaveText('sh');
+        expect(
+          (
+            await new AxeBuilder({ page })
+              .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+              .analyze()
+          ).violations,
+        ).toEqual([]);
+        await page.screenshot({
+          path: `../../test-results/docs/contribute-${theme}-${en ? 'en' : 'es'}-${width}.png`,
+        });
+      }
     }
   }
 });
@@ -1202,7 +1343,7 @@ test('floating navigation keeps a generated brand and working actions across lay
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/hyperion/');
-  await page.getByRole('button', { name: /Navegación móvil/ }).click();
+  await openMobileNavigation(page);
   await page
     .locator('.VPNavScreen')
     .getByRole('link', { name: 'Probar Hyperion', exact: true })

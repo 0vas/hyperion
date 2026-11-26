@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 import {
   chmodSync,
   mkdirSync,
@@ -28,6 +29,7 @@ import {
   safeFailure,
 } from '../desktop/live-acp-chat.mjs';
 import { LiveHarnessChat } from '../desktop/live-harness-chat.mjs';
+import { buildClaudePermissionOptions } from '../node_modules/@agentclientprotocol/claude-agent-acp/dist/permissions/options.js';
 
 function executable(directory, name) {
   const path = join(directory, name);
@@ -92,6 +94,7 @@ test('Antigravity is discovered in its vendor CLI directory without shell PATH',
 function fakeAcpProcess({
   silent = false,
   waitForPermissionOnCancel = false,
+  permissionCall,
 } = {}) {
   const child = new EventEmitter();
   child.stdin = new PassThrough();
@@ -127,6 +130,21 @@ function fakeAcpProcess({
         reply(request.id, { sessionId: 'native-session' });
       if (request.method === 'session/prompt') {
         prompt = request;
+        const call = permissionCall?.(
+          requests.find((item) => item.method === 'session/new').params
+            .mcpServers[0].name,
+        );
+        if (call)
+          child.stdout.write(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'session/update',
+              params: {
+                sessionId: 'native-session',
+                update: { sessionUpdate: 'tool_call', ...call },
+              },
+            }) + '\n',
+          );
         child.stdout.write(
           JSON.stringify({
             jsonrpc: '2.0',
@@ -134,12 +152,32 @@ function fakeAcpProcess({
             id: 900,
             params: {
               sessionId: 'native-session',
-              toolCall: {
-                toolCallId: 'read-1',
-                title: 'Read isolated test workflow',
-              },
+              ...(call ? { _meta: { is_mcp_tool_approval: true } } : {}),
+              toolCall: call
+                ? {
+                    toolCallId: call.toolCallId,
+                    kind: 'execute',
+                    status: 'pending',
+                  }
+                : {
+                    toolCallId: 'read-1',
+                    title: 'Read isolated test workflow',
+                  },
               options: [
-                { kind: 'allow_once', optionId: 'once', name: 'Allow once' },
+                {
+                  kind: 'allow_once',
+                  optionId: call ? 'allow_once' : 'once',
+                  name: 'Allow',
+                },
+                ...(call
+                  ? [
+                      {
+                        kind: 'allow_always',
+                        optionId: 'allow_session',
+                        name: 'Allow for this session',
+                      },
+                    ]
+                  : []),
               ],
             },
           }) + '\n',
@@ -375,10 +413,10 @@ for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
         (await chat.connect('11111111-1111-4111-8111-111111111111')).connected,
         true,
       );
-      assert.equal(
+      assert.match(
         wire.requests.find((r) => r.method === 'session/new').params
           .mcpServers[0].name,
-        'hyperion_active',
+        /^hyperion_active_[0-9a-f]{32}$/,
       );
       await chat.send(
         '11111111-1111-4111-8111-111111111111',
@@ -411,6 +449,61 @@ for (const harness of ['codex', 'claude', 'cursor', 'antigravity']) {
     }
   });
 }
+
+test('an adapter-shaped MCP permission travels over ACP with only a one-time Auto response', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'hyperion-auto-wire-'));
+  const events = [];
+  const wire = fakeAcpProcess({
+    permissionCall: (server) => ({
+      toolCallId: 'private-mcp-1',
+      title: 'Read workflow',
+      kind: 'execute',
+      status: 'pending',
+      _meta: { is_mcp_tool_call: true },
+      rawInput: { server, tool: 'hyperion_list_runs', arguments: {} },
+    }),
+  });
+  const chat = new LiveAcpChat({
+    harness: 'codex',
+    userData: home,
+    directory: home,
+    url: 'http://127.0.0.1:4317',
+    resolveExecutable: () => ({ executable: '/private/test-cli' }),
+    spawnImpl: () => wire.child,
+    onEvent: (event) => events.push(event),
+  });
+  try {
+    await chat.connect(null);
+    chat.setPermissionMode(null, chat.threadId, 'auto-hyperion');
+    await chat.send(null, 'List workflows');
+    await until(() =>
+      events.some(
+        (event) => event.type === 'turn' && event.status === 'completed',
+      ),
+    );
+    assert.deepEqual(
+      wire.requests.find((request) => request.id === 900).result,
+      { outcome: { outcome: 'selected', optionId: 'allow_once' } },
+    );
+    assert.equal(
+      events.some((event) => event.type === 'approval'),
+      false,
+    );
+    assert.equal(
+      events.find((event) => event.type === 'action').itemId,
+      'private-mcp-1',
+    );
+    assert.equal(
+      events.find((event) => event.type === 'assistant-delta').text,
+      'Verified wire response',
+    );
+    chat.dispose();
+    assert.equal(chat.permissionMode, 'manual');
+  } finally {
+    chat.dispose();
+    rmSync(home, { recursive: true, force: true });
+  }
+});
 
 test('an unresponsive native ACP executable times out and releases its process', async () => {
   const home = mkdtempSync(join(tmpdir(), 'hyperion-timeout-'));
@@ -549,6 +642,635 @@ function activePermissionChat() {
   };
   return { chat, events, params };
 }
+
+function policyChat() {
+  const fixture = activePermissionChat();
+  fixture.chat.harness = 'codex';
+  fixture.params._meta = { is_mcp_tool_approval: true };
+  fixture.params.options.push({
+    kind: 'allow_always',
+    optionId: 'allow_session',
+  });
+  const toolCall = {
+    toolCallId: 'hyperion-read-1',
+    title: 'Read workflow',
+    kind: 'execute',
+    status: 'pending',
+    _meta: { is_mcp_tool_call: true },
+    rawInput: {
+      server: fixture.chat.mcpServerName,
+      tool: 'hyperion_get_run',
+      arguments: { runId: fixture.chat.runId },
+    },
+  };
+  fixture.chat.onSessionUpdate({
+    sessionId: fixture.chat.threadId,
+    update: { sessionUpdate: 'tool_call', ...toolCall },
+  });
+  return { ...fixture, toolCall };
+}
+
+test('Codex correlated MCP approval uses the installed sparse request shape', async () => {
+  // ElicitationReporter.permission + buildMcpPermissionRequest in codex-acp:
+  // correlated requests omit rawInput/title and mark the REQUEST, not the call.
+  const { chat, toolCall } = policyChat();
+  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  const result = chat.requestPermission({
+    sessionId: chat.threadId,
+    toolCall: {
+      toolCallId: toolCall.toolCallId,
+      kind: 'execute',
+      status: 'pending',
+    },
+    _meta: { is_mcp_tool_approval: true },
+    options: [
+      { optionId: 'allow_once', name: 'Allow', kind: 'allow_once' },
+      {
+        optionId: 'allow_session',
+        name: 'Allow for this session',
+        kind: 'allow_always',
+      },
+      { optionId: 'cancel', name: 'Cancel', kind: 'reject_once' },
+    ],
+  });
+  try {
+    assert.equal(chat.pendingApprovals.size, 0);
+    assert.equal((await result).outcome.optionId, 'allow_once');
+  } finally {
+    chat.dispose();
+    await result;
+  }
+});
+
+test('sparse MCP requests fail closed without approval metadata, persistence or a live matching call', async () => {
+  for (const variant of [
+    'no-marker',
+    'false-marker',
+    'no-persistence',
+    'unrecognized-persistence',
+    'wrong-call',
+    'wrong-session',
+    'terminal',
+    'conflicting-input',
+    'question',
+  ]) {
+    const { chat, params, toolCall } = policyChat();
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    const request = {
+      ...params,
+      toolCall: {
+        toolCallId: toolCall.toolCallId,
+        kind: 'execute',
+        status: 'pending',
+      },
+    };
+    if (variant === 'no-marker') delete request._meta;
+    if (variant === 'false-marker')
+      request._meta = { is_mcp_tool_approval: false };
+    if (variant === 'no-persistence')
+      request.options = [{ kind: 'allow_once', optionId: 'allow_once' }];
+    if (variant === 'unrecognized-persistence')
+      request.options = [
+        ...request.options.slice(0, 1),
+        { kind: 'allow_always', optionId: 'unknown' },
+      ];
+    if (variant === 'wrong-call') request.toolCall.toolCallId = 'another';
+    if (variant === 'wrong-session') request.sessionId = 'another';
+    if (variant === 'terminal')
+      chat.onSessionUpdate({
+        sessionId: chat.threadId,
+        update: {
+          sessionUpdate: 'tool_call_update',
+          toolCallId: toolCall.toolCallId,
+          status: 'completed',
+        },
+      });
+    if (variant === 'conflicting-input')
+      request.toolCall.rawInput = {
+        ...toolCall.rawInput,
+        arguments: { runId: 'another' },
+      };
+    if (variant === 'question')
+      request.toolCall.input = { schema: { question: 'Human response' } };
+    const result = chat.requestPermission(request);
+    try {
+      assert.equal(
+        chat.pendingApprovals.size,
+        variant === 'wrong-session' ? 0 : 1,
+        variant,
+      );
+    } finally {
+      chat.dispose();
+      assert.equal((await result).outcome.outcome, 'cancelled');
+    }
+  }
+});
+
+test('Claude provider ask rules and suppressed persistence remain manual with exact adapter options', async () => {
+  const { chat, params } = activePermissionChat();
+  chat.harness = 'claude';
+  const toolName = `mcp__${chat.mcpServerName}__hyperion_get_run`;
+  const toolCall = {
+    toolCallId: 'ask-rule',
+    rawInput: { runId: chat.runId },
+    _meta: {
+      claudeCode: {
+        toolName,
+        mcpServer: { name: chat.mcpServerName, source: 'dynamic' },
+      },
+    },
+  };
+  chat.onSessionUpdate({
+    sessionId: chat.threadId,
+    update: { sessionUpdate: 'tool_call', ...toolCall },
+  });
+  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  const options = buildClaudePermissionOptions({
+    toolName,
+    input: toolCall.rawInput,
+    allowPersistentOptions: false,
+  });
+  const result = chat.requestPermission({ ...params, toolCall, options });
+  try {
+    assert.equal(chat.pendingApprovals.size, 1);
+  } finally {
+    chat.dispose();
+    await result;
+  }
+});
+
+test('Auto Hyperion is opt-in and uses allow_once for identified session tools', async () => {
+  const { chat, events, params, toolCall } = policyChat();
+  assert.equal(chat.permissionMode, 'manual');
+  const pending = chat.requestPermission({ ...params, toolCall });
+  assert.equal(chat.pendingApprovals.size, 1);
+  assert.equal(
+    events.find((event) => event.type === 'approval').autoEligible,
+    true,
+  );
+  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  assert.equal((await pending).outcome.optionId, 'once');
+  const result = await chat.requestPermission({
+    ...params,
+    toolCall,
+    options: [
+      { kind: 'allow_always', optionId: 'allow_session' },
+      { kind: 'allow_once', optionId: 'single-operation' },
+    ],
+  });
+  assert.equal(result.outcome.optionId, 'single-operation');
+  assert.equal(chat.pendingApprovals.size, 0);
+});
+
+test('Auto Hyperion asks for unknown, spoofed, human, destructive and incomplete requests', async () => {
+  const variants = [
+    undefined,
+    {
+      toolCallId: 'unknown',
+      title: 'mcp.hyperion_active.hyperion_get_run',
+      rawInput: undefined,
+      _meta: undefined,
+    },
+    {
+      rawInput: { server: 'foreign', tool: 'hyperion_get_run', arguments: {} },
+    },
+    { rawInput: { tool: 'hyperion_submit', arguments: {} } },
+    { rawInput: { tool: 'hyperion_step', arguments: { action: 'approve' } } },
+    { rawInput: { tool: 'hyperion_step', arguments: { action: 'amend' } } },
+    { rawInput: { tool: 'hyperion_step', arguments: { action: 'retry' } } },
+    { rawInput: { tool: 'hyperion_step', arguments: {} } },
+    {
+      rawInput: {
+        tool: 'hyperion_add_artifact',
+        arguments: { filePath: '/private/file' },
+      },
+    },
+    { rawInput: { tool: 'shell', arguments: { command: 'delete something' } } },
+    { rawInput: null },
+  ];
+  for (const variant of variants) {
+    const { chat, params, toolCall } = policyChat();
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    const candidate = variant && {
+      ...toolCall,
+      ...variant,
+      ...(variant.rawInput && {
+        rawInput: { ...toolCall.rawInput, ...variant.rawInput },
+      }),
+    };
+    // Both events agree: exclusion must come from the allowlist/metadata,
+    // not merely a mismatch with the original read call.
+    chat.toolCalls.clear();
+    if (candidate)
+      chat.onSessionUpdate({
+        sessionId: chat.threadId,
+        update: { sessionUpdate: 'tool_call', ...candidate },
+      });
+    const pending = chat.requestPermission({ ...params, toolCall: candidate });
+    assert.equal(chat.pendingApprovals.size, 1, JSON.stringify(variant));
+    chat.cancelPendingApprovals();
+    assert.deepEqual(await pending, { outcome: { outcome: 'cancelled' } });
+  }
+});
+
+test('Auto Hyperion never substitutes a persistent-only option or a provider denial hint', async () => {
+  for (const extra of [
+    { options: [{ kind: 'allow_always', optionId: 'always' }] },
+    { _meta: { permission: { defaultToNo: true } } },
+  ]) {
+    const { chat, params, toolCall } = policyChat();
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    const result = chat.requestPermission({ ...params, toolCall, ...extra });
+    assert.equal(chat.pendingApprovals.size, 1);
+    chat.cancelPendingApprovals();
+    assert.deepEqual(await result, { outcome: { outcome: 'cancelled' } });
+  }
+});
+
+test('Claude requires correlated dynamic private-server metadata; native providers stay manual', async () => {
+  for (const source of ['dynamic', 'sdk', 'user', undefined]) {
+    const { chat, params } = activePermissionChat();
+    chat.harness = 'claude';
+    const toolCall = {
+      toolCallId: 'claude-read',
+      title: 'Read workflow',
+      status: 'pending',
+      rawInput: { runId: chat.runId },
+      _meta: {
+        claudeCode: {
+          toolName: `mcp__${chat.mcpServerName}__hyperion_get_run`,
+          mcpServer: { name: chat.mcpServerName, source },
+        },
+      },
+    };
+    params.options = buildClaudePermissionOptions({
+      toolName: toolCall._meta.claudeCode.toolName,
+      input: toolCall.rawInput,
+      allowPersistentOptions: true,
+      durableChangeSet: {
+        updates: [
+          {
+            type: 'addRules',
+            behavior: 'allow',
+            destination: 'localSettings',
+            rules: [{ toolName: toolCall._meta.claudeCode.toolName }],
+          },
+        ],
+      },
+    });
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: { sessionUpdate: 'tool_call', ...toolCall },
+    });
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    const result = chat.requestPermission({ ...params, toolCall });
+    assert.equal(chat.pendingApprovals.size, source === 'dynamic' ? 0 : 1);
+    chat.cancelPendingApprovals();
+    assert.equal(
+      (await result).outcome.outcome,
+      source === 'dynamic' ? 'selected' : 'cancelled',
+    );
+  }
+  for (const harness of ['cursor', 'antigravity']) {
+    const { chat, params, toolCall } = policyChat();
+    chat.harness = harness;
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    const result = chat.requestPermission({ ...params, toolCall });
+    assert.equal(chat.pendingApprovals.size, 1);
+    chat.cancelPendingApprovals();
+    assert.equal((await result).outcome.outcome, 'cancelled');
+  }
+});
+
+test('a changed, untracked or stale tool identity cannot be revived by enabling Auto', async () => {
+  for (const change of ['input', 'metadata', 'kind', 'untracked', 'turn']) {
+    const { chat, params, toolCall } = policyChat();
+    const result = chat.requestPermission({ ...params, toolCall });
+    if (change === 'untracked') chat.toolCalls.clear();
+    else if (change === 'turn') {
+      chat.finish('completed');
+      chat.turnId = 'next-turn';
+    } else {
+      const altered = {
+        input: {
+          rawInput: {
+            ...toolCall.rawInput,
+            tool: 'hyperion_list_runs',
+            arguments: {},
+          },
+        },
+        metadata: { _meta: { is_mcp_tool_call: false } },
+        kind: { kind: 'delete' },
+      }[change];
+      chat.onSessionUpdate({
+        sessionId: chat.threadId,
+        update: {
+          sessionUpdate: 'tool_call_update',
+          toolCallId: toolCall.toolCallId,
+          ...altered,
+        },
+      });
+      // A later duplicate start must not repair an invalidated identity.
+      chat.onSessionUpdate({
+        sessionId: chat.threadId,
+        update: { sessionUpdate: 'tool_call', ...toolCall },
+      });
+    }
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    assert.equal(chat.pendingApprovals.size, change === 'turn' ? 0 : 1, change);
+    chat.cancelPendingApprovals();
+    assert.equal((await result).outcome.outcome, 'cancelled');
+    chat.dispose();
+  }
+});
+
+test('Claude contradictions permanently invalidate identity before or after a permission is pending', async () => {
+  for (const timing of ['before', 'after'])
+    for (const sessionUpdate of ['tool_call_update', 'tool_call'])
+      for (const conflict of ['server', 'source', 'input', 'tool']) {
+        const { chat, params } = activePermissionChat();
+        chat.harness = 'claude';
+        const toolName = `mcp__${chat.mcpServerName}__hyperion_get_run`;
+        const toolCall = {
+          toolCallId: 'claude-conflict',
+          kind: 'execute',
+          status: 'pending',
+          rawInput: { runId: chat.runId },
+          _meta: {
+            claudeCode: {
+              toolName,
+              mcpServer: { name: chat.mcpServerName, source: 'dynamic' },
+            },
+          },
+        };
+        params.options = buildClaudePermissionOptions({
+          toolName,
+          input: toolCall.rawInput,
+          allowPersistentOptions: true,
+          durableChangeSet: {
+            updates: [
+              {
+                type: 'addRules',
+                behavior: 'allow',
+                destination: 'localSettings',
+                rules: [{ toolName }],
+              },
+            ],
+          },
+        });
+        chat.onSessionUpdate({
+          sessionId: chat.threadId,
+          update: { sessionUpdate: 'tool_call', ...toolCall },
+        });
+        let result =
+          timing === 'after'
+            ? chat.requestPermission({ ...params, toolCall })
+            : undefined;
+        const contradictory = structuredClone(toolCall);
+        if (conflict === 'server')
+          contradictory._meta.claudeCode.mcpServer.name = 'foreign';
+        if (conflict === 'source')
+          contradictory._meta.claudeCode.mcpServer.source = 'sdk';
+        if (conflict === 'tool')
+          contradictory._meta.claudeCode.toolName = `mcp__${chat.mcpServerName}__hyperion_list_runs`;
+        if (conflict === 'input') contradictory.rawInput.runId = 'foreign';
+        chat.onSessionUpdate({
+          sessionId: chat.threadId,
+          update: { sessionUpdate, ...contradictory },
+        });
+        // Neither a corrected partial update nor a repeated start repairs trust.
+        for (const repair of ['tool_call_update', 'tool_call'])
+          chat.onSessionUpdate({
+            sessionId: chat.threadId,
+            update: { sessionUpdate: repair, ...toolCall },
+          });
+        result ??= chat.requestPermission({ ...params, toolCall });
+        try {
+          chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+          assert.equal(
+            chat.pendingApprovals.size,
+            1,
+            `${timing}/${sessionUpdate}/${conflict}`,
+          );
+        } finally {
+          chat.dispose();
+          assert.equal((await result).outcome.outcome, 'cancelled');
+        }
+      }
+});
+
+test('action and approval labels never expose provider titles or command prose', async () => {
+  for (const harness of ['codex', 'claude', 'cursor', 'antigravity'])
+    for (const title of [
+      'echo SYNTHETIC_SECRET_MARKER',
+      'command --password SYNTHETIC_SECRET_MARKER',
+      'Write-Output SYNTHETIC_SECRET_MARKER',
+      'Private prose SYNTHETIC_SECRET_MARKER',
+    ]) {
+      const { chat, params, events } = activePermissionChat();
+      chat.harness = harness;
+      const toolCall = {
+        toolCallId: 'native-command',
+        title,
+        kind: 'execute',
+        status: 'pending',
+        rawInput: { command: title },
+        ...(harness === 'claude'
+          ? {
+              _meta: {
+                claudeCode: {
+                  toolName: title.startsWith('Write-Output')
+                    ? 'PowerShell'
+                    : 'Bash',
+                },
+              },
+            }
+          : {}),
+      };
+      chat.onSessionUpdate({
+        sessionId: chat.threadId,
+        update: { sessionUpdate: 'tool_call', ...toolCall },
+      });
+      const result = chat.requestPermission({ ...params, toolCall });
+      try {
+        assert.equal(
+          JSON.stringify(events).includes('SYNTHETIC_SECRET_MARKER'),
+          false,
+          `${harness}/${title}`,
+        );
+        assert.equal(
+          events.find((event) => event.type === 'action').label,
+          'Run command',
+        );
+        assert.equal(
+          events.find((event) => event.type === 'approval').label,
+          'Run command',
+        );
+      } finally {
+        chat.dispose();
+        await result;
+      }
+    }
+});
+
+test('provider interruption resets Auto and resolves permissions before the terminal event', async () => {
+  const { chat, params, events } = policyChat();
+  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  const result = chat.requestPermission(params); // Unknown action stays pending.
+  chat.finish('interrupted');
+  assert.equal(chat.permissionMode, 'manual');
+  assert.equal((await result).outcome.outcome, 'cancelled');
+  const terminal = events.findIndex(
+    (event) => event.type === 'turn' && event.status === 'interrupted',
+  );
+  const reset = events.findIndex(
+    (event) => event.type === 'permission-mode' && event.mode === 'manual',
+  );
+  const resolved = events.findIndex(
+    (event) => event.type === 'approval-resolved',
+  );
+  assert.ok(reset >= 0 && reset < terminal);
+  assert.ok(resolved >= 0 && resolved < terminal);
+  chat.dispose();
+});
+
+test('verified Hyperion labels also ignore titles on starts, updates and permissions', async () => {
+  const { chat, params, events, toolCall } = policyChat();
+  const privateCall = { ...toolCall, title: 'SYNTHETIC_SECRET_MARKER' };
+  for (const sessionUpdate of ['tool_call', 'tool_call_update'])
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: { sessionUpdate, ...privateCall },
+    });
+  const result = chat.requestPermission({ ...params, toolCall: privateCall });
+  try {
+    assert.equal(
+      JSON.stringify(events).includes('SYNTHETIC_SECRET_MARKER'),
+      false,
+    );
+    assert.equal(events.at(-1).label, 'Read workflow');
+  } finally {
+    chat.dispose();
+    await result;
+  }
+});
+
+test('permission mode rejects stale selection and session; revocation cancels pending requests', async () => {
+  const { chat, params } = policyChat();
+  assert.throws(() =>
+    chat.setPermissionMode(null, chat.threadId, 'auto-hyperion'),
+  );
+  assert.throws(() =>
+    chat.setPermissionMode(chat.runId, 'old-thread', 'auto-hyperion'),
+  );
+  assert.throws(() =>
+    chat.setPermissionMode(chat.runId, chat.threadId, 'anything'),
+  );
+  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  const pending = chat.requestPermission(params);
+  const token = [...chat.pendingApprovals.keys()][0];
+  chat.setPermissionMode(chat.runId, chat.threadId, 'manual');
+  assert.deepEqual(await pending, { outcome: { outcome: 'cancelled' } });
+  assert.throws(() => chat.approve(chat.runId, token, 'allow'));
+  chat.disconnect();
+  assert.equal(chat.permissionMode, 'manual');
+  assert.throws(() =>
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion'),
+  );
+});
+
+test('Auto Hyperion resets on stop and failure but survives an ordinary turn completion', async () => {
+  for (const ending of ['completed', 'failed', 'stop']) {
+    const { chat } = policyChat();
+    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    if (ending === 'stop') await chat.stop(chat.runId);
+    else chat.finish(ending);
+    assert.equal(
+      chat.permissionMode,
+      ending === 'completed' ? 'auto-hyperion' : 'manual',
+    );
+  }
+});
+
+test('unrecognized statuses and payloads do not create facts or leak raw content', () => {
+  for (const status of ['__proto__', 'constructor', 'unknown']) {
+    const { chat, events, toolCall } = policyChat();
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: {
+        sessionUpdate: 'tool_call_update',
+        toolCallId: toolCall.toolCallId,
+        status,
+        title: '/private/credential-file',
+        rawOutput: {
+          content: [{ type: 'text', text: 'private raw prose' }],
+        },
+      },
+    });
+    assert.equal(events.at(-1).status, 'pending');
+    assert.equal(events.at(-1).label, 'Read workflow');
+    assert.equal(events.at(-1).summary, undefined);
+    assert.equal(JSON.stringify(events.at(-1)).includes('private'), false);
+    chat.dispose();
+  }
+});
+
+test('tool updates retain real ids, status and bounded public results without raw arguments', () => {
+  const { chat, events, toolCall } = policyChat();
+  chat.onSessionUpdate({
+    sessionId: chat.threadId,
+    update: {
+      sessionUpdate: 'tool_call_update',
+      toolCallId: toolCall.toolCallId,
+      status: 'completed',
+      rawOutput: {
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                status: 'active',
+                steps: [{ id: 'one' }],
+                token: 'secret-credential',
+                report: 'private structure',
+              }),
+            },
+          ],
+        },
+      },
+      content: [
+        {
+          type: 'content',
+          content: {
+            type: 'text',
+            text: 'Read complete. Authorization: Bearer secret-credential',
+          },
+        },
+      ],
+    },
+  });
+  const action = events.at(-1);
+  assert.equal(action.toolCallId, toolCall.toolCallId);
+  assert.equal(action.turnId, 'turn');
+  assert.equal(action.status, 'completed');
+  assert.equal(action.label, 'Read workflow');
+  assert.equal(action.summary, 'Workflow active; 1 steps recorded.');
+  assert.ok(!JSON.stringify(action).includes('secret-credential'));
+  assert.ok(!JSON.stringify(action).includes('private structure'));
+  assert.equal(action.rawOutput, undefined);
+  assert.equal(action.rawInput, undefined);
+  chat.finish('completed');
+  const before = events.length;
+  chat.onSessionUpdate({
+    sessionId: chat.threadId,
+    update: {
+      sessionUpdate: 'tool_call_update',
+      toolCallId: toolCall.toolCallId,
+      status: 'failed',
+    },
+  });
+  assert.equal(events.length, before);
+});
 
 for (const status of ['completed', 'interrupted', 'failed']) {
   test(`a ${status} turn settles permissions and rejects its old token in a new turn`, async () => {
@@ -774,6 +1496,78 @@ test('the multiplexer connects only the selected supported harness', async () =>
   chat.selectHarness('claude');
   await chat.connect('11111111-1111-4111-8111-111111111111');
   assert.deepEqual(calls, ['claude']);
+});
+
+test('the preload sends only explicit permission-mode arguments to the dedicated IPC channel', async () => {
+  let bridge;
+  const calls = [];
+  runInNewContext(
+    readFileSync(new URL('../desktop/preload.cjs', import.meta.url), 'utf8'),
+    {
+      require: (name) => {
+        assert.equal(name, 'electron');
+        return {
+          contextBridge: {
+            exposeInMainWorld: (_name, value) => {
+              bridge = value;
+            },
+          },
+          ipcRenderer: {
+            sendSync: () => null,
+            invoke: async (...args) => {
+              calls.push(args);
+              return { mode: 'manual', threadId: 'thread' };
+            },
+          },
+        };
+      },
+    },
+  );
+  const state = await bridge.liveChat.setPermissionMode(
+    null,
+    'thread',
+    'manual',
+  );
+  assert.deepEqual(calls, [
+    ['hyperion:live-chat:permission-mode', null, 'thread', 'manual'],
+  ]);
+  assert.equal(state.mode, 'manual');
+});
+
+test('changing provider or workflow destroys Auto state instead of persisting it', async () => {
+  const sessions = [];
+  const factory = () => {
+    const { chat } = activePermissionChat();
+    chat.turnId = null;
+    chat.connect = async (runId) => {
+      chat.runId = runId;
+      return { connected: true };
+    };
+    sessions.push(chat);
+    return chat;
+  };
+  const mux = new LiveHarnessChat({
+    userData: '/unused',
+    store: { getSelected: () => 'codex', select() {} },
+    resolveHarnesses: () => [],
+    factories: { codex: factory, claude: factory },
+  });
+  assert.throws(
+    () => mux.setPermissionMode(null, 'thread', 'auto-hyperion'),
+    /Connect/,
+  );
+  await mux.connect(null);
+  mux.setPermissionMode(null, 'thread', 'auto-hyperion');
+  await mux.connect('11111111-1111-4111-8111-111111111111');
+  assert.equal(sessions[0].permissionMode, 'manual');
+  assert.equal(sessions[0].agent, null);
+  assert.equal(sessions[1].permissionMode, 'manual');
+  mux.setPermissionMode(sessions[1].runId, 'thread', 'auto-hyperion');
+  mux.selectHarness('claude');
+  assert.equal(sessions[1].permissionMode, 'manual');
+  await mux.connect(null);
+  assert.equal(sessions[2].permissionMode, 'manual');
+  mux.dispose();
 });
 
 test('an idle persistent process can be switched, but an active turn cannot', () => {

@@ -1,6 +1,6 @@
 {
   "name": "hyperion-workflows",
-  "version": "2026.11.24-build.1403",
+  "version": "2026.11.26-build.123",
   "private": true,
   "description": "Human-guided workflows for any AI tool",
   "license": "MIT",
@@ -40,6 +40,11 @@
     "react-dom": "^19.3.0",
     "smol-toml": "1.9.1",
     "zod": "^4.6.7"
+  },
+  "overrides": {
+    "@agentclientprotocol/claude-agent-acp@0.81.1": {
+      "zod": "4.6.7"
+    }
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
