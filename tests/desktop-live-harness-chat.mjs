@@ -29,6 +29,7 @@ import {
   safeFailure,
 } from '../desktop/live-acp-chat.mjs';
 import { LiveHarnessChat } from '../desktop/live-harness-chat.mjs';
+import { LiveChatPermissionStore } from '../desktop/live-chat-permission-store.mjs';
 import { buildClaudePermissionOptions } from '../node_modules/@agentclientprotocol/claude-agent-acp/dist/permissions/options.js';
 
 function executable(directory, name) {
@@ -474,7 +475,7 @@ test('an adapter-shaped MCP permission travels over ACP with only a one-time Aut
   });
   try {
     await chat.connect(null);
-    chat.setPermissionMode(null, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     await chat.send(null, 'List workflows');
     await until(() =>
       events.some(
@@ -498,7 +499,7 @@ test('an adapter-shaped MCP permission travels over ACP with only a one-time Aut
       'Verified wire response',
     );
     chat.dispose();
-    assert.equal(chat.permissionMode, 'manual');
+    assert.equal(chat.permissionMode, 'auto');
   } finally {
     chat.dispose();
     rmSync(home, { recursive: true, force: true });
@@ -646,6 +647,7 @@ function activePermissionChat() {
 function policyChat() {
   const fixture = activePermissionChat();
   fixture.chat.harness = 'codex';
+  fixture.params.options[0].optionId = 'allow_once';
   fixture.params._meta = { is_mcp_tool_approval: true };
   fixture.params.options.push({
     kind: 'allow_always',
@@ -674,7 +676,7 @@ test('Codex correlated MCP approval uses the installed sparse request shape', as
   // ElicitationReporter.permission + buildMcpPermissionRequest in codex-acp:
   // correlated requests omit rawInput/title and mark the REQUEST, not the call.
   const { chat, toolCall } = policyChat();
-  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  chat.setPermissionMode('auto');
   const result = chat.requestPermission({
     sessionId: chat.threadId,
     toolCall: {
@@ -715,7 +717,7 @@ test('sparse MCP requests fail closed without approval metadata, persistence or 
     'question',
   ]) {
     const { chat, params, toolCall } = policyChat();
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     const request = {
       ...params,
       toolCall: {
@@ -784,7 +786,7 @@ test('Claude provider ask rules and suppressed persistence remain manual with ex
     sessionId: chat.threadId,
     update: { sessionUpdate: 'tool_call', ...toolCall },
   });
-  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  chat.setPermissionMode('auto');
   const options = buildClaudePermissionOptions({
     toolName,
     input: toolCall.rawInput,
@@ -801,24 +803,24 @@ test('Claude provider ask rules and suppressed persistence remain manual with ex
 
 test('Auto Hyperion is opt-in and uses allow_once for identified session tools', async () => {
   const { chat, events, params, toolCall } = policyChat();
-  assert.equal(chat.permissionMode, 'manual');
+  assert.equal(chat.permissionMode, 'ask');
   const pending = chat.requestPermission({ ...params, toolCall });
   assert.equal(chat.pendingApprovals.size, 1);
   assert.equal(
     events.find((event) => event.type === 'approval').autoEligible,
     true,
   );
-  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
-  assert.equal((await pending).outcome.optionId, 'once');
+  chat.setPermissionMode('auto');
+  assert.equal((await pending).outcome.optionId, 'allow_once');
   const result = await chat.requestPermission({
     ...params,
     toolCall,
     options: [
       { kind: 'allow_always', optionId: 'allow_session' },
-      { kind: 'allow_once', optionId: 'single-operation' },
+      { kind: 'allow_once', optionId: 'allow_once' },
     ],
   });
-  assert.equal(result.outcome.optionId, 'single-operation');
+  assert.equal(result.outcome.optionId, 'allow_once');
   assert.equal(chat.pendingApprovals.size, 0);
 });
 
@@ -837,20 +839,13 @@ test('Auto Hyperion asks for unknown, spoofed, human, destructive and incomplete
     { rawInput: { tool: 'hyperion_submit', arguments: {} } },
     { rawInput: { tool: 'hyperion_step', arguments: { action: 'approve' } } },
     { rawInput: { tool: 'hyperion_step', arguments: { action: 'amend' } } },
-    { rawInput: { tool: 'hyperion_step', arguments: { action: 'retry' } } },
     { rawInput: { tool: 'hyperion_step', arguments: {} } },
-    {
-      rawInput: {
-        tool: 'hyperion_add_artifact',
-        arguments: { filePath: '/private/file' },
-      },
-    },
     { rawInput: { tool: 'shell', arguments: { command: 'delete something' } } },
     { rawInput: null },
   ];
   for (const variant of variants) {
     const { chat, params, toolCall } = policyChat();
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     const candidate = variant && {
       ...toolCall,
       ...variant,
@@ -879,7 +874,7 @@ test('Auto Hyperion never substitutes a persistent-only option or a provider den
     { _meta: { permission: { defaultToNo: true } } },
   ]) {
     const { chat, params, toolCall } = policyChat();
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     const result = chat.requestPermission({ ...params, toolCall, ...extra });
     assert.equal(chat.pendingApprovals.size, 1);
     chat.cancelPendingApprovals();
@@ -922,7 +917,7 @@ test('Claude requires correlated dynamic private-server metadata; native provide
       sessionId: chat.threadId,
       update: { sessionUpdate: 'tool_call', ...toolCall },
     });
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     const result = chat.requestPermission({ ...params, toolCall });
     assert.equal(chat.pendingApprovals.size, source === 'dynamic' ? 0 : 1);
     chat.cancelPendingApprovals();
@@ -934,7 +929,7 @@ test('Claude requires correlated dynamic private-server metadata; native provide
   for (const harness of ['cursor', 'antigravity']) {
     const { chat, params, toolCall } = policyChat();
     chat.harness = harness;
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     const result = chat.requestPermission({ ...params, toolCall });
     assert.equal(chat.pendingApprovals.size, 1);
     chat.cancelPendingApprovals();
@@ -976,7 +971,7 @@ test('a changed, untracked or stale tool identity cannot be revived by enabling 
         update: { sessionUpdate: 'tool_call', ...toolCall },
       });
     }
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     assert.equal(chat.pendingApprovals.size, change === 'turn' ? 0 : 1, change);
     chat.cancelPendingApprovals();
     assert.equal((await result).outcome.outcome, 'cancelled');
@@ -1046,7 +1041,7 @@ test('Claude contradictions permanently invalidate identity before or after a pe
           });
         result ??= chat.requestPermission({ ...params, toolCall });
         try {
-          chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+          chat.setPermissionMode('auto');
           assert.equal(
             chat.pendingApprovals.size,
             1,
@@ -1113,23 +1108,23 @@ test('action and approval labels never expose provider titles or command prose',
     }
 });
 
-test('provider interruption resets Auto and resolves permissions before the terminal event', async () => {
+test('provider interruption cancels permissions before terminal without changing global Auto', async () => {
   const { chat, params, events } = policyChat();
-  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  chat.setPermissionMode('auto');
   const result = chat.requestPermission(params); // Unknown action stays pending.
   chat.finish('interrupted');
-  assert.equal(chat.permissionMode, 'manual');
+  assert.equal(chat.permissionMode, 'auto');
   assert.equal((await result).outcome.outcome, 'cancelled');
   const terminal = events.findIndex(
     (event) => event.type === 'turn' && event.status === 'interrupted',
   );
   const reset = events.findIndex(
-    (event) => event.type === 'permission-mode' && event.mode === 'manual',
+    (event) => event.type === 'permission-mode' && event.mode === 'ask',
   );
   const resolved = events.findIndex(
     (event) => event.type === 'approval-resolved',
   );
-  assert.ok(reset >= 0 && reset < terminal);
+  assert.equal(reset, -1);
   assert.ok(resolved >= 0 && resolved < terminal);
   chat.dispose();
 });
@@ -1155,40 +1150,34 @@ test('verified Hyperion labels also ignore titles on starts, updates and permiss
   }
 });
 
-test('permission mode rejects stale selection and session; revocation cancels pending requests', async () => {
+test('permission mode can change without a session; revocation cancels pending requests', async () => {
   const { chat, params } = policyChat();
-  assert.throws(() =>
-    chat.setPermissionMode(null, chat.threadId, 'auto-hyperion'),
-  );
-  assert.throws(() =>
-    chat.setPermissionMode(chat.runId, 'old-thread', 'auto-hyperion'),
-  );
-  assert.throws(() =>
-    chat.setPermissionMode(chat.runId, chat.threadId, 'anything'),
-  );
-  chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+  assert.throws(() => chat.setPermissionMode('anything'));
+  chat.setPermissionMode('auto');
   const pending = chat.requestPermission(params);
   const token = [...chat.pendingApprovals.keys()][0];
-  chat.setPermissionMode(chat.runId, chat.threadId, 'manual');
+  chat.setPermissionMode('ask');
   assert.deepEqual(await pending, { outcome: { outcome: 'cancelled' } });
   assert.throws(() => chat.approve(chat.runId, token, 'allow'));
   chat.disconnect();
-  assert.equal(chat.permissionMode, 'manual');
-  assert.throws(() =>
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion'),
-  );
+  assert.equal(chat.permissionMode, 'ask');
+  assert.deepEqual(chat.setPermissionMode('auto'), { mode: 'auto' });
 });
 
-test('Auto Hyperion resets on stop and failure but survives an ordinary turn completion', async () => {
-  for (const ending of ['completed', 'failed', 'stop']) {
+test('global Auto survives stop, failure, interruption, completion and disconnect', async () => {
+  for (const ending of [
+    'completed',
+    'failed',
+    'interrupted',
+    'stop',
+    'disconnect',
+  ]) {
     const { chat } = policyChat();
-    chat.setPermissionMode(chat.runId, chat.threadId, 'auto-hyperion');
+    chat.setPermissionMode('auto');
     if (ending === 'stop') await chat.stop(chat.runId);
+    else if (ending === 'disconnect') chat.disconnect();
     else chat.finish(ending);
-    assert.equal(
-      chat.permissionMode,
-      ending === 'completed' ? 'auto-hyperion' : 'manual',
-    );
+    assert.equal(chat.permissionMode, 'auto');
   }
 });
 
@@ -1498,6 +1487,427 @@ test('the multiplexer connects only the selected supported harness', async () =>
   assert.deepEqual(calls, ['claude']);
 });
 
+test('Auto applies to delegable command, file and external MCP tools, not only Hyperion', async () => {
+  const cases = [
+    {
+      harness: 'codex',
+      call: {
+        toolCallId: 'command',
+        name: 'exec_command',
+        kind: 'execute',
+        rawInput: { command: 'echo synthetic', cwd: '/fixture' },
+      },
+      options: [
+        { kind: 'allow_once', optionId: 'allow_once' },
+        { kind: 'allow_always', optionId: 'allow_for_session' },
+      ],
+    },
+    {
+      harness: 'codex',
+      call: {
+        toolCallId: 'wrapped-command',
+        name: 'exec_command',
+        kind: 'execute',
+        rawInput: { command: "/bin/zsh -lc 'echo synthetic'", cwd: '/fixture' },
+      },
+      permission: {
+        toolCallId: 'wrapped-command',
+        name: 'exec_command',
+        kind: 'execute',
+        status: 'pending',
+        rawInput: { command: 'echo synthetic', cwd: '/fixture' },
+      },
+      options: [
+        { kind: 'allow_once', optionId: 'allow_once' },
+        { kind: 'allow_always', optionId: 'allow_for_session' },
+      ],
+    },
+    {
+      harness: 'claude',
+      call: {
+        toolCallId: 'claude-external',
+        kind: 'other',
+        rawInput: { query: 'synthetic' },
+        _meta: { claudeCode: { toolName: 'mcp__docs__search' } },
+      },
+      permission: {
+        toolCallId: 'claude-external',
+        name: 'mcp__docs__search',
+        kind: 'other',
+        rawInput: { query: 'synthetic' },
+        _meta: {
+          claudeCode: {
+            toolName: 'mcp__docs__search',
+            mcpServer: { name: 'docs', source: 'user' },
+          },
+        },
+      },
+      options: buildClaudePermissionOptions({
+        toolName: 'mcp__docs__search',
+        input: { query: 'synthetic' },
+        durableChangeSet: {
+          updates: [
+            {
+              type: 'addRules',
+              behavior: 'allow',
+              destination: 'localSettings',
+              rules: [{ toolName: 'mcp__docs__search' }],
+            },
+          ],
+        },
+      }),
+    },
+    {
+      harness: 'codex',
+      call: {
+        toolCallId: 'file',
+        kind: 'edit',
+        content: [
+          { type: 'diff', path: '/fixture/file', oldText: 'a', newText: 'b' },
+        ],
+      },
+      permission: {
+        toolCallId: 'file',
+        kind: 'edit',
+        status: 'pending',
+        locations: [{ path: '/fixture/file' }],
+      },
+      options: [
+        { kind: 'allow_once', optionId: 'allow_once' },
+        { kind: 'allow_always', optionId: 'allow_for_session' },
+      ],
+    },
+    {
+      harness: 'codex',
+      call: {
+        toolCallId: 'external',
+        kind: 'execute',
+        _meta: { is_mcp_tool_call: true },
+        rawInput: {
+          server: 'external-fixture',
+          tool: 'search_docs',
+          arguments: { query: 'synthetic' },
+        },
+      },
+      permission: {
+        toolCallId: 'external',
+        kind: 'execute',
+        status: 'pending',
+      },
+      meta: { is_mcp_tool_approval: true },
+      options: [
+        { kind: 'allow_once', optionId: 'allow_once' },
+        { kind: 'allow_always', optionId: 'allow_session' },
+      ],
+    },
+    ...['Bash', 'PowerShell', 'Write'].map((name) => ({
+      harness: 'claude',
+      call: {
+        toolCallId: name,
+        kind: name === 'Write' ? 'edit' : 'execute',
+        rawInput: {
+          command: 'synthetic',
+          file_path: '/fixture',
+          content: 'synthetic',
+        },
+        _meta: { claudeCode: { toolName: name } },
+      },
+      permission: {
+        toolCallId: name,
+        name,
+        kind: name === 'Write' ? 'edit' : 'execute',
+        rawInput: {
+          command: 'synthetic',
+          file_path: '/fixture',
+          content: 'synthetic',
+        },
+      },
+      options: buildClaudePermissionOptions({
+        toolName: name,
+        cwd: '/fixture',
+        input: {
+          command: 'synthetic',
+          file_path: '/fixture',
+          content: 'synthetic',
+        },
+        durableChangeSet: {
+          updates: [
+            {
+              type: 'addRules',
+              behavior: 'allow',
+              destination: name === 'Write' ? 'session' : 'localSettings',
+              rules:
+                name === 'Write'
+                  ? [{ toolName: 'Edit' }]
+                  : [{ toolName: name, ruleContent: 'synthetic:*' }],
+            },
+          ],
+        },
+      }),
+    })),
+  ];
+  for (const fixture of cases) {
+    const { chat, params, events } = activePermissionChat();
+    chat.harness = fixture.harness;
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: {
+        sessionUpdate: 'tool_call',
+        status: 'pending',
+        ...fixture.call,
+      },
+    });
+    chat.setPermissionMode('auto');
+    const result = chat.requestPermission({
+      ...params,
+      toolCall: fixture.permission || fixture.call,
+      options: fixture.options,
+      _meta: fixture.meta,
+    });
+    try {
+      assert.equal(
+        chat.pendingApprovals.size,
+        0,
+        `${fixture.harness}/${fixture.call.toolCallId}`,
+      );
+      assert.equal(
+        (await result).outcome.optionId,
+        fixture.options.find((item) => item.kind === 'allow_once').optionId,
+      );
+      assert.equal(
+        events.some((event) => event.type === 'approval'),
+        false,
+      );
+    } finally {
+      chat.dispose();
+      await result;
+    }
+  }
+});
+
+test('global Auto leaves host-forced asks, strict review, missing metadata and canvas roles manual', async () => {
+  for (const variant of [
+    'once-only',
+    'default-no',
+    'reason',
+    'strict-review',
+    'duplicate-options',
+    'unknown-native',
+    'grant-permissions',
+    'AskUserQuestion',
+    'EnterPlanMode',
+    'ExitPlanMode',
+  ]) {
+    const { chat, params } = activePermissionChat();
+    chat.harness = 'codex';
+    let toolCall = {
+      toolCallId: variant,
+      name: 'exec_command',
+      kind: 'execute',
+      rawInput: { command: 'echo synthetic', cwd: '/fixture' },
+    };
+    let options = [
+      { kind: 'allow_once', optionId: 'allow_once' },
+      { kind: 'allow_always', optionId: 'allow_for_session' },
+    ];
+    let meta;
+    if (variant === 'once-only') options.pop();
+    if (variant === 'default-no') meta = { permission: { defaultToNo: true } };
+    if (variant === 'reason')
+      meta = { permission: { description: 'Provider requires a decision' } };
+    if (variant === 'strict-review')
+      options[0].optionId = 'allow_permissions_turn_strict_auto_review';
+    if (variant === 'duplicate-options')
+      options.push({ kind: 'allow_always', optionId: 'allow_once' });
+    if (variant === 'unknown-native') delete toolCall.rawInput;
+    if (variant === 'grant-permissions')
+      toolCall = {
+        toolCallId: variant,
+        name: 'request_permissions',
+        kind: 'other',
+        rawInput: { permissions: { network: { enabled: true } } },
+      };
+    if (
+      ['AskUserQuestion', 'EnterPlanMode', 'ExitPlanMode'].includes(variant)
+    ) {
+      chat.harness = 'claude';
+      toolCall = {
+        toolCallId: variant,
+        name: variant,
+        kind: 'other',
+        rawInput: {},
+        _meta: { claudeCode: { toolName: variant } },
+      };
+      options = [
+        { kind: 'allow_once', optionId: 'allow-once' },
+        { kind: 'allow_always', optionId: 'allow-with-updates' },
+      ];
+    }
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: { sessionUpdate: 'tool_call', status: 'pending', ...toolCall },
+    });
+    chat.setPermissionMode('auto');
+    const result = chat.requestPermission({
+      ...params,
+      toolCall,
+      options,
+      _meta: meta,
+    });
+    try {
+      assert.equal(chat.pendingApprovals.size, 1, variant);
+    } finally {
+      chat.dispose();
+      assert.equal((await result).outcome.outcome, 'cancelled');
+    }
+  }
+});
+
+test('native command and file mutations invalidate pending consent and cannot be repaired', async () => {
+  for (const kind of ['execute', 'edit']) {
+    const { chat, params } = activePermissionChat();
+    chat.harness = 'codex';
+    const call =
+      kind === 'execute'
+        ? {
+            toolCallId: 'native-change',
+            kind,
+            name: 'exec_command',
+            rawInput: { command: 'echo first' },
+          }
+        : {
+            toolCallId: 'native-change',
+            kind,
+            content: [
+              { type: 'diff', path: '/fixture', oldText: 'a', newText: 'b' },
+            ],
+          };
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: { sessionUpdate: 'tool_call', status: 'pending', ...call },
+    });
+    const request =
+      kind === 'execute'
+        ? call
+        : {
+            toolCallId: call.toolCallId,
+            kind,
+            locations: [{ path: '/fixture' }],
+          };
+    const pending = chat.requestPermission({
+      ...params,
+      toolCall: request,
+      options: [
+        { kind: 'allow_once', optionId: 'allow_once' },
+        { kind: 'allow_always', optionId: 'allow_for_session' },
+      ],
+    });
+    const conflict =
+      kind === 'execute'
+        ? { rawInput: { command: 'echo second' } }
+        : {
+            content: [
+              {
+                type: 'diff',
+                path: '/fixture',
+                oldText: 'a',
+                newText: 'changed',
+              },
+            ],
+          };
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: {
+        sessionUpdate: 'tool_call_update',
+        toolCallId: call.toolCallId,
+        ...conflict,
+      },
+    });
+    chat.onSessionUpdate({
+      sessionId: chat.threadId,
+      update: { sessionUpdate: 'tool_call', ...call },
+    });
+    chat.setPermissionMode('auto');
+    try {
+      assert.equal(chat.pendingApprovals.size, 1, kind);
+    } finally {
+      chat.dispose();
+      assert.equal((await pending).outcome.outcome, 'cancelled');
+    }
+  }
+});
+
+test('global permission selection works before any session and persists across reload', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hyperion-global-mode-'));
+  const events = [];
+  const options = {
+    userData: directory,
+    onEvent: (event) => events.push(event),
+    store: { getSelected: () => 'codex', select() {} },
+    resolveHarnesses: () => [],
+  };
+  try {
+    const mux = new LiveHarnessChat(options);
+    assert.deepEqual(mux.getPermissionMode(), { mode: 'ask' });
+    assert.deepEqual(mux.setPermissionMode('auto'), { mode: 'auto' });
+    assert.equal(
+      mux.chat,
+      null,
+      'Changing the preference does not connect or spawn',
+    );
+    assert.deepEqual(events.at(-1), { type: 'permission-mode', mode: 'auto' });
+    const reloaded = new LiveHarnessChat(options);
+    assert.deepEqual(reloaded.getPermissionMode(), { mode: 'auto' });
+    assert.throws(() => reloaded.setPermissionMode('auto-hyperion'));
+    assert.deepEqual(reloaded.getPermissionMode(), { mode: 'auto' });
+    reloaded.setPermissionMode('ask');
+    assert.deepEqual(new LiveHarnessChat(options).getPermissionMode(), {
+      mode: 'ask',
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('corrupt or legacy choices default Ask; failed persistence never enables Auto or emits success', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hyperion-mode-failure-'));
+  const path = join(directory, 'live-chat-permission.json');
+  try {
+    for (const data of [
+      'not json',
+      '{}',
+      '{"mode":"auto-hyperion"}',
+      '{"mode":"manual"}',
+      '{"mode":true}',
+    ]) {
+      writeFileSync(path, data);
+      assert.deepEqual(new LiveChatPermissionStore(directory).snapshot(), {
+        mode: 'ask',
+      });
+    }
+    const events = [];
+    const store = new LiveChatPermissionStore(directory);
+    // Deterministic filesystem failure without changing real OS permissions.
+    mkdirSync(path + '.tmp');
+    const mux = new LiveHarnessChat({
+      userData: directory,
+      permissionStore: store,
+      store: { getSelected: () => 'codex' },
+      resolveHarnesses: () => [],
+      onEvent: (event) => events.push(event),
+    });
+    const { chat } = activePermissionChat();
+    mux.chat = chat;
+    assert.throws(() => mux.setPermissionMode('auto'));
+    assert.deepEqual(mux.getPermissionMode(), { mode: 'ask' });
+    assert.equal(chat.permissionMode, 'ask');
+    assert.deepEqual(events, []);
+    mux.dispose();
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('the preload sends only explicit permission-mode arguments to the dedicated IPC channel', async () => {
   let bridge;
   const calls = [];
@@ -1516,25 +1926,23 @@ test('the preload sends only explicit permission-mode arguments to the dedicated
             sendSync: () => null,
             invoke: async (...args) => {
               calls.push(args);
-              return { mode: 'manual', threadId: 'thread' };
+              return { mode: 'ask' };
             },
           },
         };
       },
     },
   );
-  const state = await bridge.liveChat.setPermissionMode(
-    null,
-    'thread',
-    'manual',
-  );
+  const state = await bridge.liveChat.setPermissionMode('ask');
+  await bridge.liveChat.getPermissionMode();
   assert.deepEqual(calls, [
-    ['hyperion:live-chat:permission-mode', null, 'thread', 'manual'],
+    ['hyperion:live-chat:permission-mode:set', 'ask'],
+    ['hyperion:live-chat:permission-mode:get'],
   ]);
-  assert.equal(state.mode, 'manual');
+  assert.equal(state.mode, 'ask');
 });
 
-test('changing provider or workflow destroys Auto state instead of persisting it', async () => {
+test('changing provider or workflow retains global Auto in each new session', async () => {
   const sessions = [];
   const factory = () => {
     const { chat } = activePermissionChat();
@@ -1549,24 +1957,31 @@ test('changing provider or workflow destroys Auto state instead of persisting it
   const mux = new LiveHarnessChat({
     userData: '/unused',
     store: { getSelected: () => 'codex', select() {} },
+    permissionStore: {
+      mode: 'ask',
+      snapshot() {
+        return { mode: this.mode };
+      },
+      set(mode) {
+        this.mode = mode;
+        return this.snapshot();
+      },
+    },
     resolveHarnesses: () => [],
     factories: { codex: factory, claude: factory },
   });
-  assert.throws(
-    () => mux.setPermissionMode(null, 'thread', 'auto-hyperion'),
-    /Connect/,
-  );
+  mux.setPermissionMode('auto');
   await mux.connect(null);
-  mux.setPermissionMode(null, 'thread', 'auto-hyperion');
+  mux.setPermissionMode('auto');
   await mux.connect('11111111-1111-4111-8111-111111111111');
-  assert.equal(sessions[0].permissionMode, 'manual');
+  assert.equal(sessions[0].permissionMode, 'auto');
   assert.equal(sessions[0].agent, null);
-  assert.equal(sessions[1].permissionMode, 'manual');
-  mux.setPermissionMode(sessions[1].runId, 'thread', 'auto-hyperion');
+  assert.equal(sessions[1].permissionMode, 'auto');
+  mux.setPermissionMode('auto');
   mux.selectHarness('claude');
-  assert.equal(sessions[1].permissionMode, 'manual');
+  assert.equal(sessions[1].permissionMode, 'auto');
   await mux.connect(null);
-  assert.equal(sessions[2].permissionMode, 'manual');
+  assert.equal(sessions[2].permissionMode, 'auto');
   mux.dispose();
 });
 

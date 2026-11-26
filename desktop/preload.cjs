@@ -24,13 +24,10 @@ contextBridge.exposeInMainWorld('hyperionDesktop', {
     stop: (runId) => ipcRenderer.invoke('hyperion:live-chat:stop', runId),
     approve: (runId, token, decision) =>
       ipcRenderer.invoke('hyperion:live-chat:approve', runId, token, decision),
-    setPermissionMode: (runId, threadId, mode) =>
-      ipcRenderer.invoke(
-        'hyperion:live-chat:permission-mode',
-        runId,
-        threadId,
-        mode,
-      ),
+    getPermissionMode: () =>
+      ipcRenderer.invoke('hyperion:live-chat:permission-mode:get'),
+    setPermissionMode: (mode) =>
+      ipcRenderer.invoke('hyperion:live-chat:permission-mode:set', mode),
     resolveUncertain: (runId) =>
       ipcRenderer.invoke('hyperion:live-chat:resolve-uncertain', runId),
     harnesses: () => ipcRenderer.invoke('hyperion:live-chat:harnesses'),

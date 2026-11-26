@@ -4,7 +4,7 @@
  */
 export type LiveChatTurnStatus =
   'running' | 'completed' | 'failed' | 'interrupted';
-export type LiveChatPermissionMode = 'manual' | 'auto-hyperion';
+export type LiveChatPermissionMode = 'ask' | 'auto';
 export type LiveChatEvent =
   | {
       type: 'connection';
@@ -14,8 +14,6 @@ export type LiveChatEvent =
   | { type: 'thread'; runId: string | null; threadId: string }
   | {
       type: 'permission-mode';
-      runId: string | null;
-      threadId: string;
       mode: LiveChatPermissionMode;
     }
   | {

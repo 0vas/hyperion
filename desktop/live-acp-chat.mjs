@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { validatePermissionMode } from './live-chat-permission-store.mjs';
 import { mkdirSync } from 'node:fs';
 import { delimiter, dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
@@ -123,8 +124,70 @@ const AUTO_TOOLS = new Set([
   'hyperion_create_run',
   'hyperion_revise_plan',
   'hyperion_step',
+  'hyperion_open',
+  'hyperion_add_artifact',
+  'hyperion_suspend',
 ]);
-const AUTO_ACTIONS = new Set(['start', 'log', 'complete', 'fail']);
+const AUTO_ACTIONS = new Set(['start', 'log', 'complete', 'fail', 'retry']);
+const CLAUDE_TOOLS = new Set([
+  'Bash',
+  'PowerShell',
+  'Read',
+  'Write',
+  'Edit',
+  'NotebookEdit',
+  'Glob',
+  'Grep',
+  'WebFetch',
+  'WebSearch',
+  'Skill',
+  'Agent',
+  'Task',
+  'TodoWrite',
+]);
+const MCP_SOURCES = new Set([
+  'sdk',
+  'plugin',
+  'user',
+  'project',
+  'local',
+  'dynamic',
+  'managed',
+  'enterprise',
+  'claudeai',
+  'agent',
+]);
+const toolIdentifier = (value) =>
+  typeof value === 'string' && /^[a-zA-Z0-9_.:-]{1,200}$/.test(value);
+function ordinaryAllowOnce(harness, options) {
+  const id =
+    harness === 'codex'
+      ? 'allow_once'
+      : harness === 'claude'
+        ? 'allow-once'
+        : undefined;
+  if (
+    !id ||
+    options.length > 64 ||
+    new Set(options.map((option) => option?.optionId)).size !== options.length
+  )
+    return undefined;
+  return options.find(
+    (option) => option?.kind === 'allow_once' && option.optionId === id,
+  );
+}
+
+// Exact display normalization used by installed codex-acp CommandReporter.
+// This is string comparison only, not parsing/executing a shell command.
+function codexPermissionCommand(command) {
+  const withoutShell = command.replace(
+    /^(?:\/bin\/)?(?:bash|zsh|sh)\s+(?:-[lc]+\s+)?/,
+    '',
+  );
+  return withoutShell.startsWith("'") && withoutShell.endsWith("'")
+    ? withoutShell.slice(1, -1)
+    : withoutShell;
+}
 const TERMINAL_ACTIONS = new Set(['completed', 'failed', 'cancelled']);
 const record = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -166,8 +229,8 @@ function publicLabel(identity, kind) {
     fetch: 'Fetch content',
     switch_mode: 'Change mode',
   };
-  if (identity && Object.hasOwn(operations, identity.tool))
-    return operations[identity.tool];
+  if (identity?.publicTool && Object.hasOwn(operations, identity.publicTool))
+    return operations[identity.publicTool];
   return Object.hasOwn(kinds, kind) ? kinds[kind] : 'Harness action';
 }
 function actionStatus(value, prior = 'pending') {
@@ -184,7 +247,7 @@ function actionStatus(value, prior = 'pending') {
 }
 /** Only schema-shaped facts from a verified Hyperion response leave main. */
 function publicResult(update, identified) {
-  if (!identified) return undefined;
+  if (!identified?.publicTool) return undefined;
   const opaque = update.rawOutput;
   const result = record(opaque?.result) ? opaque.result : opaque;
   if (opaque?.error || result?.isError === true)
@@ -282,7 +345,7 @@ export class LiveAcpChat {
     this.pendingApprovals = new Map();
     this.connecting = false;
     this.entryPromptSent = false;
-    this.permissionMode = 'manual';
+    this.permissionMode = 'ask';
     this.mcpServerName = `hyperion_active_${randomUUID().replaceAll('-', '')}`;
     this.toolCalls = new Map();
     this.seenToolCalls = new Map();
@@ -301,7 +364,6 @@ export class LiveAcpChat {
         throw new Error('Close the current local harness session first.');
       this.emit({ type: 'connection', status: 'connected' });
       this.emit({ type: 'thread', runId, threadId: this.threadId });
-      this.emitPermissionMode();
       return { connected: true };
     }
     this.runId = runId;
@@ -428,7 +490,6 @@ export class LiveAcpChat {
       this.connecting = false;
       this.emit({ type: 'connection', status: 'connected' });
       this.emit({ type: 'thread', runId, threadId: this.threadId });
-      this.emitPermissionMode();
       return { connected: true };
     } catch (error) {
       this.disconnect(error);
@@ -488,7 +549,7 @@ export class LiveAcpChat {
       throw new Error('There is no active local harness turn to stop.');
     const turnId = this.turnId;
     this.stoppingTurnId = turnId;
-    this.resetPermissionMode();
+    this.cancelPendingApprovals();
     try {
       // Send cancel first, then release permission requests immediately. Some
       // providers cannot finish cancellation while their permission is pending.
@@ -521,8 +582,9 @@ export class LiveAcpChat {
       : [];
     const toolCallId = callId(params.toolCall?.toolCallId);
     const identified = this.permissionIdentity(params);
-    const once = options.find(
-      (item) => item?.kind === 'allow_once' && callId(item.optionId),
+    const once = ordinaryAllowOnce(
+      this.harness,
+      Array.isArray(params.options) ? params.options : [],
     );
     const autoEligible = !!identified && !!once;
     return new Promise((resolveResult) => {
@@ -544,7 +606,7 @@ export class LiveAcpChat {
         this.resolvePermission(token, 'cancelled');
         return;
       }
-      if (this.permissionMode === 'auto-hyperion' && autoEligible) {
+      if (this.permissionMode === 'auto' && autoEligible) {
         this.resolvePermission(token, 'allowed', once.optionId);
         return;
       }
@@ -554,47 +616,26 @@ export class LiveAcpChat {
         turnId: this.turnId,
         token,
         ...(toolCallId ? { toolCallId } : {}),
-        ...(identified ? { toolName: identified.tool } : {}),
+        ...(identified?.publicTool ? { toolName: identified.publicTool } : {}),
         autoEligible,
         label: publicLabel(identified, params.toolCall?.kind),
       });
     });
   }
 
-  emitPermissionMode() {
-    if (this.threadId)
-      this.emit({
-        type: 'permission-mode',
-        threadId: this.threadId,
-        mode: this.permissionMode,
-      });
-    return { mode: this.permissionMode, threadId: this.threadId };
-  }
-
-  resetPermissionMode() {
-    this.permissionMode = 'manual';
-    this.cancelPendingApprovals();
-    this.emitPermissionMode();
-  }
-
-  setPermissionMode(runId, threadId, mode) {
-    if (
-      !this.agent ||
-      !this.threadId ||
-      this.threadId !== threadId ||
-      this.runId !== runId ||
-      this.stoppingTurnId ||
-      !['manual', 'auto-hyperion'].includes(mode)
-    )
-      throw new Error('That local chat session is no longer available.');
+  setPermissionMode(mode) {
+    validatePermissionMode(mode);
     this.permissionMode = mode;
-    if (mode === 'manual') this.cancelPendingApprovals();
+    if (mode === 'ask') this.cancelPendingApprovals();
     else
       for (const [token, pending] of this.pendingApprovals) {
         if (
           pending.threadId !== this.threadId ||
           pending.turnId !== this.turnId ||
-          pending.runId !== this.runId
+          pending.runId !== this.runId ||
+          !this.turnId ||
+          this.stoppingTurnId ||
+          !this.agent
         ) {
           this.resolvePermission(token, 'cancelled');
           continue;
@@ -605,48 +646,111 @@ export class LiveAcpChat {
           tracked?.identity &&
           tracked.identity.tool === pending.identity?.tool &&
           tracked.identity.signature === pending.identity?.signature &&
+          tracked.identity.source === pending.identity?.source &&
           !TERMINAL_ACTIONS.has(tracked.status)
         ) {
-          const once = pending.options.find(
-            (item) => item?.kind === 'allow_once' && callId(item.optionId),
-          );
+          const once = ordinaryAllowOnce(this.harness, pending.options);
           if (once) this.resolvePermission(token, 'allowed', once.optionId);
         }
       }
-    return this.emitPermissionMode();
+    return { mode: this.permissionMode };
   }
 
   toolIdentity(toolCall, permission = false) {
-    if (!toolCall || !inputSignature(toolCall.rawInput)) return undefined;
-    let tool, args;
+    if (!toolCall) return undefined;
+    const signature = inputSignature(toolCall.rawInput);
+    let tool, args, server;
     if (this.harness === 'codex') {
-      if (!permission && toolCall._meta?.is_mcp_tool_call !== true)
-        return undefined;
-      if (toolCall._meta?.is_mcp_tool_call === false) return undefined;
-      if (toolCall.rawInput.server !== this.mcpServerName) return undefined;
-      tool = toolCall.rawInput.tool;
-      args = toolCall.rawInput.arguments;
+      if (
+        toolCall._meta?.is_mcp_tool_call === true ||
+        (permission && toolCall.rawInput?.server)
+      ) {
+        if (!signature || toolCall._meta?.is_mcp_tool_call === false)
+          return undefined;
+        server = toolCall.rawInput.server;
+        tool = toolCall.rawInput.tool;
+        args = toolCall.rawInput.arguments;
+      } else if (
+        toolCall.kind === 'execute' &&
+        signature &&
+        typeof toolCall.rawInput.command === 'string' &&
+        toolCall.rawInput.command.trim() &&
+        toolCall.rawInput.server === undefined &&
+        toolCall.rawInput.additionalPermissions === undefined &&
+        (toolCall.name === undefined ||
+          ['exec_command', 'write_stdin'].includes(toolCall.name))
+      ) {
+        return { tool: 'codex:command', group: 'command', signature };
+      } else if (
+        toolCall.kind === 'edit' &&
+        toolCall.rawInput === undefined &&
+        Array.isArray(toolCall.content) &&
+        toolCall.content.length > 0 &&
+        toolCall.content.every(
+          (item) => item?.type === 'diff' && typeof item.path === 'string',
+        )
+      ) {
+        const diffSignature = inputSignature({ diffs: toolCall.content });
+        if (!diffSignature) return undefined;
+        return {
+          tool: 'codex:file',
+          group: 'file',
+          signature: diffSignature,
+          paths: [...new Set(toolCall.content.map((item) => item.path))].sort(),
+        };
+      } else return undefined;
     } else if (this.harness === 'claude') {
       const meta = toolCall._meta?.claudeCode;
+      const name = meta?.toolName ?? (permission ? toolCall.name : undefined);
+      if (
+        !signature ||
+        !toolIdentifier(name) ||
+        (toolCall.name !== undefined && toolCall.name !== name)
+      )
+        return undefined;
+      if (!name.startsWith('mcp__')) {
+        if (!CLAUDE_TOOLS.has(name) || meta?.mcpServer !== undefined)
+          return undefined;
+        return { tool: `claude:${name}`, group: 'native', signature };
+      }
+      // Initial events carry the complete tool name, while permissions must
+      // additionally identify its actual configured server and provenance.
       const prefix = `mcp__${this.mcpServerName}__`;
-      if (
-        typeof meta?.toolName !== 'string' ||
-        !meta.toolName.startsWith(prefix)
-      )
+      if (name.startsWith(prefix)) server = this.mcpServerName;
+      else
+        server = meta?.mcpServer?.name ?? name.slice(5, name.lastIndexOf('__'));
+      if (!toolIdentifier(server) || !name.startsWith(`mcp__${server}__`))
         return undefined;
       if (
-        (permission || meta.mcpServer !== undefined) &&
-        (meta.mcpServer?.name !== this.mcpServerName ||
-          meta.mcpServer?.source !== 'dynamic')
+        (permission || meta?.mcpServer !== undefined) &&
+        (meta?.mcpServer?.name !== server ||
+          !MCP_SOURCES.has(meta?.mcpServer?.source) ||
+          (server === this.mcpServerName &&
+            meta.mcpServer.source !== 'dynamic'))
       )
         return undefined;
-      tool = meta.toolName.slice(prefix.length);
+      tool = name.slice(`mcp__${server}__`.length);
       args = toolCall.rawInput;
     } else return undefined;
-    if (!AUTO_TOOLS.has(tool) || !record(args)) return undefined;
-    if (tool === 'hyperion_step' && !AUTO_ACTIONS.has(args.action))
+    if (!toolIdentifier(server) || !toolIdentifier(tool) || !record(args))
       return undefined;
-    return { tool, signature: inputSignature(toolCall.rawInput) };
+    // Global tool consent does not grant human workflow authority, including
+    // attempts to route Hyperion commands through a different configured MCP.
+    if (tool.startsWith('hyperion_') || server === this.mcpServerName) {
+      if (
+        server !== this.mcpServerName ||
+        !AUTO_TOOLS.has(tool) ||
+        (tool === 'hyperion_step' && !AUTO_ACTIONS.has(args.action))
+      )
+        return undefined;
+      return { tool, publicTool: tool, group: 'mcp', signature };
+    }
+    return {
+      tool: `mcp:${server}:${tool}`,
+      group: 'mcp',
+      signature,
+      source: toolCall._meta?.claudeCode?.mcpServer?.source,
+    };
   }
 
   permissionIdentity(params) {
@@ -666,7 +770,9 @@ export class LiveAcpChat {
     // The persistent option is evidence only: we NEVER select it.
     const persistentIds =
       this.harness === 'codex'
-        ? ['allow_session', 'allow_always']
+        ? prior.identity.group === 'mcp'
+          ? ['allow_session', 'allow_always']
+          : ['allow_for_session', 'accept_execpolicy_amendment']
         : this.harness === 'claude'
           ? ['allow-with-updates']
           : [];
@@ -681,13 +787,19 @@ export class LiveAcpChat {
         )
     )
       return undefined;
-    if (this.harness === 'codex' && params._meta?.is_mcp_tool_approval !== true)
+    if (
+      this.harness === 'codex' &&
+      prior.identity.group === 'mcp' &&
+      params._meta?.is_mcp_tool_approval !== true
+    )
       return undefined;
     // Codex ElicitationReporter deliberately omits rawInput on correlated MCP
     // approvals. Its request-level marker distinguishes tool approval from a
     // form/question; the original, private-server call supplies the identity.
     const sparseCodex =
-      this.harness === 'codex' && toolCall.rawInput === undefined;
+      this.harness === 'codex' &&
+      prior.identity.group === 'mcp' &&
+      toolCall.rawInput === undefined;
     if (
       sparseCodex &&
       (toolCall.kind !== 'execute' ||
@@ -698,14 +810,41 @@ export class LiveAcpChat {
         toolCall.readableInput !== undefined)
     )
       return undefined;
-    const identity = sparseCodex
-      ? prior.identity
-      : this.toolIdentity(toolCall, true);
+    const filePermission =
+      this.harness === 'codex' && prior.identity.group === 'file';
+    if (
+      filePermission &&
+      (toolCall.rawInput !== undefined ||
+        toolCall.name !== undefined ||
+        !Array.isArray(toolCall.locations) ||
+        JSON.stringify(
+          [...new Set(toolCall.locations.map((item) => item?.path))].sort(),
+        ) !== JSON.stringify(prior.identity.paths))
+    ) {
+      prior.identity = undefined;
+      return undefined;
+    }
+    const normalizedCommand =
+      this.harness === 'codex' &&
+      prior.identity.group === 'command' &&
+      typeof prior.rawInput?.command === 'string' &&
+      inputSignature(toolCall.rawInput) ===
+        inputSignature({
+          ...prior.rawInput,
+          command: codexPermissionCommand(prior.rawInput.command),
+        }) &&
+      this.toolIdentity(toolCall, true)?.tool === prior.identity.tool;
+    const identity =
+      sparseCodex || filePermission || normalizedCommand
+        ? prior.identity
+        : this.toolIdentity(toolCall, true);
     if (
       !identity ||
       !prior.identity ||
       identity.tool !== prior.identity.tool ||
-      identity.signature !== prior.identity.signature
+      identity.signature !== prior.identity.signature ||
+      (prior.identity.source !== undefined &&
+        identity.source !== prior.identity.source)
     ) {
       prior.identity = undefined;
       prior.rawInput = undefined;
@@ -718,6 +857,10 @@ export class LiveAcpChat {
       prior.summary = undefined;
       return undefined;
     }
+    // Remember the permission's newly supplied provenance when the initial
+    // Claude event omitted it, so later contradictions invalidate pending Auto.
+    if (prior.identity.source === undefined && identity.source !== undefined)
+      prior.identity = identity;
     return identity;
   }
 
@@ -827,9 +970,19 @@ export class LiveAcpChat {
       inputSignature(update.rawInput) !== prior.identity.signature
     )
       identity = undefined;
+    if (
+      prior?.identity?.group === 'file' &&
+      update.content !== undefined &&
+      inputSignature({ diffs: update.content }) !== prior.identity.signature
+    )
+      identity = undefined;
+    if (prior && update.name !== undefined && update.name !== prior.name)
+      identity = undefined;
     const metadataIdentity = update._meta
       ? this.toolIdentity({
           ...update,
+          kind: update.kind ?? prior?.kind,
+          name: update.name ?? prior?.name,
           rawInput: update.rawInput ?? prior?.rawInput,
         })
       : undefined;
@@ -838,12 +991,15 @@ export class LiveAcpChat {
       ((update.kind && update.kind !== prior.kind) ||
         (update._meta &&
           (!metadataIdentity ||
-            metadataIdentity.tool !== prior.identity?.tool)))
+            metadataIdentity.tool !== prior.identity?.tool ||
+            (prior.identity?.source !== undefined &&
+              metadataIdentity.source !== prior.identity.source))))
     )
       identity = undefined;
     const entry = {
       label: prior?.label || publicLabel(identity, update.kind),
       kind: update.kind || prior?.kind,
+      name: update.name ?? prior?.name,
       status: actionStatus(update.status, prior?.status),
       identity,
       rawInput: identity ? (update.rawInput ?? prior?.rawInput) : undefined,
@@ -860,7 +1016,7 @@ export class LiveAcpChat {
       ...(id ? { toolCallId: id, itemId: id } : {}),
       label: entry.label,
       status: entry.status,
-      ...(identity ? { toolName: identity.tool } : {}),
+      ...(identity?.publicTool ? { toolName: identity.publicTool } : {}),
       ...(entry.summary ? { summary: entry.summary } : {}),
     });
   }
@@ -870,8 +1026,7 @@ export class LiveAcpChat {
     const turnId = this.turnId;
     this.turnId = null;
     this.stoppingTurnId = null;
-    if (status === 'completed') this.cancelPendingApprovals();
-    else this.resetPermissionMode();
+    this.cancelPendingApprovals();
     this.toolCalls.clear();
     this.emit({ type: 'turn', threadId: this.threadId, turnId, status });
     if (status === 'failed')
@@ -891,7 +1046,7 @@ export class LiveAcpChat {
     this.connecting = false;
     this.entryPromptSent = false;
     this.stoppingTurnId = null;
-    this.resetPermissionMode();
+    this.cancelPendingApprovals();
     this.toolCalls.clear();
     connection?.close?.();
     if (active) active.kill?.('SIGTERM');

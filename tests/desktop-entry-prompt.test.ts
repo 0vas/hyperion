@@ -90,3 +90,29 @@ test('every real chat message is bound to a Hyperion workflow before a substanti
     /workflow is selected.*read.*continue.*revise/i,
   );
 });
+
+test('every subsequent turn reinforces workflow-first and canvas authority without altering the prompt', () => {
+  for (const selectedRunId of [null, runId]) {
+    const text = 'A normal question without naming any product';
+    const blocks = hyperionPromptBlocks({
+      runId: selectedRunId,
+      text,
+      includeEntry: false,
+    });
+    assert.match(blocks[0].text, /whether or not it names Hyperion/);
+    assert.match(
+      blocks[0].text,
+      /Never provide a substantive direct answer outside/,
+    );
+    assert.match(
+      blocks[0].text,
+      /human inputs, approvals and review remain on the canvas/,
+    );
+    assert.match(
+      blocks[0].text,
+      /If Hyperion is unavailable, explain the blocker/,
+    );
+    assert.equal(blocks[1].text, text);
+    assert.equal(blocks.length, 2);
+  }
+});

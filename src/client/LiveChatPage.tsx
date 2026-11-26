@@ -4,6 +4,7 @@ import {
   ChevronDown,
   MessageSquareText,
   Send,
+  Shield,
   Square,
   X,
 } from 'lucide-react';
@@ -163,6 +164,148 @@ function HarnessStatusDot({ status }: { status: string }) {
 type ChatContext = { runId: string | null; title?: string };
 type Conversation = { prompt: string; thread: ThreadMessage[] };
 
+function PermissionModePicker({
+  mode,
+  busy,
+  onChange,
+}: {
+  mode: 'ask' | 'auto' | null;
+  busy: boolean;
+  onChange: (mode: 'ask' | 'auto') => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const options = useRef<Array<HTMLButtonElement | null>>([]);
+  useEffect(() => {
+    if (!open) return;
+    options.current[mode === 'auto' ? 1 : 0]?.focus();
+    const outside = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
+  }, [open]);
+
+  return (
+    <div
+      ref={root}
+      className="live-chat-mode-picker"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen(false);
+          trigger.current?.focus();
+        }
+      }}
+    >
+      <button
+        type="button"
+        ref={trigger}
+        className="live-chat-mode-trigger"
+        data-testid="live-chat-mode-trigger"
+        aria-label={`${t('Modo de permisos')}: ${mode === 'auto' ? 'Auto' : mode === 'ask' ? 'Ask' : t('Sin confirmar')}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? 'live-chat-mode-menu' : undefined}
+        aria-busy={busy}
+        onClick={() => setOpen((value) => !value)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
+      >
+        <Shield size={15} aria-hidden="true" />
+        <span>{mode === 'auto' ? 'Auto' : mode === 'ask' ? 'Ask' : '…'}</span>
+        <ChevronDown size={12} aria-hidden="true" />
+      </button>
+      {open && (
+        <div
+          className="live-chat-mode-popover"
+          data-testid="live-chat-mode-popover"
+        >
+          <div
+            id="live-chat-mode-menu"
+            role="menu"
+            aria-label={t('Modo de permisos')}
+            aria-describedby="live-chat-mode-scope"
+            onKeyDown={(event) => {
+              if (event.key === 'Tab') {
+                setOpen(false);
+                trigger.current?.focus();
+                return;
+              }
+              const index = options.current.indexOf(
+                document.activeElement as HTMLButtonElement,
+              );
+              const next =
+                event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? 1
+                    : event.key === 'ArrowDown'
+                      ? (index + 1) % 2
+                      : event.key === 'ArrowUp'
+                        ? (index + 1) % 2
+                        : null;
+              if (next !== null) {
+                event.preventDefault();
+                options.current[next]?.focus();
+              }
+            }}
+          >
+            {(['ask', 'auto'] as const).map((value, index) => (
+              <button
+                key={value}
+                ref={(node) => {
+                  options.current[index] = node;
+                }}
+                type="button"
+                role="menuitemradio"
+                tabIndex={-1}
+                aria-checked={mode === value}
+                aria-label={value === 'ask' ? 'Ask' : 'Auto'}
+                aria-describedby={`live-chat-mode-${value}-description`}
+                aria-disabled={busy}
+                className="live-chat-mode-option"
+                onClick={() => {
+                  if (busy) return;
+                  setOpen(false);
+                  trigger.current?.focus();
+                  void onChange(value);
+                }}
+              >
+                <span>
+                  <strong>{value === 'ask' ? 'Ask' : 'Auto'}</strong>
+                  <span id={`live-chat-mode-${value}-description`}>
+                    {t(
+                      value === 'ask'
+                        ? 'Pregunta antes de autorizar acciones del proveedor.'
+                        : 'Autoriza automáticamente las acciones del proveedor.',
+                    )}
+                  </span>
+                </span>
+                {mode === value && <Check size={15} aria-hidden="true" />}
+              </button>
+            ))}
+          </div>
+          <p id="live-chat-mode-scope">
+            {t(
+              'Se guarda para todos los chats. Las decisiones humanas y los permisos obligatorios del proveedor siguen requiriendo tu respuesta.',
+            )}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function expirePermission(message: ThreadMessage): ThreadMessage {
   return message.approvalToken && !message.approvalState
     ? { ...message, approvalState: 'expired', meta: 'Permiso ya no disponible' }
@@ -204,9 +347,9 @@ export function LiveChatPage({
   >('disconnected');
   const [turnRunning, setTurnRunning] = useState(false);
   const [requestBusy, setRequestBusy] = useState(false);
-  const [permissionMode, setPermissionMode] = useState<
-    'manual' | 'auto-hyperion'
-  >('manual');
+  const [permissionMode, setPermissionMode] = useState<'ask' | 'auto' | null>(
+    null,
+  );
   const [modeBusy, setModeBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
@@ -283,8 +426,6 @@ export function LiveChatPage({
     setPrompt(saved?.prompt ?? '');
     setThread(saved?.thread ?? []);
     setStatus('disconnected');
-    setPermissionMode('manual');
-    modeVersion.current += 1;
     setSetupMessage(null);
     setNotice(null);
     setAuthRequired(false);
@@ -305,9 +446,41 @@ export function LiveChatPage({
   }, [liveChat]);
 
   useEffect(() => {
+    if (!liveChat?.getPermissionMode) return;
+    let disposed = false;
+    const version = modeVersion.current;
+    void liveChat
+      .getPermissionMode()
+      .then((result) => {
+        if (!disposed && modeVersion.current === version)
+          setPermissionMode(result.mode);
+      })
+      .catch(() => {
+        if (!disposed && modeVersion.current === version)
+          setNotice(
+            t(
+              'No se pudo leer el modo de permisos. Vuelve a elegir Ask o Auto.',
+            ),
+          );
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [liveChat]);
+
+  useEffect(() => {
     if (!liveChat) return;
     return liveChat.onEvent((value) => {
       const event = value as Record<string, unknown>;
+      // Permission preference belongs to Desktop, not the current conversation.
+      if (
+        event.type === 'permission-mode' &&
+        (event.mode === 'ask' || event.mode === 'auto')
+      ) {
+        setPermissionMode(event.mode);
+        modeVersion.current += 1;
+        return;
+      }
       // A disposed session may finish emitting after the user changes context.
       if ('runId' in event && event.runId !== runId) return;
       if (event.type === 'connection' && typeof event.status === 'string') {
@@ -319,8 +492,6 @@ export function LiveChatPage({
         }
         if (event.status === 'disconnected') {
           threadId.current = null;
-          setPermissionMode('manual');
-          modeVersion.current += 1;
           setTurnRunning(false);
           setThread((items) =>
             settleActivities(items, 'unconfirmed').map(expirePermission),
@@ -370,14 +541,6 @@ export function LiveChatPage({
       const eventThreadId =
         typeof event.threadId === 'string' ? event.threadId : null;
       if (!eventThreadId || eventThreadId !== threadId.current) return;
-      if (
-        event.type === 'permission-mode' &&
-        (event.mode === 'manual' || event.mode === 'auto-hyperion')
-      ) {
-        setPermissionMode(event.mode);
-        modeVersion.current += 1;
-        return;
-      }
       const eventText = typeof event.text === 'string' ? event.text : null;
       if (event.type === 'user-message' && eventText !== null) {
         assistantTurn.current += 1;
@@ -409,10 +572,6 @@ export function LiveChatPage({
         if (event.status === 'running') setTurnRunning(true);
         else {
           setTurnRunning(false);
-          if (event.status !== 'completed') {
-            setPermissionMode('manual');
-            modeVersion.current += 1;
-          }
           if (event.status === 'completed') lastSubmitted.current = '';
           setThread((items) =>
             settleActivities(items, String(event.status)).map((item) =>
@@ -551,7 +710,6 @@ export function LiveChatPage({
         ),
       );
       setStatus('disconnected');
-      setPermissionMode('manual');
     } finally {
       setRequestBusy(false);
     }
@@ -568,8 +726,6 @@ export function LiveChatPage({
       setSelectedHarness(snapshot.selected);
       setHarnesses(snapshot.harnesses);
       setStatus('disconnected');
-      setPermissionMode('manual');
-      modeVersion.current += 1;
       setAuthRequired(false);
       setUncertain(false);
       threadId.current = null;
@@ -614,30 +770,14 @@ export function LiveChatPage({
     }
   }
 
-  async function changePermissionMode(mode: 'manual' | 'auto-hyperion') {
-    const currentThread = threadId.current;
-    if (
-      !liveChat?.setPermissionMode ||
-      !currentThread ||
-      status !== 'connected' ||
-      modeBusy
-    )
-      return;
+  async function changePermissionMode(mode: 'ask' | 'auto') {
+    if (!liveChat?.setPermissionMode || modeBusy) return;
     setModeBusy(true);
-    const version = modeVersion.current;
+    const version = ++modeVersion.current;
     setNotice(null);
     try {
-      const result = await liveChat.setPermissionMode(
-        runId,
-        currentThread,
-        mode,
-      );
-      if (
-        threadId.current === currentThread &&
-        modeVersion.current === version &&
-        result.threadId === currentThread
-      )
-        setPermissionMode(result.mode);
+      const result = await liveChat.setPermissionMode(mode);
+      if (modeVersion.current === version) setPermissionMode(result.mode);
     } catch {
       setNotice(t('No se pudo cambiar el modo de permisos.'));
     } finally {
@@ -863,7 +1003,7 @@ export function LiveChatPage({
                 )}
                 {message.approvalToken && !message.approvalState && (
                   <>
-                    {permissionMode === 'auto-hyperion' && (
+                    {permissionMode === 'auto' && (
                       <p className="live-chat-permission-hint">
                         {t('Esta acción todavía requiere tu permiso.')}
                       </p>
@@ -900,42 +1040,6 @@ export function LiveChatPage({
         </div>
       </section>
       <div className="live-chat-bottom">
-        {liveChat?.setPermissionMode && (
-          <div className="live-chat-permission-mode">
-            <label htmlFor="live-chat-permission-mode">
-              {t('Permisos del proveedor')}
-            </label>
-            <select
-              id="live-chat-permission-mode"
-              value={permissionMode}
-              disabled={
-                status !== 'connected' ||
-                !threadId.current ||
-                modeBusy ||
-                !serviceOnline
-              }
-              aria-describedby="live-chat-permission-scope"
-              onChange={(event) =>
-                void changePermissionMode(
-                  event.target.value as 'manual' | 'auto-hyperion',
-                )
-              }
-            >
-              <option value="manual">{t('Preguntar')}</option>
-              <option value="auto-hyperion">
-                {t('Auto Hyperion (esta sesión)')}
-              </option>
-            </select>
-            <details className="live-chat-permission-help">
-              <summary>{t('Alcance del permiso')}</summary>
-              <p id="live-chat-permission-scope">
-                {t(
-                  'Auto permite solo herramientas de coordinación Hyperion verificadas en esta sesión. Otras acciones siguen pidiendo permiso. Las decisiones humanas se responden en el canvas. Vuelve a Preguntar para revocar; detener o desconectar restablece Preguntar.',
-                )}
-              </p>
-            </details>
-          </div>
-        )}
         {(setupMessage || notice || !serviceOnline) && (
           <div className="live-chat-notice" role="status">
             <p>{setupMessage || notice || t('Servicio local sin conexión')}</p>
@@ -1070,6 +1174,13 @@ export function LiveChatPage({
                 </div>
               )}
             </div>
+            {liveChat?.getPermissionMode && liveChat?.setPermissionMode && (
+              <PermissionModePicker
+                mode={permissionMode}
+                busy={modeBusy}
+                onChange={changePermissionMode}
+              />
+            )}
             <span className="live-chat-shortcut">
               {t('Enter para enviar · Shift+Enter para nueva línea')}
             </span>

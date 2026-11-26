@@ -317,6 +317,11 @@ async function installContextBridge(
     ({ locale, permissionMode }) => {
       const calls: ChatCall[] = [];
       let threadId = '';
+      let selected = 'codex';
+      const harnesses = [
+        { id: 'codex', label: 'Codex', status: 'ready' },
+        { id: 'claude', label: 'Claude Code', status: 'ready' },
+      ];
       Object.assign(window, { chatTestCalls: calls });
       const emit = (event: Record<string, unknown>) =>
         window.dispatchEvent(
@@ -329,22 +334,17 @@ async function installContextBridge(
           onLanguageChanged: () => () => {},
           setLanguage: async () => {},
           liveChat: {
-            harnesses: async () => ({
-              selected: 'codex',
-              harnesses: [{ id: 'codex', label: 'Codex', status: 'ready' }],
-            }),
+            harnesses: async () => ({ selected, harnesses }),
+            selectHarness: async (id: string) => {
+              selected = id;
+              calls.push({ method: 'selectHarness', runId: null, text: id });
+              return { selected, harnesses };
+            },
             connect: async (runId: string | null) => {
               calls.push({ method: 'connect', runId });
               threadId = `thread-${runId ?? 'new'}`;
               emit({ type: 'connection', status: 'connected' });
               emit({ type: 'thread', runId, threadId });
-              if (permissionMode)
-                emit({
-                  type: 'permission-mode',
-                  runId,
-                  threadId,
-                  mode: 'manual',
-                });
               return { connected: true };
             },
             send: async (runId: string | null, text: string) => {
@@ -380,25 +380,23 @@ async function installContextBridge(
             stop: async (runId: string | null) => {
               calls.push({ method: 'stop', runId });
               emit({ type: 'turn', threadId, status: 'interrupted' });
-              if (permissionMode)
-                emit({
-                  type: 'permission-mode',
-                  runId,
-                  threadId,
-                  mode: 'manual',
-                });
             },
             ...(permissionMode
               ? {
-                  setPermissionMode: async (
-                    runId: string | null,
-                    requestedThreadId: string,
-                    mode: string,
-                  ) => {
+                  getPermissionMode: async () => {
+                    const mode =
+                      localStorage.getItem('chat-test-mode') || 'ask';
+                    if (localStorage.getItem('chat-test-delay-read') === 'true')
+                      await new Promise<void>((resolve) =>
+                        Object.assign(window, { chatResolveRead: resolve }),
+                      );
+                    return { mode };
+                  },
+                  setPermissionMode: async (mode: string) => {
                     calls.push({
                       method: 'setPermissionMode',
-                      runId,
-                      text: `${requestedThreadId}:${mode}`,
+                      runId: null,
+                      text: mode,
                     });
                     if (
                       document.documentElement.dataset.rejectPermissionMode ===
@@ -412,10 +410,11 @@ async function installContextBridge(
                       await new Promise<void>((resolve) =>
                         Object.assign(window, { chatResolveMode: resolve }),
                       );
-                      return { mode, threadId };
+                      return { mode };
                     }
-                    emit({ type: 'permission-mode', runId, threadId, mode });
-                    return { mode, threadId };
+                    localStorage.setItem('chat-test-mode', mode);
+                    emit({ type: 'permission-mode', mode });
+                    return { mode };
                   },
                 }
               : {}),
@@ -439,9 +438,14 @@ const chatCalls = (page: Page) =>
     () => (window as unknown as { chatTestCalls: ChatCall[] }).chatTestCalls,
   );
 
-test('session permission mode is explicit, reversible and never changes optimistically', async ({
+async function chooseMode(page: Page, mode: 'Ask' | 'Auto') {
+  await page.getByTestId('live-chat-mode-trigger').click();
+  await page.getByRole('menuitemradio', { name: mode, exact: true }).click();
+}
+
+test('global permission mode works before connection, persists and never changes optimistically', async ({
   browser,
-}) => {
+}, testInfo) => {
   const context = await browser.newContext({
     userAgent: 'Hyperion synthetic Electron/44.0',
     viewport: { width: 390, height: 844 },
@@ -453,9 +457,18 @@ test('session permission mode is explicit, reversible and never changes optimist
     await installContextBridge(page, 'en', true);
     await page.goto('/');
     await page.getByTestId('chat-bubble').click();
-    const mode = page.getByLabel('Provider permissions');
-    await expect(mode).toHaveValue('manual');
-    await expect(mode).toBeDisabled();
+    const mode = page.getByTestId('live-chat-mode-trigger');
+    await expect(mode).toHaveText('Ask');
+    await expect(mode).toBeEnabled();
+    await chooseMode(page, 'Auto');
+    await expect(mode).toHaveText('Auto');
+    expect(
+      (await chatCalls(page)).some((call) => call.method === 'connect'),
+    ).toBe(false);
+    await page.reload();
+    await page.getByTestId('chat-bubble').click();
+    await expect(mode).toHaveText('Auto');
+    await chooseMode(page, 'Ask');
     await page.getByLabel('Request for the agent').fill('Review this workflow');
     await page.getByTestId('live-chat-send').click();
     await expect(mode).toBeEnabled();
@@ -465,16 +478,16 @@ test('session permission mode is explicit, reversible and never changes optimist
     await page.evaluate(
       () => (document.documentElement.dataset.rejectPermissionMode = 'true'),
     );
-    await mode.selectOption('auto-hyperion');
-    await expect(mode).toHaveValue('manual');
+    await chooseMode(page, 'Auto');
+    await expect(mode).toHaveText('Ask');
     await expect(
       page.getByText('Could not change the permission mode.'),
     ).toBeVisible();
     await page.evaluate(
       () => (document.documentElement.dataset.rejectPermissionMode = 'false'),
     );
-    await mode.selectOption('auto-hyperion');
-    await expect(mode).toHaveValue('auto-hyperion');
+    await chooseMode(page, 'Auto');
+    await expect(mode).toHaveText('Auto');
     await expect(page.getByTestId('live-chat-approval-allow')).toBeVisible();
     await expect(
       page.getByText('This action still requires your permission.'),
@@ -484,45 +497,223 @@ test('session permission mode is explicit, reversible and never changes optimist
         new CustomEvent('chat-test-event', {
           detail: {
             type: 'permission-mode',
-            runId: null,
-            threadId: 'stale',
-            mode: 'manual',
+            mode: 'ask',
           },
         }),
       ),
     );
-    await expect(mode).toHaveValue('auto-hyperion');
-    await mode.selectOption('manual');
-    await expect(mode).toHaveValue('manual');
-    await mode.selectOption('auto-hyperion');
+    await expect(mode).toHaveText('Ask');
+    await chooseMode(page, 'Auto');
     await page.getByTestId('live-chat-stop').click();
-    await expect(mode).toHaveValue('manual');
+    await expect(mode).toHaveText('Auto');
+    await page.getByTestId('live-chat-harness-trigger').click();
+    await page.getByTestId('live-chat-harness-claude').click();
+    await expect(mode).toHaveText('Auto');
     await page.getByLabel('Request for the agent').fill('Continue reviewing');
     await page.getByTestId('live-chat-send').click();
     await page.evaluate(
       () => (document.documentElement.dataset.delayPermissionMode = 'true'),
     );
-    await mode.selectOption('auto-hyperion');
-    await expect(mode).toHaveValue('manual');
+    await chooseMode(page, 'Ask');
+    await expect(mode).toHaveText('Auto');
     await page.getByTestId('live-chat-stop').click();
+    await page.evaluate(() =>
+      window.dispatchEvent(
+        new CustomEvent('chat-test-event', {
+          detail: { type: 'permission-mode', mode: 'auto' },
+        }),
+      ),
+    );
     await page.evaluate(() =>
       (window as unknown as { chatResolveMode: () => void }).chatResolveMode(),
     );
     await expect(mode).toBeEnabled();
-    await expect(mode).toHaveValue('manual');
+    await expect(mode).toHaveText('Auto');
+    await page.evaluate(() => {
+      for (const detail of [
+        { type: 'turn', threadId: 'thread-new', status: 'failed' },
+        { type: 'connection', status: 'disconnected' },
+      ])
+        window.dispatchEvent(new CustomEvent('chat-test-event', { detail }));
+    });
+    await expect(mode).toHaveText('Auto');
     expect(
       (await chatCalls(page))
         .filter((call) => call.method === 'setPermissionMode')
         .every(
-          (call) => call.runId === null && call.text?.startsWith('thread-new:'),
+          (call) => call.runId === null && ['ask', 'auto'].includes(call.text!),
         ),
     ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath('permission-after.png'),
+    });
+  } finally {
+    await context.close();
+  }
+});
+
+test('permission mode ignores a stale initial read and remains editable with the service offline', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent: 'Hyperion synthetic Electron/44.0',
+  });
+  const page = await context.newPage();
+  try {
+    await mockConnectionHome(page);
+    await setAppearance(page, 'light', 'en');
+    await page.addInitScript(() =>
+      localStorage.setItem('chat-test-delay-read', 'true'),
+    );
+    await installContextBridge(page, 'en', true);
+    await page.goto('/');
+    await page.getByTestId('chat-bubble').click();
+    const mode = page.getByTestId('live-chat-mode-trigger');
+    await expect(mode).toHaveText('…');
+    await chooseMode(page, 'Auto');
+    await expect(mode).toHaveText('Auto');
+    await page.evaluate(() =>
+      (window as unknown as { chatResolveRead: () => void }).chatResolveRead(),
+    );
+    await expect(mode).toHaveText('Auto');
+    await page.route('**/api/runs', (route) => route.abort());
+    await page.route('**/api/events', (route) => route.abort());
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await expect(page.getByTestId('live-chat-status')).toHaveText(
+      'Local service is offline',
+    );
+    await chooseMode(page, 'Ask');
+    await expect(mode).toHaveText('Ask');
+    await chooseMode(page, 'Auto');
+    await expect(mode).toHaveText('Auto');
+    expect(
+      (await chatCalls(page)).some((call) => call.method === 'connect'),
+    ).toBe(false);
   } finally {
     await context.close();
   }
 });
 
 for (const locale of ['es', 'en'] as const) {
+  test(`permission menu is compact, contained and keyboard accessible (${locale})`, async ({
+    browser,
+  }, testInfo) => {
+    const context = await browser.newContext({
+      userAgent: 'Hyperion synthetic Electron/44.0',
+      reducedMotion: 'reduce',
+    });
+    const page = await context.newPage();
+    try {
+      await mockConnectionHome(page);
+      await setAppearance(page, 'light', locale);
+      await installContextBridge(page, locale, true);
+      await page.goto('/');
+      await page.getByTestId('chat-bubble').click();
+      const panel = page.getByTestId('live-chat-page');
+      const mode = page.getByTestId('live-chat-mode-trigger');
+      const input = page.locator('#live-chat-prompt');
+      await input.fill('Keep this draft exactly.');
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate(
+          (theme) => (document.documentElement.dataset.theme = theme),
+          theme,
+        );
+        for (const width of [320, 390, 1440]) {
+          await page.setViewportSize({
+            width,
+            height: width === 320 ? 568 : 844,
+          });
+          await expect(mode).toHaveText('Ask');
+          const provider = await page
+            .getByTestId('live-chat-harness-trigger')
+            .boundingBox();
+          const trigger = await mode.boundingBox();
+          expect(Math.abs(provider!.y - trigger!.y)).toBeLessThanOrEqual(1);
+          expect(provider!.x + provider!.width).toBeLessThanOrEqual(trigger!.x);
+          await mode.click();
+          await expect(mode).toHaveAttribute('aria-expanded', 'true');
+          const ask = page.getByRole('menuitemradio', {
+            name: 'Ask',
+            exact: true,
+          });
+          const auto = page.getByRole('menuitemradio', {
+            name: 'Auto',
+            exact: true,
+          });
+          await expect(ask).toBeFocused();
+          await expect(ask).toHaveAttribute('aria-checked', 'true');
+          const popup = page.getByTestId('live-chat-mode-popover');
+          const box = await popup.boundingBox();
+          const panelBox = await panel.boundingBox();
+          expect(box!.x).toBeGreaterThanOrEqual(panelBox!.x);
+          expect(box!.x + box!.width).toBeLessThanOrEqual(
+            panelBox!.x + panelBox!.width,
+          );
+          expect(box!.y).toBeGreaterThanOrEqual(panelBox!.y);
+          expect(box!.y + box!.height).toBeLessThanOrEqual(trigger!.y);
+          expect(
+            await popup.evaluate(
+              (node) => node.scrollWidth <= node.clientWidth,
+            ),
+          ).toBe(true);
+          expect(
+            (
+              await new AxeBuilder({ page })
+                .include('#hyperion-chat-panel')
+                .analyze()
+            ).violations,
+          ).toEqual([]);
+          await page.screenshot({
+            path: testInfo.outputPath(
+              `mode-${locale}-${theme}-${width}-open.png`,
+            ),
+          });
+          await ask.press('ArrowDown');
+          await expect(auto).toBeFocused();
+          await auto.press('Home');
+          await expect(ask).toBeFocused();
+          await ask.press('End');
+          await expect(auto).toBeFocused();
+          await auto.press('Escape');
+          await expect(popup).toHaveCount(0);
+          await expect(mode).toBeFocused();
+          await expect(panel).toBeVisible();
+          await mode.press('ArrowDown');
+          await auto.click();
+          await expect(mode).toHaveText('Auto');
+          await expect(mode).toBeFocused();
+          await mode.press('Enter');
+          await expect(auto).toBeFocused();
+          await auto.press('ArrowUp');
+          await ask.press('Space');
+          await expect(mode).toHaveText('Ask');
+          await mode.click();
+          await ask.press('Tab');
+          await expect(popup).toHaveCount(0);
+          await expect(page.getByTestId('live-chat-send')).toBeFocused();
+          await mode.click();
+          await ask.press('Shift+Tab');
+          await expect(popup).toHaveCount(0);
+          await expect(
+            page.getByTestId('live-chat-harness-trigger'),
+          ).toBeFocused();
+          await mode.click();
+          await panel.getByRole('heading').click();
+          await expect(popup).toHaveCount(0);
+          await input.click();
+          await expect(input).toHaveValue('Keep this draft exactly.');
+          await page.screenshot({
+            path: testInfo.outputPath(
+              `mode-${locale}-${theme}-${width}-closed.png`,
+            ),
+          });
+        }
+      }
+    } finally {
+      await context.close();
+    }
+  });
+
   test(`backend public labels localize without changing replies or evidence (${locale})`, async ({
     browser,
   }) => {
@@ -716,9 +907,7 @@ for (const locale of ['es', 'en'] as const) {
         'Artifact unavailable',
       );
       await expect(panel.getByTestId('live-chat-activity-error')).toBeVisible();
-      await page
-        .locator('#live-chat-permission-mode')
-        .selectOption('auto-hyperion');
+      await chooseMode(page, 'Auto');
       for (const theme of ['light', 'dark'] as const) {
         await page.evaluate(
           (theme) => (document.documentElement.dataset.theme = theme),
@@ -923,7 +1112,7 @@ test('canvas navigation never retargets a running chat and context changes retai
       }),
     );
     await setAppearance(page, 'light', 'es');
-    await installContextBridge(page);
+    await installContextBridge(page, 'es', true);
     await page.goto(`/?run=${first.id}`);
     await expect(
       page.getByRole('heading', { name: 'Workflow Alpha' }),
@@ -932,6 +1121,8 @@ test('canvas navigation never retargets a running chat and context changes retai
     const panel = page.getByTestId('live-chat-page');
     const input = panel.getByLabel('Petición para el agente');
     const selector = panel.getByTestId('live-chat-context');
+    await chooseMode(page, 'Auto');
+    const mode = page.getByTestId('live-chat-mode-trigger');
     await input.fill('Work on Alpha');
     await panel.getByTestId('live-chat-send').click();
     await expect(selector).toBeDisabled();
@@ -944,12 +1135,11 @@ test('canvas navigation never retargets a running chat and context changes retai
     await expect(selector).toBeDisabled();
     await panel.getByTestId('live-chat-approval-allow').click();
     await panel.getByTestId('live-chat-stop').click();
-    expect((await chatCalls(page)).map(({ runId }) => runId)).toEqual([
-      first.id,
-      first.id,
-      first.id,
-      first.id,
-    ]);
+    expect(
+      (await chatCalls(page))
+        .filter((call) => call.method !== 'setPermissionMode')
+        .map(({ runId }) => runId),
+    ).toEqual([first.id, first.id, first.id, first.id]);
     await expect(selector).toBeEnabled();
     await expect(panel).toContainText('Este chat sigue vinculado a otro flujo');
     await input.fill('Alpha draft');
@@ -961,6 +1151,7 @@ test('canvas navigation never retargets a running chat and context changes retai
     await input.fill('New workflow draft');
     await selector.selectOption(second.id);
     await expect(input).toHaveValue('Beta draft');
+    await expect(mode).toHaveText('Auto');
     await page.getByRole('button', { name: 'Ver paso: Agent work' }).click();
     await expect(page.getByTestId('resultado-stage')).toBeVisible();
     await expect(panel).toBeVisible();
@@ -985,6 +1176,7 @@ test('canvas navigation never retargets a running chat and context changes retai
       'Beta draft',
     );
     await expect(selector).toHaveValue(second.id);
+    await expect(mode).toHaveText('Auto');
     expect(
       (await chatCalls(page)).filter((call) => call.method === 'send'),
     ).toHaveLength(1);

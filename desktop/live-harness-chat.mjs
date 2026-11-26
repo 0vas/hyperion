@@ -1,5 +1,6 @@
 import { LiveAcpChat } from './live-acp-chat.mjs';
 import { validateChatRunId } from './hyperion-entry-prompt.mjs';
+import { LiveChatPermissionStore } from './live-chat-permission-store.mjs';
 import {
   LIVE_HARNESSES,
   LiveHarnessLauncherStore,
@@ -20,6 +21,7 @@ export class LiveHarnessChat {
     onEvent,
     onError,
     store = new LiveHarnessLauncherStore(userData),
+    permissionStore = new LiveChatPermissionStore(userData),
     resolveHarnesses: resolveAll = () => resolveHarnesses({ userData, store }),
     factories,
   }) {
@@ -29,6 +31,7 @@ export class LiveHarnessChat {
     this.onEvent = onEvent;
     this.onError = onError;
     this.store = store;
+    this.permissionStore = permissionStore;
     this.resolveAll = resolveAll;
     this.factories =
       factories ||
@@ -85,6 +88,7 @@ export class LiveHarnessChat {
       const factory = this.factories[this.selected];
       if (!factory) throw new Error('Unsupported local chat harness.');
       this.chat = factory();
+      this.chat.setPermissionMode?.(this.permissionStore.snapshot().mode);
     }
     return this.chat;
   }
@@ -114,9 +118,15 @@ export class LiveHarnessChat {
     return this.active().approve(runId, token, decision);
   }
 
-  setPermissionMode(runId, threadId, mode) {
-    if (!this.chat) throw new Error('Connect a local chat session first.');
-    return this.chat.setPermissionMode(runId, threadId, mode);
+  getPermissionMode() {
+    return this.permissionStore.snapshot();
+  }
+
+  setPermissionMode(mode) {
+    const snapshot = this.permissionStore.set(mode);
+    this.chat?.setPermissionMode?.(mode);
+    this.onEvent?.({ type: 'permission-mode', ...snapshot });
+    return snapshot;
   }
 
   resolveUncertain(runId) {

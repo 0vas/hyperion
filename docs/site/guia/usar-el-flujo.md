@@ -12,6 +12,22 @@ El chat define el objetivo, el progreso breve y la continuación cuando haga fal
 
 En esa compilación, **Permisos del proveedor** permite elegir **Preguntar** (predeterminado) o **Auto Hyperion (esta sesión)** una vez conectado. Auto solo permite llamadas de coordinación verificadas, una vez por llamada; no concede shell, acceso a archivos, herramientas desconocidas ni decisiones del canvas, y respeta la política del proveedor. Las solicitudes fuera del alcance siguen visibles. Abre **Alcance del permiso** para revisar el límite. Volver a Preguntar revoca Auto y cancela solicitudes pendientes; detener, fallar, desconectar o cambiar contexto/proveedor también restablece el modo. No se persiste entre sesiones y el selector no aparece en versiones del bridge que no lo soportan. Auto no evita por sí mismo que una tarea del canvas sea abandonada por falta de progreso.
 
+### Ask/Auto global: aún no publicado
+
+Las preguntas del proveedor, cambios de modo plan y concesiones de sandbox siguen requiriendo intervención. Hyperion respeta las restricciones que el proveedor expone, pero no puede certificar políticas internas que no le comunica.
+
+Abre el control para ver las dos opciones y su explicación. Puedes recorrerlas con las flechas o Inicio/Fin, elegir con Enter/Espacio y cerrar con Escape, que devuelve el foco al control. Tab o un clic fuera también cierran el menú.
+
+La nueva fuente reúne el selector de proveedor y **Ask / Auto** con un escudo en la barra del compositor. Puedes elegir el modo antes de conectar o sin conexión. **Ask** es el valor inicial; **Auto** permite una vez solicitudes de herramientas delegables verificadas, incluidos archivos, shell y MCP de Codex/Claude. No es permiso ilimitado: no salta reglas explícitas de preguntar o denegar del proveedor, permisos del sistema ni decisiones humanas del canvas. Las solicitudes sin evidencia verificable —incluidas las formas todavía no verificadas de Cursor/Antigravity— siguen siendo manuales. Esto no certifica conversaciones nativas autenticadas.
+
+El modo se guarda para todo Desktop, no para un flujo o proveedor. Persiste al detener, fallar, desconectar, cambiar contexto/proveedor y reiniciar. Si falta una preferencia válida, se usa Ask; el Auto antiguo por sesión no se convierte automáticamente en este Auto más amplio. Un error al guardar conserva el modo anterior. Los permisos pendientes no se guardan ni se transfieren: sus tokens se cancelan en los límites de sesión/turno. Volver a Ask cancela solicitudes pendientes; no deshace acciones ya autorizadas. Auto nunca instala una regla de permiso permanente en el proveedor.
+
+Cada mensaje real refuerza que el agente debe intentar trabajar mediante Hyperion: crear un flujo desde Inicio o leer y continuar el seleccionado. Son instrucciones best-effort, no una garantía de cumplimiento o éxito. Abrir Chat no inicia trabajo. Un permiso pendiente tampoco suspende el abandono tras unos 180 segundos sin progreso ni espera activa; este límite sigue pendiente.
+
+::: warning Fuente, no instalador publicado
+La Beta **2026.11.26.0203** conserva el modo por sesión descrito arriba. El selector global persistente aún no se ha publicado.
+:::
+
 <GuideLens kind="canvas" />
 
 ## Encuentra tu siguiente tarea

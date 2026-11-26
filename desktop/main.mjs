@@ -41,6 +41,10 @@ import {
 } from './outbound-send.mjs';
 import { LiveHarnessChat } from './live-harness-chat.mjs';
 import { validateChatRunId } from './hyperion-entry-prompt.mjs';
+import { LiveChatPermissionStore } from './live-chat-permission-store.mjs';
+const liveChatPermissionStore = new LiveChatPermissionStore(
+  app.getPath('userData'),
+);
 const language = createLanguageStore({
   file: resolve(app.getPath('userData'), 'language.json'),
   systemLanguages: () => app.getPreferredSystemLanguages(),
@@ -346,6 +350,7 @@ if (!app.requestSingleInstanceLock()) {
         if (!liveHarnessChat)
           liveHarnessChat = new LiveHarnessChat({
             userData: app.getPath('userData'),
+            permissionStore: liveChatPermissionStore,
             directory: target.directory,
             url: target.service,
             onEvent: liveChatEvent,
@@ -385,21 +390,18 @@ if (!app.requestSingleInstanceLock()) {
         liveRun(runId);
         await getLiveChat().stop(runId);
       });
+      ipcMain.handle('hyperion:live-chat:permission-mode:get', (event) => {
+        validateDesktopSender(event);
+        return liveChatPermissionStore.snapshot();
+      });
       ipcMain.handle(
-        'hyperion:live-chat:permission-mode',
-        (event, runId, threadId, mode) => {
+        'hyperion:live-chat:permission-mode:set',
+        (event, mode) => {
           validateDesktopSender(event);
-          liveRun(runId);
-          if (
-            typeof threadId !== 'string' ||
-            !threadId ||
-            threadId.length > 512 ||
-            !['manual', 'auto-hyperion'].includes(mode)
-          )
-            throw new Error(
-              'A valid session and permission mode are required.',
-            );
-          return getLiveChat().setPermissionMode(runId, threadId, mode);
+          if (liveHarnessChat) return liveHarnessChat.setPermissionMode(mode);
+          const snapshot = liveChatPermissionStore.set(mode);
+          liveChatEvent({ type: 'permission-mode', ...snapshot });
+          return snapshot;
         },
       );
       ipcMain.handle(
