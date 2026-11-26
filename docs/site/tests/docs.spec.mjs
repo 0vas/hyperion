@@ -1557,7 +1557,7 @@ test('Claude Code happy path is documented honestly in both languages', async ({
 test('CalVer minute and macOS opening instructions remain visible in both themes, languages and narrow layouts', async ({
   page,
 }) => {
-  expect(publishedRelease.macNotarized).toBe(false);
+  expect(publishedRelease.macNotarized).toBe(true);
   for (const locale of ['', 'en/']) {
     for (const dark of [false, true]) {
       for (const width of [390, 1440]) {
@@ -1578,20 +1578,21 @@ test('CalVer minute and macOS opening instructions remain visible in both themes
         );
         await expect(downloads.locator('.download-status')).toContainText(
           locale
-            ? `this ${
-                publishedRelease.channel === 'beta' ? 'Beta' : 'preview'
-              } is not yet notarized by Apple`
-            : `esta ${
-                publishedRelease.channel === 'beta' ? 'Beta' : 'preview'
-              } aún no está notarizada por Apple`,
-        );
-        await expect(downloads.locator('.download-status')).not.toContainText(
-          locale
             ? 'notarized with Developer ID'
             : 'notarizado con Developer ID',
         );
         await expect(downloads.locator('.download-status')).not.toContainText(
+          locale
+            ? 'not yet notarized by Apple'
+            : 'aún no está notarizada por Apple',
+        );
+        await expect(downloads.locator('.download-status')).toContainText(
           locale ? 'Gatekeeper should accept' : 'Gatekeeper debería aceptar',
+        );
+        await expect(downloads).toContainText(
+          locale
+            ? 'Windows still has no publisher signature'
+            : 'Windows sigue sin firma de editor',
         );
         await expect(
           page.getByRole('link', { name: 'macOS · Intel', exact: true }),

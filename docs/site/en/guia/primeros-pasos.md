@@ -12,13 +12,13 @@ You need a compatible AI tool connected to Hyperion. Set up the connection once;
 
 <Downloads />
 
-Choose the installer for your computer. On Apple Silicon Macs, open the DMG and move Hyperion to **Applications** before connecting your AI. On Windows, open the EXE. Beta 2026.11.24.2323 has ad-hoc integrity signing: it is **not Apple-notarized and does not establish Developer ID identity**. Windows has no publisher signature.
+Choose the installer for your computer. On Apple Silicon Macs, open the DMG and move Hyperion to **Applications** before connecting your AI. On Windows, open the EXE. The macOS app in Beta 2026.11.26.0203 is **Developer ID signed and Apple-notarized**; CI verified the signature, stapled ticket and Gatekeeper acceptance. Windows has no publisher signature.
 
 ### macOS blocks the app
 
-This Beta is not notarized, so Gatekeeper may block Hyperion. “Apple could not verify Hyperion.app is free of malware” alone does not establish download corruption; confirm you downloaded the official release before deciding whether to trust it.
+Beta 2026.11.26.0203 is notarized. If opening is blocked, check that you installed that version from the official release; historical versions may lack notarization. “Apple could not verify Hyperion.app is free of malware” alone does not establish download corruption; confirm you downloaded the official release before deciding whether to trust it.
 
-If macOS still blocks an official copy:
+If you choose to retain an official historical, unnotarized copy and decide to trust it:
 
 1. Move **Hyperion.app** to **Applications** and attempt to open it once.
 2. Choose **Done** in the alert.
@@ -111,7 +111,7 @@ From CalVer **2026.10.12.0638 UTC**, the menu checks GitHub and offers an instal
 
 **The first migration from 0.4 or 0.5.1 to CalVer is manual from this page**: the old updater does not recognize the new tags. Public versions use **YYYY.MM.DD.HHmm UTC**, including hours and minutes; Preview, Beta, and Stable are separate channels. Preview receives all three levels; Beta receives Beta and Stable; Stable receives Stable only. Subsequent updates are compared chronologically.
 
-Version 0.4.0 requires a manual upgrade. Its macOS bundle has an incomplete signature; downloading the same installer again does not fix it. The current Apple Silicon Beta passes ad-hoc integrity verification but is not Apple-notarized. If macOS blocks installation, consult [Apple’s guide](https://support.apple.com/102445); do not disable system-wide protection.
+Version 0.4.0 requires a manual upgrade. Its macOS bundle has an incomplete signature; downloading the same installer again does not fix it. The current Apple Silicon Beta 2026.11.26.0203 has verified Developer ID signing and Apple notarization. If macOS blocks installation, consult [Apple’s guide](https://support.apple.com/102445); do not disable system-wide protection.
 
 Starting with **2026.10.12.2101**, opening the updated app automatically backs up and restarts the older service from the same installation. Workflows, files, answers and history remain intact; tasks are not executed again. You do not need to restart your computer. The backup remains in `backups` inside the local data directory.
 
