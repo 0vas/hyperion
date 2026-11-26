@@ -18,13 +18,13 @@ The `bpmn-lite` profile supports start/end nodes and structured exclusive, inclu
 
 ## Distribution
 
-The published `2026.11.26.0203` Beta provides Apple Silicon Macs (arm64) and Windows x64. Both installers and their SHA-256 digests were verified during publication. The macOS app is **Developer ID signed and Apple-notarized**, with signature, stapled ticket and Gatekeeper acceptance verified in CI; Windows has no publisher signature. [Download links](../guia/primeros-pasos.md) point to that published release, not a pending build.
+The published `2026.11.26.1345` Beta provides Apple Silicon Macs (arm64) and Windows x64. Both installers and their SHA-256 digests were verified during publication. The macOS app is **Developer ID signed and Apple-notarized**, with signature, stapled ticket and Gatekeeper acceptance verified in CI; Windows has no publisher signature. [Download links](../guia/primeros-pasos.md) point to that published release, not a pending build.
 
 New builds and publications include only macOS arm64 and Windows x64. Both must pass native and packaged-installer tests; new Intel Mac packages are no longer produced. The historical `v0.4.0-preview.1` release included Apple Silicon, Intel and Windows; its files remain available. Native tests do not certify a real conversation in every AI client.
 
 This documentation follows `main`, which may contain changes still absent from published installers. A build or CI artifact is not a new release available to update the application.
 
-This Beta includes session-scoped Auto Hyperion and compact activity. It does not certify authenticated sessions with every provider. An ACP permission pending for more than 180 seconds can still lead to task abandonment without a workflow wait or recorded progress; this limitation is not fixed.
+This Beta includes global persistent Ask/Auto and compact activity. Auto allows verified delegable Codex/Claude tool requests once; it does not bypass exposed provider restrictions or human canvas decisions. Cursor/Antigravity retain manual permissions when request shapes are not verifiable. Per-prompt workflow-first instructions do not guarantee model compliance. It does not certify authenticated sessions with every provider. An ACP permission pending for more than 180 seconds can still lead to task abandonment without a workflow wait or recorded progress; this limitation is not fixed.
 
 ## Privacy
 

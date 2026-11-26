@@ -1,6 +1,6 @@
 # ADR 0040 — Preferencia global Ask/Auto en Desktop
 
-Estado: **fuente en desarrollo, no publicada en Beta 2026.11.26.0203**.
+Estado: **publicada en Beta 2026.11.26.1345; no incluida retroactivamente en Beta 2026.11.26.0203**.
 Fecha: 2026-11-26.
 
 ## Decisión
@@ -25,4 +25,8 @@ Las nueve herramientas de agente del MCP privado pueden ser elegibles, incluido 
 - La cobertura con fixtures ACP no certifica sesiones nativas autenticadas. Tampoco se cambia el watchdog de unos 180 segundos ni se implementa suspensión por un permiso pendiente.
 - La Beta 2026.11.26.0203 mantiene su política histórica por sesión. No se cambia la disponibilidad de instaladores por documentar esta decisión.
 
-Detalle del contrato: [integración](../integration.md#global-askauto-permissions-unpublished-source). Contexto histórico: [ADR 0038](0038-desktop-local-multiharness.md).
+Detalle del contrato: [integración](../integration.md#global-askauto-permissions). Contexto histórico: [ADR 0038](0038-desktop-local-multiharness.md).
+
+## Publicación verificada
+
+La [Beta 2026.11.26.1345](https://github.com/0vas/hyperion/releases/tag/v2026.11.26.1345) se construyó desde `4b262d286822e7c0ef694fb2028b121084f7c949`. Verify (Node 22/24, audit, Chromium y WebKit), CodeQL y Pages aprobaron ese commit. [Desktop](https://github.com/0vas/hyperion/actions/runs/45832565945) aprobó las pruebas nativas de fuente y paquete en macOS y Windows; los cuatro casos de paquete pasaron en ambos sistemas. La app macOS tiene firma Developer ID y notarización verificadas con codesign, stapler y Gatekeeper; Windows no tiene firma de editor. La [publicación](https://github.com/0vas/hyperion/actions/runs/45834819017) verificó los artefactos, y una descarga pública independiente confirmó sus tamaños y SHA-256 contra el manifiesto. No se reemplazaron los instaladores de la Beta anterior ni se certificaron conversaciones autenticadas de proveedores.

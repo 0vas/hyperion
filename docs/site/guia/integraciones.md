@@ -18,6 +18,8 @@ Mientras Menú, Conexiones, Ajustes, Ayuda o una confirmación están abiertos, 
 
 #### Elegir la IA local
 
+La Beta **2026.11.26.1345** añade **Ask / Auto** global persistente junto al proveedor en la barra del compositor, disponible antes de conectar. Auto permite una vez solicitudes delegables verificadas de Codex/Claude, incluidos archivos, shell y MCP; las restricciones explícitas del proveedor y decisiones humanas del canvas siguen vigentes. Cursor/Antigravity conservan respuesta manual cuando sus permisos no tienen una forma verificable. [Uso, persistencia y límites](./usar-el-flujo.md). Cada prompt refuerza trabajar mediante Hyperion, pero no hay una garantía de cumplimiento ni un bloqueo de respuestas hasta recibir un comprobante del workflow.
+
 El compositor conserva espacio para escribir: un selector desplegable compacto muestra la marca SVG local del proveedor elegido, su nombre y un indicador de disponibilidad. Al abrirlo, el menú permanece dentro del panel y muestra todos los harness con el estado legible. Las marcas se empaquetan localmente, no se cargan desde la red y no son una certificación ni respaldo del proveedor.
 
 | Estado visible                 | Significado exacto                                                   | No significa                                                                                              |

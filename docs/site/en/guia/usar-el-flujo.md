@@ -12,20 +12,20 @@ The chat carries the goal, short progress and continuation when needed. Scope, p
 
 In that build, **Provider permissions** offers **Ask** (the default) or **Auto Hyperion (this session)** once connected. Auto allows only verified coordination calls, once per call; it does not grant shell, file access, unknown tools, or canvas decisions, and provider policy still applies. Requests outside its scope remain visible. Open **Permission scope** to review the limit. Returning to Ask revokes Auto and cancels pending requests; stopping, failure, disconnection, or a context/provider change also resets the mode. It is not persisted across sessions, and older Desktop bridges without support do not show the selector. Auto does not itself prevent a canvas task from being abandoned for lack of progress.
 
-### Global Ask/Auto: not yet published
+### Global Ask/Auto: Beta 2026.11.26.1345
 
 Provider questions, plan-mode changes and sandbox permission grants still require intervention. Hyperion respects the restrictions the provider exposes, but cannot certify internal policies the provider does not disclose.
 
 Open the control to see both options and their explanations. Use the arrow keys or Home/End to move, Enter/Space to choose, and Escape to close and return focus to the control. Tab or an outside click also closes the menu.
 
-The new source places the provider picker and a shield-marked **Ask / Auto** control together in the composer toolbar. You can choose the mode before connecting or while offline. **Ask** is the default; **Auto** allows verified, delegable tool requests once, including Codex/Claude file, shell and MCP tools. It is not unrestricted permission: explicit provider ask/denial rules, OS permissions and human canvas decisions still apply. Requests without verifiable evidence—including as-yet unverified Cursor/Antigravity request shapes—remain manual. This does not certify authenticated native conversations.
+Beta 2026.11.26.1345 places the provider picker and a shield-marked **Ask / Auto** control together in the composer toolbar. You can choose the mode before connecting or while offline. **Ask** is the default; **Auto** allows verified, delegable tool requests once, including Codex/Claude file, shell and MCP tools. It is not unrestricted permission: explicit provider ask/denial rules, OS permissions and human canvas decisions still apply. Requests without verifiable evidence—including as-yet unverified Cursor/Antigravity request shapes—remain manual. This does not certify authenticated native conversations.
 
 The mode is saved for all of Desktop, not for one workflow or provider. It persists across stopping, errors, disconnects, context/provider changes and restarting Desktop. Missing or invalid preferences fall back to Ask; the old session-only Auto does not automatically migrate to this broader Auto. A failed save preserves the previous mode. Pending permissions are not saved or transferred: their tokens are cancelled at session/turn boundaries. Switching back to Ask cancels pending requests; it cannot undo actions already authorized. Auto never installs a permanent permission rule in the provider.
 
 Every actual message reinforces that the agent should attempt the work through Hyperion: create a workflow from Home, or read and continue the selected workflow. These are best-effort instructions, not a guarantee of compliance or success. Opening Chat starts no work. A pending permission also does not suspend abandonment after about 180 seconds without progress or an active integration wait; that limitation remains unresolved.
 
-::: warning Source, not a published installer
-Beta **2026.11.26.0203** retains the session-only mode described above. The persistent global selector has not been published yet.
+::: tip Available since Beta 2026.11.26.1345
+The persistent global selector ships in Beta **2026.11.26.1345**. Beta **2026.11.26.0203** retains the session-only mode described above; its installers were not replaced.
 :::
 
 <GuideLens kind="canvas" />

@@ -18,13 +18,13 @@ El perfil `bpmn-lite` admite inicio, fin y compuertas exclusivas, inclusivas y p
 
 ## Distribución actual
 
-La Beta publicada `2026.11.26.0203` ofrece macOS Apple Silicon (arm64) y Windows x64. Ambos instaladores y sus SHA-256 se verificaron al publicar. La app macOS tiene **firma Developer ID y notarización de Apple**, con firma, ticket adjunto y aceptación de Gatekeeper verificados en CI; Windows no tiene firma de editor. Los [enlaces de descarga](../guia/primeros-pasos.md) corresponden a esa release publicada, no a una compilación pendiente.
+La Beta publicada `2026.11.26.1345` ofrece macOS Apple Silicon (arm64) y Windows x64. Ambos instaladores y sus SHA-256 se verificaron al publicar. La app macOS tiene **firma Developer ID y notarización de Apple**, con firma, ticket adjunto y aceptación de Gatekeeper verificados en CI; Windows no tiene firma de editor. Los [enlaces de descarga](../guia/primeros-pasos.md) corresponden a esa release publicada, no a una compilación pendiente.
 
 Las nuevas compilaciones y publicaciones incluyen solo macOS arm64 y Windows x64. Ambos deben superar las pruebas nativas y del instalador empaquetado; ya no se generan paquetes nuevos para Mac Intel. La release histórica `v0.4.0-preview.1` sí incluyó Apple Silicon, Intel y Windows; sus archivos se conservan. Las pruebas nativas no certifican una conversación real en cada cliente de IA.
 
 La documentación sigue `main`, que puede incluir cambios todavía ausentes de los instaladores publicados. Una compilación o un artefacto de CI no equivale a una nueva release disponible para actualizar la aplicación.
 
-La Beta incluye Auto Hyperion por sesión y actividad compacta. No certifica sesiones autenticadas con todos los proveedores. Un permiso ACP pendiente durante más de 180 segundos puede seguir terminando en abandono de la tarea si no hay espera de flujo ni progreso registrado; este límite no está corregido.
+La Beta incluye Ask/Auto global persistente y actividad compacta. Auto permite una vez herramientas delegables verificadas de Codex/Claude; no salta restricciones explícitas del proveedor ni decisiones humanas del canvas. Cursor/Antigravity mantienen permisos manuales cuando no hay una forma verificable. Las instrucciones workflow-first de cada prompt no garantizan cumplimiento del modelo. No certifica sesiones autenticadas con todos los proveedores. Un permiso ACP pendiente durante más de 180 segundos puede seguir terminando en abandono de la tarea si no hay espera de flujo ni progreso registrado; este límite no está corregido.
 
 ## Privacidad
 

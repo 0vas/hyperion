@@ -18,6 +18,8 @@ While Menu, Connections, Settings, Help, or a confirmation is open, Desktop hide
 
 #### Choosing local AI
 
+Beta **2026.11.26.1345** adds global persistent **Ask / Auto** beside the provider in the composer toolbar, available before connecting. Auto allows verified delegable Codex/Claude requests once, including files, shell and MCP; exposed provider restrictions and human canvas decisions still apply. Cursor/Antigravity retain manual responses when their permission shapes cannot be verified. [Usage, persistence and limits](./usar-el-flujo.md). Every prompt reinforces working through Hyperion, but there is no guarantee of compliance or a response gate waiting for a workflow receipt.
+
 The composer preserves room to write: a compact dropdown shows the selected provider's locally bundled SVG mark, name, and availability indicator. Opening it keeps the menu within the panel and shows every harness with readable status. The marks are bundled locally, never fetched at runtime, and do not certify or imply provider endorsement.
 
 | Visible status            | Exact meaning                                                   | It does not mean                                                                                                        |

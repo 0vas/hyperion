@@ -21,9 +21,9 @@ Desktop Chat implements Codex, Claude Code, Cursor Agent and Antigravity using p
 
 ## Desktop entry instructions and workflow selection
 
-### Global Ask/Auto permissions (unpublished source)
+### Global Ask/Auto permissions
 
-This source change is **not included in published Beta 2026.11.26.0203**. The historical session-only policy below describes that installer, not the new global preference.
+Available in published **Beta 2026.11.26.1345**, built from `4b262d286822e7c0ef694fb2028b121084f7c949`. The historical session-only policy below describes Beta 2026.11.26.0203, not the new global preference.
 
 Desktop's composer toolbar offers **Ask** and **Auto** beside the local provider picker, with a shield identifying permission mode. This is a Desktop-wide preference, not a workflow, thread or provider setting. It can be chosen before connecting or while offline. Main owns and saves the preference in private `userData` storage; missing or invalid data starts in Ask. Stop, errors, disconnects, workflow/provider changes and restarting Desktop preserve the chosen mode. They do not preserve permission tokens: pending requests are still cancelled at their lifecycle boundaries, and old tokens cannot authorize another session or turn.
 
@@ -33,7 +33,7 @@ Ask leaves each provider permission request for the person. Auto may grant **del
 
 Eligibility requires structured or correlated identity for the current session, turn and call, plus a recognized persistent option as a delegation signal; that option is never selected. Exposed denial/reason or `defaultToNo` metadata, forced-ask requests, questions, Enter/ExitPlanMode, sandbox permission grants and strict-review requests remain manual. Codex can supply standard options as upstream defaults, so this check cannot prove that every invisible host policy was detected. An unexposed policy is not evidence of a verified override. No provider flags are changed to enable Auto.
 
-The new source makes all nine private Hyperion agent tools eligible when the same delegation checks pass: `hyperion_create_run`, `hyperion_list_runs`, `hyperion_get_run`, `hyperion_open`, `hyperion_step`, `hyperion_add_artifact`, `hyperion_revise_plan`, `hyperion_wait` and `hyperion_suspend`. Eligible `hyperion_step` actions are `start`, `log`, `complete`, `fail` and `retry`. This expands the historical Beta allowlist below, not human authority: roles, revisions, attempt checks, review gates and real-connector requirements still apply. A Hyperion-named tool routed through another configured MCP server is not an eligible substitute for the private session server.
+This Beta makes all nine private Hyperion agent tools eligible when the same delegation checks pass: `hyperion_create_run`, `hyperion_list_runs`, `hyperion_get_run`, `hyperion_open`, `hyperion_step`, `hyperion_add_artifact`, `hyperion_revise_plan`, `hyperion_wait` and `hyperion_suspend`. Eligible `hyperion_step` actions are `start`, `log`, `complete`, `fail` and `retry`. This expands the historical Beta allowlist below, not human authority: roles, revisions, attempt checks, review gates and real-connector requirements still apply. A Hyperion-named tool routed through another configured MCP server is not an eligible substitute for the private session server.
 
 Changing back to Ask cancels pending permission requests; it cannot undo an operation already authorized. Enabling Auto rechecks outstanding requests against their original identity and current session/turn before allowing an eligible request. Human canvas decisions, approvals, plan review and irreversible confirmations remain human actions in both modes. Global preference does not transfer workflow ownership or human credentials.
 
@@ -41,7 +41,7 @@ Every actual prompt carries fresh workflow-first instructions with the selected 
 
 ### Session permissions and compact tool events (development source)
 
-Historical behavior in published Beta **2026.11.26.0203**, built from `150e1e327db574543a6ba76d109b55800676e06e`. This heading retains its existing link anchor. The unpublished global mode above supersedes the session-only permission policy in new source, without changing the compact-event privacy rules.
+Historical behavior in published Beta **2026.11.26.0203**, built from `150e1e327db574543a6ba76d109b55800676e06e`. This heading retains its existing link anchor. The global mode in Beta 2026.11.26.1345 supersedes the session-only permission policy, without changing the compact-event privacy rules.
 
 Desktop starts each ACP session in **Manual** mode. **Auto Hyperion** is an explicit, in-memory choice for that session, not a saved provider policy. It answers eligible provider requests with `allow_once` only. It never selects `allow_always`, changes provider settings, bypasses OS permission dialogs, or approves a human workflow decision. Normal turn completion preserves the choice; Stop, any non-completed turn ending (including provider interruption), disconnect, a different provider or a different workflow selection resets it. Pending permissions are cancelled and the reset is published before a non-completed terminal turn event. Switching back to Manual cancels outstanding permission requests; it cannot undo an operation already allowed.
 
